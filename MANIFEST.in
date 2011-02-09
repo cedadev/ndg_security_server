@@ -1,0 +1,11 @@
+#
+# MANIFEST.in file to enable inclusion of paster template
+# 
+# NERC Data Grid Project
+# 
+# P J Kershaw 06/01/09
+# 
+# Copyright (C) 2009 STFC
+# 
+# BSD - See LICENCE file for details
+recursive-include ndg/security/server/paster_templates/ *

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xrds:XRDS xmlns:xrds="xri://$xrds" xmlns="xri://$xrd*($v*2.0)">
+    <XRD>
+        <Service priority="0">
+            <Type>$openid20type</Type>
+            <Type>$openid10type</Type>
+            <URI>$endpoint_url</URI>
+            <LocalID>$user_url</LocalID>
+        </Service>
+        %%{yadisExtraServiceEndpoints}
+    </XRD>
+</xrds:XRDS>

@@ -1,0 +1,141 @@
+<html xmlns="http://www.w3.org/1999/xhtml" 
+	xmlns:py="http://genshi.edgewall.org/"
+	xmlns:xi="http://www.w3.org/2001/XInclude">        
+    <head>
+    	<xi:include href="base.html"/>
+	    <replace py:replace="pagehead()"/>
+    </head>
+    <body>
+        <div id="main">
+            <div py:replace="header()"/>
+            <div id="decideFormContent">  
+            	<form method="POST" action="${c.urls['url_allow']}">
+            		<table>
+            			<input type="hidden" name="identity" value="$c.identityURI" />
+            			<tr>
+            				<td>
+    		        			The website <b>$c.oidRequest.trust_root</b> has requested 
+    		        			your OpenID for sign in:
+            				</td>
+            			</tr>
+            			<tr>
+    	                 	<td>
+    	                 		<div id="identityUriBox">$c.identityURI</div>
+    	                 	</td>
+    	                </tr>
+            			<tr py:if="len(axRequestedAttr) > 0">
+            			    <td>
+    		        			This site has also requested some additional information:
+            			    	<span>
+            			    		<a href="javascript:;" title="Toggle help" onclick="toggleDiv(1,'axHelp','shown','hidden','div'); return false;">
+            			    			<img src="/layout/icons/help.png" alt="Toggle help" class="helpicon"/></a>
+            			    	</span>
+            			    	<div id="axHelp" class="hidden">
+            			    		<div class="helptxt">
+            			    			<p>The site where you want to sign in has requested some additional
+            			    				information as well as your OpenID.  Review the list of items below.
+            			    				The righthand column, "Return Item to Requesting Site?" has a tick box
+            			    				assigned to each item.  By unticking a given box you can prevent the
+            			    				related item from being returned to the requested site.  However, for
+            			    				some items, the tick box may be disabled.  This indicates that the 
+            			    				requesting site has marked this item as mandatory.  In this case,
+            			    				you can still choose the "No" button at the bottom off this form and
+            			    				cancel sign in to the given site.</p>
+            			    			<p>If you are otherwise happy to return the requested information, 
+            			    				select the "Yes" button</p>
+            			    		</div>
+            			    	</div>                              
+            			    	<table id="opAXRequestedAttributes">
+        			                <tr>
+        			                    <th>Item</th>
+        			                    <th>Value</th>
+        			                    <th>Return Item to Requesting Site?</th>
+        			                </tr>
+            			         	<?python
+            			         		# Only get those attributes that it was possible to retrieve 
+            			         		# values for
+            			         		requestedVals = [i for i in axRequestedAttr.values() 
+            			         		                 if axFetchResponse.getSingle(i.type_uri)]
+            			         	?>
+            			         	<tr py:for="i in requestedVals">
+									    <?python
+									       # Disable checkbox if attribute is required and not optional
+									       nameAttr = 'ax.%s' % i.alias
+									       if i.required:
+									       	   inputAttr = {'disabled': 'disabled', 'checked': "checked"}
+									       else:
+									       	   inputAttr = {'id': i.alias, 'name': nameAttr, 'value': i.type_uri}
+									    ?>
+									    <td>${i.alias or i.type_uri}</td>
+            			         		<td>${axFetchResponse.getSingle(i.type_uri)}</td>
+										<!-- hidden input is required to force the setting of disabled checkbox values -->
+										<td><input type="checkbox"  py:attrs="inputAttr"/>
+									        <input py:if="i.required" type="hidden" value="${i.type_uri}" name="$nameAttr"/></td>
+									</tr> 
+							    </table>
+            			    </td>
+            			</tr>
+            			<tr>
+            				<td>        					
+    	        				Would you like to pass your OpenID credential
+    	        				information back to $c.oidRequest.trust_root and 
+    	        				return to this site?  
+            					<span>
+            						<a href="javascript:;" title="Toggle help" onclick="toggleDiv(1,'approvalHelp','shown','hidden','div'); return false;">
+            							<img src="/layout/icons/help.png" alt="Toggle help" class="helpicon"/></a>
+            					</span>
+            					<div id="approvalHelp" class="hidden">
+            						<div class="helptxt">
+            							<p>You are logged in to this your home site but you 
+            								have not yet returned your OpenID to the site 
+            								requesting it, ${c.oidRequest.trust_root} so that 
+            								you are signed in there.  Selecting "Yes" will 
+            								complete the sign in process redirecting your browser 
+            								to the requesting site and returning your OpenID, 
+            								$c.identityURI and any other personal details listed 
+            								above.
+            							</p>
+            							<p>
+            								Select "No" to cancel this process.  You will remain 
+            								logged in here at this your OpenID Provider site but 
+            								none of your details will not be passed back to the 
+            								requesting site ${c.oidRequest.trust_root}.
+            							</p>
+            							<p>
+            								If you select the tickbox, 
+            								"Remember this decision for session duration" this 
+            								page will be skipped the next time you sign into
+            								${c.oidRequest.trust_root}. Note that this decision
+            								is only remembered for as long as you are logged in here.
+            								In some circumstances you will still be prompted with this
+            								page regardless.  This is the case if you didn't enter your
+            								full OpenID to sign in. e.g. if you entered your home
+            								institution URL, https://myorganisation.somewhere/
+            								instead of your full OpenID, 
+            								https://myorganisation.somewhere/my.name/         								
+            							</p>
+            						</div>
+            					</div>                              
+            				</td>
+            			</tr>
+            			<tr>
+            				<td align="right">
+            					<input type="submit" name="$c.APPROVE_RP_SUBMIT" value="Yes" />
+            					<input type="submit" name="$c.REJECT_RP_SUBMIT" value="No" />
+            				</td>
+            			</tr>
+            			<tr>
+            				<td align="right">
+            					<div py:if="c.oidRequest.trust_root not in c.session.get('approved', {})">
+    	        					<input type="checkbox" id="remember" name="remember" value="Yes"/>
+    	        					<label for="remember">Remember this decision for session duration</label>
+            					</div>
+            				</td>
+            			</tr>
+            		</table>
+            	</form>
+            </div>
+            <div py:replace="footer()"/>
+        </div>
+    </body>
+</html>

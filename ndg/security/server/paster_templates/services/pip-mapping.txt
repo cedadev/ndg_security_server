@@ -1,0 +1,23 @@
+#
+# NDG Security XACML Policy Information Point Attribute ID -> Attribute 
+# Authority mapping file.  The PIP, on receipt of a query from the XACML context
+# handler, checks the attribute(s) being queried for and looks up this mapping
+# to determine which attribute authority to query to find out if the subject
+# has the attribute in their entitlement
+#
+# NERC DataGrid
+#
+# Author: P J Kershaw
+#
+# Date: 11/08/10
+#
+# Copyright: STFC 2010
+#
+# Licence: BSD - See top-level LICENCE file for licence details
+#
+# $Id: pip-mapping.txt 7822 2011-01-17 16:26:46Z pjkersha $
+
+# Entries are whitespace delimited <attribute id> <attribute authority>
+urn:siteA:security:authz:1.0:attr https://localhost:7443/AttributeAuthority
+myattributeid https://myattributeauthority.ac.uk/
+http://someotherattributeid.schema https://another.ac.uk/attributeservice/
