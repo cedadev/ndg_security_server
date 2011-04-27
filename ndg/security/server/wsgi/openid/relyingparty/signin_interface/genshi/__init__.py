@@ -76,7 +76,15 @@ class GenshiSigninTemplate(SigninInterface):
         
         if self.staticContentRootDir is not None:
             staticApp = StaticURLParser(self.staticContentRootDir)
-            self._app = Cascade([staticApp, self._app], catch=(404, 401))
+            appList = [staticApp]
+            
+            # Check next app is set - if it is, add to the Cascade - Nb.
+            # THIS middleware may behave as an app in which case there is no
+            # next app in the chain      
+            if self._app is not None:
+                appList += [self._app]
+                
+            self._app = Cascade(appList, catch=(404, 401))
 
     def _getStaticContentRootDir(self):
         return self.__staticContentRootDir

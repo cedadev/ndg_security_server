@@ -1107,24 +1107,42 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
             return response
 
     def _identityIsAuthenticated(self, oidRequest):
-        '''Check that a user is authorized i.e. does a session exist for their
-        username and if so does it correspond to the identity URL provided.
-        This last check doesn't apply for ID Select mode where No ID was input
-        at the Relying Party.
+        '''Check that a user is authenticated i.e. does a session exist for their
+        username 
         
         @type oidRequest: openid.server.server.CheckIDRequest
         @param oidRequest: OpenID Request object
         @rtype: bool
-        @return: True/False is user authorized
+        @return: True/False is user authenticated
         '''
         username = self.session.get(
                             OpenIDProviderMiddleware.USERNAME_SESSION_KEYNAME)
         if username is None:
             return False
+        
+        identityURI = self.session.get(
+                        OpenIDProviderMiddleware.IDENTITY_URI_SESSION_KEYNAME)
+        if identityURI is None:
+            return False
 
+        log.debug("OpenIDProviderMiddleware._identityIsAuthenticated - "
+                  "user is logged in")
+        return True
+    
+        
+    def _requestedIdMatchesAuthenticatedId(self, oidRequest):
+        """Check requested Identity matches identity of already logged in user.
+        Note also returns positive response if identity select mode used
+        
+        @type oidRequest: openid.server.server.CheckIDRequest
+        @param oidRequest: OpenID Request object
+        @rtype: bool
+        @return: True/False authenticated user satisfy request ID
+        """
         if oidRequest.idSelect():
-            log.debug("OpenIDProviderMiddleware._identityIsAuthenticated - "
-                      "ID Select mode set but user is already logged in")
+            log.debug(
+                "OpenIDProviderMiddleware._requestedIdMatchesAuthenticatedId - "
+                "ID Select mode set but user is already logged in")
             return True
         
         identityURI = self.session.get(
@@ -1133,17 +1151,18 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
             return False
         
         if oidRequest.identity != identityURI:
-            log.debug("OpenIDProviderMiddleware._identityIsAuthenticated - user "
-                      "is already logged in with a different ID=%s and "
-                      "identityURI=%s" %
-                      (username, identityURI))
+            log.debug(
+                "OpenIDProviderMiddleware._requestedIdMatchesAuthenticatedId - "
+                "user is already logged in with a different ID=%s and "
+                "identityURI=%s" % (username, identityURI))
             return False
         
-        log.debug("OpenIDProviderMiddleware._identityIsAuthenticated - "
-                  "user is logged in with ID matching ID URI")
+        log.debug(
+            "OpenIDProviderMiddleware._requestedIdMatchesAuthenticatedId - "
+            "user is logged in with ID matching ID URI")
+
         return True
     
-
     def _trustRootIsAuthorized(self, trust_root):
         '''Return True/False for the given trust root (Relying Party) 
         previously been approved by the user
@@ -1283,6 +1302,16 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         
         if self._identityIsAuthenticated(oidRequest):
             
+            # Check requested ID matches ID for existing authenticated user
+            if not self._requestedIdMatchesAuthenticatedId(oidRequest):
+                response = self._render.errorPage(self.environ, 
+                                                  self.start_response,
+                    'An existing user is already logged in with a different '
+                    'identity to the one you provided (%s). Log out from this '
+                    'site and then retry sign in.' % 
+                    oidRequest.identity)
+                return response
+                
             # User is logged in - check for ID Select type request i.e. the
             # user entered their IdP address at the Relying Party and not their
             # full OpenID URL.  In this case, the identity they wish to use must
@@ -1346,16 +1375,23 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                 
         elif oidRequest.immediate:
             oidResponse = oidRequest.answer(False)
-            return self._displayResponse(oidResponse)        
+            return self._displayResponse(oidResponse)  
+        
         else:
-            # User is not logged in
             
-            # Call login and if successful then call decide page to confirm
-            # user wishes to trust the Relying Party.
-            response = self.do_login(self.environ,
-                                     self.start_response,
-                                     success_to=self.urls['url_decide'])
-            return response
+            identityURI = self.session.get(
+                        OpenIDProviderMiddleware.IDENTITY_URI_SESSION_KEYNAME)
+            if identityURI is None:
+                # User is not logged in
+                
+                # Call login and if successful then call decide page to confirm
+                # user wishes to trust the Relying Party.
+                response = self.do_login(self.environ,
+                                         self.start_response,
+                                         success_to=self.urls['url_decide'])
+                return response
+            
+            elif oidRequest.identity != identityURI:
 
     def _displayResponse(self, oidResponse):
         """Serialize an OpenID Response object, set headers and return WSGI
