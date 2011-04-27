@@ -1046,7 +1046,8 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
             raise UserIdNotKnown('Subject Id "%s" is not known to this '
                                  'authority' % userId)
 
-        if requestorDN not in self.samlValidRequestorDNs:
+        if (len(self.samlValidRequestorDNs) > 0 and
+            requestorDN not in self.samlValidRequestorDNs):
             raise InvalidRequestorId('Requestor identity "%s" is invalid' %
                                      requestorDN)
 

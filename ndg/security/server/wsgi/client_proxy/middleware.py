@@ -9,7 +9,7 @@ from webob.dec import wsgify
 from webob import Request, Response
 from OpenSSL import SSL
 
-from myproxy.server.ws.middleware import MyProxyClientMiddleware
+from myproxy.ws.server.wsgi.middleware import MyProxyClientMiddleware
 from ndg.security.common.utils import pyopenssl
 
 
@@ -18,19 +18,21 @@ class SSLCtxSessionMiddleware(object):
     __slots__ = (
         '_app',
         '__environSessionKeyName',
-        '__ctxEnvironKeyName',
-        '__ctx',
+        '__ctxSessionKeyName',
     )
     PARAM_NAMES = ('environSessionKeyName', 'ctxEnvironKeyName', 'caCertDir',)
     DEFAULT_ENVIRON_SESSION_KEYNAME = "ndg.security.session"
+    DEFAULT_CTX_SESSION_KEYNAME = "ssl_ctx"
     DEFAULT_PARAM_PREFIX = 'ssl_ctx.'
+    
+    '''@param SSL_VERSION: SSL version for context object
+    @type SSL_VERSION: string'''
+    SSL_VERSION = SSL.SSLv3_METHOD
     
     def __init__(self, app):
         self._app = app
         self.__environSessionKeyName = \
             self.__class__.DEFAULT_ENVIRON_SESSION_KEYNAME
-            
-        self.__ctx = SSL.Context(SSL.SSLv3_METHOD)
         
     def initialise(self, app_conf, prefix=DEFAULT_PARAM_PREFIX, **local_conf):
         for k in local_conf:
@@ -56,26 +58,60 @@ class SSLCtxSessionMiddleware(object):
                 'Expecting session assigned to %r environ key' % 
                 self.__environSessionKeyName)
             
-        session[self.__ctxEnvironKeyName] = self.__ctx
-        
+        self._create_ssl_ctx()
+
         return self._app(request.environ, request.start_response)
+    
+    def _create_ssl_ctx(self, session):
+        """Create or refresh SSL Context object"""
+        # TODO: refresh existing context if client credentials are near expiry
+        ctx = session.get(self.__ctxSessionKeyName)
+        if ctx is None:
+            session[self.__ctxSessionKeyName
+                    ] = SSL.Context(self.__class__.SSL_VERSION)
         
 
+class MyProxyProvisionedSessionMiddlewareError(Exception):
+    """Exception class for MyProxyProvisionedSessionMiddleware, a WSGI 
+    middleware class which provisions a session object with PKI credentials from
+    a MyProxy server
+    """
+        
+
+class MyProxyRetrievalError(MyProxyProvisionedSessionMiddlewareError):
+    """Exception class to flag errors from MyProxy logon calls made from 
+    MyProxyProvisionedSessionMiddleware"""
+        
+
+class MyProxyRetrievalSocketError(MyProxyProvisionedSessionMiddlewareError):
+    """Exception class to flag socket errors from MyProxy logon calls made from 
+    MyProxyProvisionedSessionMiddleware"""
+    
+    
 class MyProxyProvisionedSessionMiddleware(object):
-    """Call MyProxy logon to populate a session based SSL context object with
+    """Provisions a session object with PKI credentials from a MyProxy server.
+    Call MyProxy logon to populate a session based SSL context object with
     client PKI credentials to make SSL calls to other services.
     """
     __slots__ = (
         '_app',
         '__environSessionKeyName',
+        '__ctxSessionKeyName',
+        '__environMyProxyClientKeyName',
     )
     DEFAULT_ENVIRON_SESSION_KEYNAME = "ndg.security.session"
     DEFAULT_PARAM_PREFIX = 'myproxy_provision_session.'
-    
+
     def __init__(self, app):
         self._app = app
         self.__environSessionKeyName = \
             self.__class__.DEFAULT_ENVIRON_SESSION_KEYNAME
+            
+        self.__environMyProxyClientKeyName = \
+            MyProxyClientMiddleware.DEFAULT_CLIENT_ENV_KEYNAME
+            
+        self.__ctxSessionKeyName = \
+            SSLCtxSessionMiddleware.DEFAULT_CTX_SESSION_KEYNAME
         
     def initialise(self, app_conf, prefix=DEFAULT_PARAM_PREFIX, **local_conf):
         for k in local_conf:
@@ -106,21 +142,55 @@ class MyProxyProvisionedSessionMiddleware(object):
                 'Expecting session assigned to %r environ key' % 
                 self.__environSessionKeyName)
             
-        session[self.__ctxEnvironKeyName] = self.__ctx
-        self._refreshCredentials(session)
+        self._refresh_credentials(session)
     
-    def _refreshCredentials(self, session):
-        pass
-    
-    
+    def _refresh_credentials(self, session):
+        """Refresh credentials by making a MyProxy server logon request"""
+
+        try:
+            credentials = myProxyClient.logon(username, password)
+                   
+        except MyProxyClientError, e:
+            raise httpexceptions.HTTPUnauthorized(str(e))
+        
+        except socket.error, e:
+            raise MyProxyRetrievalSocketError("Socket error with MyProxy "
+                                              "server %r: %s" % 
+                                              (self.myProxyClient.hostname, e))
+        except Exception:
+            raise MyProxyRetrievalError("MyProxyClient.logon raised an unknown "
+                                        "exception calling %r: %s" %
+                                        (self.myProxyClient.hostname,
+                                        traceback.format_exc())) 
+            
+        # Get Context from session and update with credentials just retrieved
+        sslCtx = session[self.__ctxSessionKeyName]
+        
+        # The first element is the certificate, second, the private key,
+        # remainder, any associated certificate chain       
+        sslCtx.use_certificate(credentials[0])
+        sslCtx.use_privatekey(credentials[1])
+        if len(credentials) > 2:
+            for chainCert in credentials[2:]:
+                sslCtx.add_extra_chain_cert(chainCert)
+
+
 class NDGSecurityProxy(Proxy):
     """Extend paste.proxy.Proxy to enable an SSL context to be set with client
     certificate and key from a user session
     """
     def __init__(self, environ_session_keyname, *arg, **kw):
         super(NDGSecurityProxy, self).__init__(*arg, **kw)
-        self.environ_session_keyname = environ_session_keyname
-        
+
+        self.__environSessionKeyName = \
+            MyProxyProvisionedSessionMiddleware.DEFAULT_ENVIRON_SESSION_KEYNAME
+            
+        self.__environMyProxyClientKeyName = \
+            MyProxyClientMiddleware.DEFAULT_CLIENT_ENV_KEYNAME
+            
+        self.__ctxSessionKeyName = \
+            SSLCtxSessionMiddleware.DEFAULT_CTX_SESSION_KEYNAME
+                    
     def __call__(self, environ, start_response):
         if (self.allowed_request_methods and 
             environ['REQUEST_METHOD'
@@ -131,15 +201,13 @@ class NDGSecurityProxy(Proxy):
         if not self.environ_session_keyname:
             sslCtx = None
         else:
-            session = environ.get(self.environ_session_keyname)
+            session = environ.get(self.__environSessionKeyName)
             if session is None:
-                return httpexceptions.HTTPInternalServerError(
-                            "No session in environ")(environ, start_response)
-            keyPasswd = None
-            certChain              
-            sslCtx = SSL.Context()
-            sslCtx.load_cert_chain(certchainfile, keyfile=None, 
-                                   callback=lambda *arg, **kw: keyPasswd)
+                msg = "No session in environ"
+                http500Error = httpexceptions.HTTPInternalServerError(msg)
+                return http500Error(environ, start_response)
+            
+            sslCtx = session[self.__ctxSessionKeyName]
             
         if self.scheme == 'http':
             conn = httplib.HTTPConnection(self.host)

@@ -1,4 +1,4 @@
-"""WSGI Middleware to set an Attribute Authority instance in tyhe WSGI environ
+"""WSGI Middleware to set an Attribute Authority instance in the WSGI environ
 
 NERC DataGrid Project
 """

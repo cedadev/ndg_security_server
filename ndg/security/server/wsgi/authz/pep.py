@@ -5,7 +5,7 @@ __date__ = "11/07/10"
 __copyright__ = "(C) 2010 Science and Technology Facilities Council"
 __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
-__revision__ = '$Id:$'
+__revision__ = '$Id$'
 '''
 import logging
 log = logging.getLogger(__name__)
@@ -383,6 +383,10 @@ class SamlPepFilter(SessionMiddlewareBase):
         credWallet = self.session.get(walletKeyName)
         if credWallet is None:
             credWallet = SAMLAssertionWallet()
+            
+            # Fix: make wallet follow the same clock skew tolerance and as the 
+            # SAML authz decision query settings
+            credWallet.clockSkewTolerance = self.client.clockSkewTolerance
         
         credWallet.addCredentials(resourceId, assertions)
         self.session[walletKeyName] = credWallet
