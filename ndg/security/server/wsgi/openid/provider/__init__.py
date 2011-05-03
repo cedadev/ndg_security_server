@@ -1153,8 +1153,8 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         if oidRequest.identity != identityURI:
             log.debug(
                 "OpenIDProviderMiddleware._requestedIdMatchesAuthenticatedId - "
-                "user is already logged in with a different ID=%s and "
-                "identityURI=%s" % (username, identityURI))
+                "requested identity is %r but user is already logged in with "
+                "ID %r" % (oidRequest.identity, identityURI))
             return False
         
         log.debug(
@@ -1300,15 +1300,18 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         
         self.session.save()
         
+        # Check for authenticated session already present
         if self._identityIsAuthenticated(oidRequest):
             
-            # Check requested ID matches ID for existing authenticated user
+            # Check requested ID matches ID for an existing authenticated user
+            # if one has already been set
             if not self._requestedIdMatchesAuthenticatedId(oidRequest):
                 response = self._render.errorPage(self.environ, 
                                                   self.start_response,
                     'An existing user is already logged in with a different '
                     'identity to the one you provided (%s). Log out from this '
-                    'site and then retry sign in.' % 
+                    'site using the link below and then navigate back to the '
+                    'site which first requested your OpenID.' % 
                     oidRequest.identity)
                 return response
                 
@@ -1378,20 +1381,14 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
             return self._displayResponse(oidResponse)  
         
         else:
+            # User is not logged in
             
-            identityURI = self.session.get(
-                        OpenIDProviderMiddleware.IDENTITY_URI_SESSION_KEYNAME)
-            if identityURI is None:
-                # User is not logged in
-                
-                # Call login and if successful then call decide page to confirm
-                # user wishes to trust the Relying Party.
-                response = self.do_login(self.environ,
-                                         self.start_response,
-                                         success_to=self.urls['url_decide'])
-                return response
-            
-            elif oidRequest.identity != identityURI:
+            # Call login and if successful then call decide page to confirm
+            # user wishes to trust the Relying Party.
+            response = self.do_login(self.environ,
+                                     self.start_response,
+                                     success_to=self.urls['url_decide'])
+            return response
 
     def _displayResponse(self, oidResponse):
         """Serialize an OpenID Response object, set headers and return WSGI
