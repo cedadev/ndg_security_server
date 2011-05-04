@@ -28,6 +28,7 @@ _entryPoints = """
     [paste.paster_create_template]
     ndgsecurity_securedapp=ndg.security.server.paster_templates.template:SecuredAppTemplate
     ndgsecurity_services=ndg.security.server.paster_templates.template:ServicesTemplate
+    ndgsecurity_relyingparty_authn_services=ndg.security.server.paster_templates.template:RelyingPartyAuthnServicesTemplate
     ndgsecurity_attribute_service=ndg.security.server.paster_templates.template:AttributeServiceTemplate
     ndgsecurity_authorisation_service=ndg.security.server.paster_templates.template:AuthorisationServiceTemplate
     ndgsecurity_openidprovider=ndg.security.server.paster_templates.template:OpenIDProviderTemplate
@@ -59,7 +60,7 @@ protected in a flexible manner without the need to modify application code.
 
 setup(
     name =           		'ndg_security_server',
-    version =        		'2.2.0',
+    version =        		'2.2.1',
     description =    		'Server side components for running NERC DataGrid '
                             'Security Services',
     long_description =		_longDescription,
