@@ -25,10 +25,14 @@ INTEGRATION_TEST_DIR = ${TEST_DIR}integration/
 USERDB_FILENAME = user.db
 USERDB_FILEPATH = ${TEST_CONFIG_SRC_DIR}${USERDB_FILENAME}
 
-# OpenID Provider Specific Settings
-OP_SERVER_YADIS_TMPL_SRC_FILENAME = serveryadis.xml
-OP_YADIS_TMPL_SRC_FILENAME = yadis.xml
-
+all: service_tmpl relyingparty_authn_services_tmpl securedapp_tmpl \
+	authorisation_service_tmpl attribute_service_tmpl openidprovider_tmpl
+    
+clean: service_tmpl_clean relyingparty_authn_services_tmpl_clean \
+	securedapp_tmpl_clean authorisation_service_tmpl_clean \
+	attribute_service_tmpl_clean openidprovider_tmpl_clean
+		    
+force: clean all
 
 # Generic Services Template Settings
 SERVICE_SRC_DIRNAME = full_system/
@@ -55,12 +59,6 @@ SERVICE_OP_SERVER_YADIS_TMPL_FILEPATH_TMP = ${SERVICE_OP_TMPL_DIR}serveryadis.xm
 SERVICE_OP_SERVER_YADIS_TMPL_FILEPATH = ${SERVICE_OP_SERVER_YADIS_TMPL_FILEPATH_TMP}_tmpl
 SERVICE_OP_YADIS_TMPL_FILEPATH_TMP = ${SERVICE_OP_TMPL_DIR}yadis.xml
 SERVICE_OP_YADIS_TMPL_FILEPATH = ${SERVICE_OP_YADIS_TMPL_FILEPATH_TMP}_tmpl
-
-
-all: service_tmpl securedapp_tmpl authorisation_service_tmpl \
-		attribute_service_tmpl openidprovider_tmpl
-			
-force: clean all
 
 		
 service_tmpl: ${SERVICE_SRC_DIR}
@@ -97,13 +95,19 @@ service_tmpl: ${SERVICE_SRC_DIR}
 	-e s/'# Revision:.*'//g \
 		${SERVICE_SRC_INI_FILEPATH} > ${SERVICE_INI_TMPL_FILEPATH}
 	@-echo Making substitutions for OpenID Provider Yadis templates ...
-	sed -r -e /'<Service priority=\"(1|19|30|20)\">'/,/'<\/Service>'/d \
-	-e s/'<\/XRD>'/'    %%\{serveryadisExtraServiceEndpoints}\n    <\/XRD>'/ \
+	sed -e /'<Service priority=\"1\">'/,/'<\/Service>'/d \
+	-e /'<Service priority=\"20\">'/,/'<\/Service>'/d \
+	-e /'<Service priority=\"30\">'/,/'<\/Service>'/d \
+	-e /'<Service priority=\"19\">'/,/'<\/Service>'/d \
+	-e s/'<\/XRD>'/'    %%\{serveryadisExtraServiceEndpoints}<\/XRD>'/ \
 		${SERVICE_OP_SERVER_YADIS_TMPL_FILEPATH_TMP} > \
 		${SERVICE_OP_SERVER_YADIS_TMPL_FILEPATH}
 	rm -f ${SERVICE_OP_SERVER_YADIS_TMPL_FILEPATH_TMP}
-	sed -r -e /'<Service priority=\"(1|19|30|20)\">'/,/'<\/Service>'/d \
-	-e s/'<\/XRD>'/'    %%\{yadisExtraServiceEndpoints}\n    <\/XRD>'/ \
+	sed -e /'<Service priority=\"1\">'/,/'<\/Service>'/d \
+	-e /'<Service priority=\"20\">'/,/'<\/Service>'/d \
+	-e /'<Service priority=\"30\">'/,/'<\/Service>'/d \
+	-e /'<Service priority=\"19\">'/,/'<\/Service>'/d \
+	-e s/'<\/XRD>'/'    %%\{yadisExtraServiceEndpoints}<\/XRD>'/ \
 		${SERVICE_OP_YADIS_TMPL_FILEPATH_TMP} > ${SERVICE_OP_YADIS_TMPL_FILEPATH}
 	rm -f ${SERVICE_OP_YADIS_TMPL_FILEPATH_TMP}
 	@-echo
@@ -122,6 +126,65 @@ service_tmpl_clean:
 	@-echo Clearing Services template ...
 	rm -rf ${SERVICE_DEST_DIR}
 
+# Create a template defining authentication services for a Relying Party.  This 
+# consists of an OpenID relying Party App fronted with an SSL Client Authentication
+# filter
+RP_AUTHN_SERVICES_SRC_DIRNAME = openidrp_and_sslauthn/
+RP_AUTHN_SERVICES_DEST_DIRNAME = relyingparty_authn_services/
+RP_AUTHN_SERVICES_SRC_DIR = ${INTEGRATION_TEST_DIR}${RP_AUTHN_SERVICES_SRC_DIRNAME}
+RP_AUTHN_SERVICES_DEST_DIR = ${DEST_DIR}${RP_AUTHN_SERVICES_DEST_DIRNAME}
+RP_AUTHN_SERVICES_SRC_INI_FILENAME = authenticationservices.ini
+RP_AUTHN_SERVICES_SRC_INI_FILEPATH = ${RP_AUTHN_SERVICES_SRC_DIR}${RP_AUTHN_SERVICES_SRC_INI_FILENAME}
+RP_AUTHN_SERVICES_INI_TMPL_FILEPATH = ${RP_AUTHN_SERVICES_DEST_DIR}authenticationservices.ini_tmpl
+RP_AUTHN_SERVICES_PKI_DEST_DIR = ${RP_AUTHN_SERVICES_DEST_DIR}pki/
+RP_AUTHN_SERVICES_CA_DEST_DIR = ${RP_AUTHN_SERVICES_PKI_DEST_DIR}ca/
+RP_AUTHN_SERVICES_LOG_DEST_DIR = ${RP_AUTHN_SERVICES_DEST_DIR}log/
+RP_AUTHN_SERVICES_LOG_FILEPATH = ${RP_AUTHN_SERVICES_LOG_DEST_DIR}service.log
+RP_AUTHN_SERVICES_SURPLUS_FILES = README __init__.* securedapp.* \
+    *.pyc authn/* openidrelyparty/store/ openidrelyparty/__init__.* \
+    log ${RP_AUTHN_SERVICES_SRC_INI_FILENAME}
+
+relyingparty_authn_services_tmpl: ${RP_AUTHN_SERVICES_SRC_DIR}
+	@-echo Preparing Relying Party Authentication Services template ...
+	@-echo ________________________________________________________________________________
+	@-echo
+	@-echo Copying configuration files ...
+	@-cp -r ${RP_AUTHN_SERVICES_SRC_DIR} ${RP_AUTHN_SERVICES_DEST_DIR} 2> /dev/null
+	@-echo Clear out SVN directories ...
+	@-find ${RP_AUTHN_SERVICES_DEST_DIR} -name ".svn" -print | xargs /bin/rm -rf
+	@-echo Remove unneeded files ...
+	for i in ${RP_AUTHN_SERVICES_SURPLUS_FILES} ; do \
+	    rm -rf ${RP_AUTHN_SERVICES_DEST_DIR}$$i ; \
+	done ;
+	@# Make an empty log file so that log directory is included in egg
+	@-echo Make log directory ...
+	mkdir ${RP_AUTHN_SERVICES_DEST_DIR}log
+	touch ${RP_AUTHN_SERVICES_LOG_FILEPATH}
+	@-echo Making substitutions for ini file template variables ...
+	sed -e s/'portNum = .*'/'portNum = %%\{portNumber}'/ \
+	-e s/'baseURI =.*'/'baseURI = %%\{baseURI}'/ \
+	-e s/'authkitCookieSecret =.*'/'authkitCookieSecret = %%\{authkitCookieSecret}'/ \
+	-e s/'beakerSessionCookieSecret =.*'/'beakerSessionCookieSecret = %%\{beakerSessionCookieSecret}'/ \
+	-e s/'authkit.openid.session.secret = .*'/'authkit.openid.session.secret = %%\{openidRelyingPartyCookieSecret}'/ \
+    -e s/'openIDProviderIDSelectURI = .*'/'openIDProviderIDSelectURI = %%\{openIDProviderIDSelectURI}'/ \
+	-e s/'testConfigDir = .*'// \
+	-e s/testConfigDir/here/g \
+	-e s/\(os\.path\.join\(\'%\(here\)s\'/\(os.path.join\(\'%%\{outputDir}\'/ \
+	-e s/'# Revision:.*'//g \
+	    ${RP_AUTHN_SERVICES_SRC_INI_FILEPATH} > ${RP_AUTHN_SERVICES_INI_TMPL_FILEPATH}
+	@-echo
+	@-echo Create PKI directory and copying files ...
+	-mkdir ${RP_AUTHN_SERVICES_PKI_DEST_DIR}
+	cp ${SERVER_CERT_SRC_FILEPATH} ${RP_AUTHN_SERVICES_PKI_DEST_DIR}
+	cp ${SERVER_KEY_SRC_FILEPATH} ${RP_AUTHN_SERVICES_PKI_DEST_DIR}
+	-mkdir ${RP_AUTHN_SERVICES_CA_DEST_DIR}
+	cp ${CA_SRC_DIR}* ${RP_AUTHN_SERVICES_CA_DEST_DIR}
+	@-echo
+	@-echo Done.
+    
+relyingparty_authn_services_tmpl_clean:
+	@-echo Clearing Relying Party Services template ...
+	rm -rf ${RP_AUTHN_SERVICES_DEST_DIR}
 
 # Secured Application Template Settings
 SECUREDAPP_SRC_DIRNAME = full_system/
@@ -179,7 +242,7 @@ securedapp_tmpl: ${SECUREDAPP_SRC_DIR}
 		${SECUREDAPP_INI_FILEPATH_TMP} > ${SECUREDAPP_INI_TMPL_FILEPATH}
 	rm -f ${SECUREDAPP_INI_FILEPATH_TMP}
 	@-echo "Make template for ${SECUREDAPP_REQUEST_FILTER_FILENAME} ..."
-	sed -r -e s/'http:\/\/localhost:7080\/'/'%%\{baseURI}'/ \
+	sed -e s/'http:\/\/localhost:7080\/'/'%%\{baseURI}'/ \
 		${SECUREDAPP_REQUEST_FILTER_FILEPATH} > ${SECUREDAPP_REQUEST_FILTER_TMPL_FILEPATH}
 	@-echo
 	@-echo Create PKI directory and copying files ...
@@ -215,7 +278,7 @@ authorisation_service_tmpl:
 	@-echo ________________________________________________________________________________
 	@-echo
 	@-echo Copying test ini file and other configuration files ...
-	mkdir ${AUTHZ_SERVICE_DEST_DIR}
+	-mkdir ${AUTHZ_SERVICE_DEST_DIR}
 	for i in ${AUTHZ_SERVICE_FILES}; do \
 		cp -r ${AUTHZ_SERVICE_SRC_DIR}$$i ${AUTHZ_SERVICE_DEST_DIR} ; \
 	done ;
@@ -232,10 +295,10 @@ authorisation_service_tmpl:
 	@-echo
 	# Make an empty log file so that log directory is included in egg
 	@-echo Make log directory ...
-	mkdir ${AUTHZ_SERVICE_DEST_DIR}log
+	-mkdir ${AUTHZ_SERVICE_DEST_DIR}log
 	touch ${AUTHZ_SERVICE_LOG_FILEPATH}
 	@-echo Create PKI directory and copying files ...
-	mkdir -p ${AUTHZ_SERVICE_CA_DEST_DIR}
+	-mkdir -p ${AUTHZ_SERVICE_CA_DEST_DIR}
 	cp ${SERVER_CERT_SRC_FILEPATH} ${AUTHZ_SERVICE_PKI_DEST_DIR}
 	cp ${SERVER_KEY_SRC_FILEPATH} ${AUTHZ_SERVICE_PKI_DEST_DIR}
 	cp ${CA_SRC_DIR}* ${AUTHZ_SERVICE_CA_DEST_DIR}
@@ -292,7 +355,7 @@ attribute_service_tmpl:
 	cp ${CA_SRC_DIR}* ${ATTR_SERVICE_CA_DEST_DIR}
 	# Make an empty log file so that log directory is included in egg
 	@-echo Make log directory ...
-	mkdir ${ATTR_SERVICE_DEST_DIR}log
+	-mkdir ${ATTR_SERVICE_DEST_DIR}log
 	touch ${ATTR_SERVICE_LOG_FILEPATH}
 	@-echo Copying test SQLite user database ...
 	cp ${USERDB_FILEPATH} ${ATTR_SERVICE_DEST_DIR}
@@ -321,20 +384,20 @@ OP_SERVER_YADIS_TMPL_FILEPATH_TMP = ${OP_TMPL_DIR}serveryadis.xml
 OP_SERVER_YADIS_TMPL_FILEPATH = ${OP_SERVER_YADIS_TMPL_FILEPATH_TMP}_tmpl
 OP_YADIS_TMPL_FILEPATH_TMP = ${OP_TMPL_DIR}yadis.xml
 OP_YADIS_TMPL_FILEPATH = ${OP_YADIS_TMPL_FILEPATH_TMP}_tmpl
+
 OP_LOG_DEST_DIR = ${OP_DEST_DIR}log/
 OP_LOG_FILEPATH = ${OP_LOG_DEST_DIR}service.log
-
-
+    
 openidprovider_tmpl:
 	@-echo Preparing OpenID Provider template ...
 	@-echo ________________________________________________________________________________
 	@-echo
 	@-echo Copying templates, CSS and graphics and ini file ...
-	mkdir ${OP_DEST_DIR}
-	mkdir ${OP_LOG_DEST_DIR}
+	-mkdir ${OP_DEST_DIR}
+	-mkdir ${OP_LOG_DEST_DIR}
 	touch ${OP_LOG_FILEPATH}
 	@-echo Copying files ...
-	for i in ${OP_CONFIG_FILES} ; do \
+	-for i in ${OP_CONFIG_FILES} ; do \
 		cp -r ${OP_SRC_DIR}$$i ${OP_DEST_DIR}; \
 	done ;
 	@-echo Making substitutions for template variables ...
@@ -348,15 +411,21 @@ openidprovider_tmpl:
 	${OP_INI_FILEPATH_TMP} > ${OP_INI_TMPL_FILEPATH}
 	rm -f ${OP_INI_FILEPATH_TMP}
 	@-echo Making substitutions for Yadis templates ...
-	sed -r -e /'<Service priority=\"(1|19|30|20)\">'/,/'<\/Service>'/d \
-	-e s/'<\/XRD>'/'    %%\{serveryadisExtraServiceEndpoints}\n    <\/XRD>'/ \
-		${OP_SERVER_YADIS_TMPL_FILEPATH_TMP} > ${OP_SERVER_YADIS_TMPL_FILEPATH}
+	sed -e /'<Service priority=\"1\">'/,/'<\/Service>'/d \
+	-e /'<Service priority=\"20\">'/,/'<\/Service>'/d \
+	-e /'<Service priority=\"30\">'/,/'<\/Service>'/d \
+	-e /'<Service priority=\"19\">'/,/'<\/Service>'/d \
+	-e s/'<\/XRD>'/'    %%\{serveryadisExtraServiceEndpoints}<\/XRD>'/ \
+        ${OP_SERVER_YADIS_TMPL_FILEPATH_TMP} > \
+        ${OP_SERVER_YADIS_TMPL_FILEPATH}
 	rm -f ${OP_SERVER_YADIS_TMPL_FILEPATH_TMP}
-	sed -r -e /'<Service priority=\"(1|19|30|20)\">'/,/'<\/Service>'/d \
-	-e s/'<\/XRD>'/'    %%\{yadisExtraServiceEndpoints}\n    <\/XRD>'/ \
-		${OP_YADIS_TMPL_FILEPATH_TMP} > ${OP_YADIS_TMPL_FILEPATH}
+	sed -e /'<Service priority=\"1\">'/,/'<\/Service>'/d \
+	-e /'<Service priority=\"20\">'/,/'<\/Service>'/d \
+	-e /'<Service priority=\"30\">'/,/'<\/Service>'/d \
+	-e /'<Service priority=\"19\">'/,/'<\/Service>'/d \
+	-e s/'<\/XRD>'/'    %%\{yadisExtraServiceEndpoints}<\/XRD>'/ \
+        ${OP_YADIS_TMPL_FILEPATH_TMP} > ${OP_YADIS_TMPL_FILEPATH}
 	rm -f ${OP_YADIS_TMPL_FILEPATH_TMP}
-	@-echo
 	@-echo
 	@-echo Copying test SQLite user database ...
 	cp ${USERDB_FILEPATH} ${OP_DEST_DIR}
@@ -376,8 +445,4 @@ openidprovider_tmpl_clean:
 	@-echo Clearing OpenID Provider template ...
 	rm -rf ${OP_DEST_DIR}
 
-	
-clean: service_tmpl_clean securedapp_tmpl_clean \
-		authorisation_service_tmpl_clean \
-		attribute_service_tmpl_clean openidprovider_tmpl_clean
 
