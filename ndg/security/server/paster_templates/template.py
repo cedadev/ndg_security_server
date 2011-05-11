@@ -263,6 +263,78 @@ class ServicesTemplate(TemplateBase):
         # This sets the log file path
         super(ServicesTemplate, self).pre(command, output_dir, vars)
 
+
+class RelyingPartyAuthnServicesTemplate(TemplateBase):
+    """Template to create authentication services for a Relying Party.  This 
+    includes an OpenID Relying Party App fronted with an SSL client
+    authentication filter.  Nb. it does not include an OpenID Provider 
+    application.  For this, see the generic services template or the specific
+    OpenID Provider template.
+    """
+    DEFAULT_PORT = 6443
+    DEFAULT_URI = urlunsplit(('https', '%s:%d' % (_hostname, DEFAULT_PORT), '',
+                              None, None))
+    DEFAULT_OPENID_PROVIDER_URI = 'https://ceda.ac.uk/openid/'
+    
+    _template_dir = 'relyingparty_authn_services'
+    summary = ('NDG Security Relying Party Authentication Services template '
+               'includes, OpenID Relying Party and SSL client authentication '
+               'services.  Use this template alongside the SecuredApp template')
+    vars = [
+        var('baseURI',
+            'Base URI for the service(s) [with no trailing slash]',
+            default=DEFAULT_URI),
+
+        var('openIDProviderIDSelectURI',
+            ('Initial OpenID displayed in OpenID Relying Party interface '
+             'text box.  This can be a partial URL representing a default '
+             'OpenID Provider rather than an individual user\'s OpenID'),
+             default=DEFAULT_OPENID_PROVIDER_URI),
+             
+        var('authkitCookieSecret', 
+            ('Cookie secret for AuthKit authentication middleware.  This value '
+             '*MUST* agree with the one used for the ini file of the '
+             'application to be secured - see ndgsecurity_securedapp template'),
+            default=base64.b64encode(os.urandom(32))[:32]),
+
+        var('beakerSessionCookieSecret', 
+            'Secret for securing the SSL Client authentication session cookie',
+            default=base64.b64encode(os.urandom(32))[:32]),
+            
+        var('openidRelyingPartyCookieSecret',
+            'Secret for securing OpenID Relying Party session cookie',
+            default=base64.b64encode(os.urandom(32))[:32]),
+
+        ]
+    
+    def pre(self, command, output_dir, vars):
+        '''Extend to enable substitutions for OpenID Provider Yadis templates,
+        port number and fix log file path setting
+        
+        @param command: command to create template
+        @type command: 
+        @param output_dir: output directory for template file(s)
+        @type output_dir: string
+        @param vars: variables to be substituted into template
+        @type vars: dict
+        '''  
+        
+        # Fix for baseURI in case trailing slash was included.  In THIS template
+        # it should not be there
+        if vars['baseURI'].endswith('/'):
+            vars['baseURI'] = vars['baseURI'].rstrip('/')  
+            
+        # Cut out port number from base URI
+        uriParts = urlparse(vars['baseURI'])
+        netlocLastElem = uriParts.netloc.split(':')[-1]
+        if netlocLastElem.isdigit():
+            vars['portNumber'] = netlocLastElem
+        else:
+            vars['portNumber'] = ''
+                    
+        # This sets the log file path
+        super(RelyingPartyAuthnServicesTemplate, self).pre(command, output_dir, vars)
+
         
 class SecuredAppTemplate(TemplateBase):
     """Create a template for a secured application with authentication and
