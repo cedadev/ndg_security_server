@@ -3,11 +3,13 @@ Created on 21 Dec 2010
 
 @author: pjkersha
 '''
+from datetime import datetime, timedelta
+
 from paste import httpexceptions
 from paste.proxy import Proxy
 from webob.dec import wsgify
 from webob import Request, Response
-from OpenSSL import SSL
+from OpenSSL import SSL, crypto
 
 from myproxy.ws.server.wsgi.middleware import MyProxyClientMiddleware
 from ndg.security.common.utils import pyopenssl
@@ -88,41 +90,52 @@ class MyProxyRetrievalSocketError(MyProxyProvisionedSessionMiddlewareError):
     MyProxyProvisionedSessionMiddleware"""
     
     
-class MyProxyProvisionedSessionMiddleware(object):
+class MyProxyProvisionedSessionMiddleware(SSLCtxSessionMiddleware):
     """Provisions a session object with PKI credentials from a MyProxy server.
     Call MyProxy logon to populate a session based SSL context object with
     client PKI credentials to make SSL calls to other services.
+    
+    @cvar DEFAULT_CERT_EXPIRY_OFFSET: default time offset prior to certificate
+    expiry used to trigger certificate renewal. e.g. if the offset is 1 day
+    and the certificate will expiry within one day then certificate renewal
+    is invoked with a fresh MyProxy logon call.
+    @type DEFAULT_CERT_EXPIRY_OFFSET: timedelta
     """
     __slots__ = (
-        '_app',
-        '__environSessionKeyName',
-        '__ctxSessionKeyName',
         '__environMyProxyClientKeyName',
+        '__certExpiryOffset'
     )
     DEFAULT_ENVIRON_SESSION_KEYNAME = "ndg.security.session"
     DEFAULT_PARAM_PREFIX = 'myproxy_provision_session.'
-
+    DEFAULT_CERT_EXPIRY_OFFSET = timedelta(days=1)
+    
     def __init__(self, app):
-        self._app = app
-        self.__environSessionKeyName = \
-            self.__class__.DEFAULT_ENVIRON_SESSION_KEYNAME
-            
-        self.__environMyProxyClientKeyName = \
-            MyProxyClientMiddleware.DEFAULT_CLIENT_ENV_KEYNAME
-            
-        self.__ctxSessionKeyName = \
-            SSLCtxSessionMiddleware.DEFAULT_CTX_SESSION_KEYNAME
-        
-    def initialise(self, app_conf, prefix=DEFAULT_PARAM_PREFIX, **local_conf):
-        for k in local_conf:
-            if k in self.__class__.PARAM_NAMES:
-                if prefix:
-                    paramName = k.lstrip(prefix)
-                else:
-                    paramName = k
+        super(MyProxyProvisionedSessionMiddleware, self).__init__(app)
+        self.__certExpiryOffset = self.__class__.DEFAULT_CERT_EXPIRY_OFFSET
                     
-                setattr(self, paramName, local_conf[i])
-                
+    @property
+    def certExpiryOffset(self):
+        '''Certificate expiry offset measured in seconds before current time
+        '''
+        return self.__certExpiryOffset
+    
+    @certExpiryOffset.setter
+    def certExpiryOffset(self, val):
+        '''Certificate expiry offset measured in seconds before current time
+        '''
+        if isinstance(val, basestring):
+            self.__certExpiryOffset = timedelta(seconds=float(val))
+            
+        elif isinstance(val, (float, int, long)):
+            self.__certExpiryOffset = timedelta(seconds=val)
+            
+        elif isinstance(val, timedelta):
+            self.__certExpiryOffset = val
+            
+        else:
+            raise TypeError('Expecting string, int, long, float or timedelta '
+                            'type for "certExpiryOffset", got %r' % type(val))
+        
     @classmethod
     def filter_app_factory(cls, app, app_conf, **kw):
         """Configure filter and associated SSL Context session middleware
@@ -136,13 +149,16 @@ class MyProxyProvisionedSessionMiddleware(object):
     
     @wsgify
     def __call__(self, request):
-        session = request.environ.get(self.__environSessionKeyName)
-        if session is None:
-            raise httpexceptions.HTTPInternalServerError(
-                'Expecting session assigned to %r environ key' % 
-                self.__environSessionKeyName)
+        resp = super(MyProxyProvisionedSessionMiddleware, self).__call__(
+                                    request)
+        
+        # if not certificate has been set or if it is present but expired,
+        # renew        
+        if (not self.__class__._is_cert_set(session) or 
+            self._is_cert_expired(session)):
+            self._refresh_credentials(session)
             
-        self._refresh_credentials(session)
+        return resp
     
     def _refresh_credentials(self, session):
         """Refresh credentials by making a MyProxy server logon request"""
@@ -166,30 +182,54 @@ class MyProxyProvisionedSessionMiddleware(object):
         # Get Context from session and update with credentials just retrieved
         sslCtx = session[self.__ctxSessionKeyName]
         
-        # The first element is the certificate, second, the private key,
-        # remainder, any associated certificate chain       
+        # The first element is the certificate, the second the private key,
+        # the remainder, any associated certificate chain  
+        session['certs'] = credentials[0]
+        session['privateKey'] = credentials[1]
+              
         sslCtx.use_certificate(credentials[0])
         sslCtx.use_privatekey(credentials[1])
+        
         if len(credentials) > 2:
+            session['certs'].extend(credentials[2:])
             for chainCert in credentials[2:]:
                 sslCtx.add_extra_chain_cert(chainCert)
+    
+    @classmethod
+    def _is_cert_set(self, session): 
+        return len(session.get('certs', [])) > 0 
+              
+    def _is_cert_expired(self, session):
+        '''Check if input certificate has expired
+        @param session: session
+        @type session: beaker.session
+        @return: true if expired, false otherwise
+        @rtype: bool
+        '''
+        cert = session['certs'][0]
+        x509 = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
+        notAfter = x509.get_notAfter()
+        dtNotAfter = datetime.strptime(notAfter, '%Y%m%d%H%M%S%fZ')       
+        dtNow = datetime.utcNow()
+        
+        return dtNotAfter < dtNow - self.certExpiryOffset
 
 
 class NDGSecurityProxy(Proxy):
     """Extend paste.proxy.Proxy to enable an SSL context to be set with client
     certificate and key from a user session
     """
-    def __init__(self, environ_session_keyname, *arg, **kw):
-        super(NDGSecurityProxy, self).__init__(*arg, **kw)
+    def __init__(self, address, **kw):
+        super(NDGSecurityProxy, self).__init__(address, **kw)
 
         self.__environSessionKeyName = \
             MyProxyProvisionedSessionMiddleware.DEFAULT_ENVIRON_SESSION_KEYNAME
             
+        self.__ctxSessionKeyName = \
+            MyProxyProvisionedSessionMiddleware.DEFAULT_CTX_SESSION_KEYNAME
+            
         self.__environMyProxyClientKeyName = \
             MyProxyClientMiddleware.DEFAULT_CLIENT_ENV_KEYNAME
-            
-        self.__ctxSessionKeyName = \
-            SSLCtxSessionMiddleware.DEFAULT_CTX_SESSION_KEYNAME
                     
     def __call__(self, environ, start_response):
         if (self.allowed_request_methods and 
@@ -258,7 +298,7 @@ class NDGSecurityProxy(Proxy):
                      body, headers)
         res = conn.getresponse()
         headers_out = parse_headers(res.msg)
-        
+                
         status = '%s %s' % (res.status, res.reason)
         start_response(status, headers_out)
         # @@: Default?
