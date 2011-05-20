@@ -1,7 +1,0 @@
-NDG Security Security Service Applications Template
-===================================================
-This template creates the configuration for NDG Security services: OpenID
-Provider, OpenID Relying Party, SSL Authentication Service and SAML Attribute
-and Authorisation Services.  The ini file template is a starting point for 
-configuration only.  Services can be added or separated out into individual
-ini files as needed,
