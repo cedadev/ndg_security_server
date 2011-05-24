@@ -60,7 +60,7 @@ protected in a flexible manner without the need to modify application code.
 
 setup(
     name =           		'ndg_security_server',
-    version =        		'2.2.1',
+    version =        		'2.2.2',
     description =    		'Server side components for running NERC DataGrid '
                             'Security Services',
     long_description =		_longDescription,
