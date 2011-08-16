@@ -14,9 +14,7 @@ import paste.httpserver
 from threading import Thread
 from paste.deploy import loadapp
 from paste.script.util.logging_config import fileConfig
-
-import logging
-logging.basicConfig(level=logging.DEBUG)
+from OpenSSL import SSL
 
 
 class PasteDeployAppServer(object):
@@ -30,6 +28,10 @@ class PasteDeployAppServer(object):
         self.__thread = None
         
         if cfgFilePath:
+            if app:
+                raise KeyError('Set either the "cfgFilePath" or "app" keyword '
+                               'but not both')
+            
             fileConfig(cfgFilePath, defaults={'here':path.dirname(cfgFilePath)})
             app = loadapp('config:%s' % cfgFilePath)
             

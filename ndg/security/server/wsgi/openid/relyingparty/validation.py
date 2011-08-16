@@ -282,7 +282,6 @@ class SSLIdPValidator(object):
 import urllib2
 from M2Crypto import SSL
 from M2Crypto.m2urllib2 import build_opener
-from ndg.security.common.X509 import X500DN
 
 class SSLClientAuthNValidator(SSLIdPValidator):
     """HTTPS based validation with the addition that this client can provide

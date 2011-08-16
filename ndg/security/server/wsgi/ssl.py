@@ -142,7 +142,8 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
 
     sslClientCertKeyName = property(_getSslClientCertKeyName, 
                                     _setSslClientCertKeyName, 
-                                    doc="SslClientCertKeyName's Docstring")
+                                    doc="environ key name for SSL Client "
+                                        "Certificate")
 
     def _getSslKeyName(self):
         return self.__sslKeyName

@@ -1,11 +1,14 @@
 #
-# MANIFEST.in file to enable inclusion of paster template
+# MANIFEST.in file to enable inclusion of paster templates and Genshi templates
 # 
-# NERC Data Grid Project
+# NERC DataGrid Project
 # 
 # P J Kershaw 06/01/09
 # 
-# Copyright (C) 2009 STFC
+# Copyright (C) 2011 STFC
 # 
 # BSD - See LICENCE file for details
 recursive-include ndg/security/server/paster_templates/ *
+recursive-include ndg/security/server/wsgi/authz/result_handler/genshi/templates/ *
+recursive-include ndg/security/server/wsgi/openid/relyingparty/signin_interface/genshi/templates/ *
+recursive-include ndg/security/server/wsgi/openid/provider/renderinginterface/genshi/templates/ * 

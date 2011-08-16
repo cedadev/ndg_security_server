@@ -87,8 +87,6 @@ setup(
     include_package_data =  True,
     package_data = {
         # See MANIFEST.in for ndg.security.server.paster_templates files
-#        'ndg.security.server.templates.pki': ['*.crt', '*.key'],
-#        'ndg.security.server.templates.pki.ca': ['*.crt'],
     },
     entry_points =           _entryPoints,
     test_suite =		    'ndg.security.test',
