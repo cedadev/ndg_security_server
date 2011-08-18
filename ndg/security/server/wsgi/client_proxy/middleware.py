@@ -9,8 +9,9 @@ log = logging.getLogger(__name__)
 import traceback
 import socket
 import httplib
+from cookielib import CookieJar
 import urllib
-import urlparse
+from urlparse import urlparse, ParseResult
 import os
 from datetime import datetime, timedelta
 
@@ -24,6 +25,51 @@ from myproxy.client import MyProxyClient, MyProxyClientError
 from ndg.security.common.utils import pyopenssl
 
 
+class FakeHTTPRequest(object):
+    """Substitute for urllib2 HTTP request to enable use of cookielib with 
+    httplib
+    
+    http://stackoverflow.com/questions/1016765/how-to-use-cookielib-with-httplib-in-python
+    """
+
+    def __init__(self, host, url, headers={}):
+        self._host = host
+        self._url = url
+        self._headers = {}
+        for key, value in headers.items():
+            self.add_header(key, value)
+
+    def has_header( self, name ):
+        return name in self._headers
+
+    def add_header( self, key, val ):
+        self._headers[key.capitalize()] = val
+
+    def add_unredirected_header(self, key, val):
+        self._headers[key.capitalize()] = val
+
+    def is_unverifiable(self):
+        return True
+
+    def get_type(self):
+        # TODO: implement other protocols support
+        return 'https'
+
+    def get_full_url(self):
+        # TODO: implement other protocols support
+        return 'https://' + self._host[0] + ":" + str(self._host[1]) + self._url
+
+    def get_header(self, header_name, default=None):
+        return self._headers.get( header_name, default )
+
+    def get_host( self ):
+        return self._host[0]
+
+    get_origin_req_host = get_host
+
+    def get_headers(self):
+        return self._headers
+    
 class SSLCtxSessionMiddleware(object):
     """Store an SSL Context object in session middleware for client callouts"""
     PARAM_NAMES = (
@@ -603,17 +649,22 @@ class NDGSecurityProxy(Proxy):
         conn.request('GET', redirectPath)
         res = conn.getresponse()
         authnRedirectHeaders = parse_headers(res.msg)
-                
+        
+        cookie_jar = CookieJar()
+        
+        # Hack to make httplib response urllib2.Response-like
+        res.info = lambda : res.msg
+        authnRedirectURI_req = FakeHTTPRequest((host, portStr), redirectPath, 
+                                               {})
+        cookie_jar.extract_cookies(res, authnRedirectURI_req)
+        
         if res.status == httplib.FOUND:
             # Get redirect location
             returnURI = None
-            cookies = []
             for k, v in authnRedirectHeaders:
                 if k == 'Location':
                     returnURI = v
-                
-                if k == 'Set-cookie':
-                    cookies.append(v)
+                    break
                 
             if returnURI is None:
                 log.error('No redirect location set for %r response from %r',
@@ -633,18 +684,20 @@ class NDGSecurityProxy(Proxy):
             # Make path
             returnUriPath = self.__class__._makeUriPath(parsedReturnURI)
             
-            # Add any cookies to header
-            cookieHeaders = [('Set-cookie', i) for i in cookies]
-            returnUriHeaders = dict(headers_out + cookieHeaders)
-            
             # Get host and port number
             returnUriHost, returnUriPortStr = parsedReturnURI.netloc.split(':', 
                                                                            1)
             returnUriPort = int(returnUriPortStr)
-                    
+            
+            # Add any cookies to header
+            return_req = FakeHTTPRequest((returnUriHost, returnUriPortStr), 
+                                         returnUriPath, {})
+            cookie_jar.add_cookie_header(return_req)
+            return_headers = return_req.get_headers()
+            
             # Invoke return URI passing headers            
             conn = httplib.HTTPConnection(returnUriHost, port=returnUriPort)
-            conn.request(action, returnUriPath, body, returnUriHeaders)
+            conn.request(action, returnUriPath, body, return_headers)
             returnUriRes = conn.getresponse()
             return returnUriRes
         else:
