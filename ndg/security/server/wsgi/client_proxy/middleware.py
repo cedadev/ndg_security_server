@@ -11,7 +11,7 @@ import socket
 import httplib
 from cookielib import CookieJar
 import urllib
-from urlparse import urlparse, ParseResult
+from urlparse import urlparse, urljoin
 import os
 from datetime import datetime, timedelta
 
@@ -22,53 +22,8 @@ from webob import Request, Response
 from OpenSSL import SSL, crypto
 
 from myproxy.client import MyProxyClient, MyProxyClientError
-from ndg.security.common.utils import pyopenssl
-
-
-class FakeHTTPRequest(object):
-    """Substitute for urllib2 HTTP request to enable use of cookielib with 
-    httplib
+from ndg.security.common.utils import pyopenssl, FakeUrllib2HTTPRequest
     
-    http://stackoverflow.com/questions/1016765/how-to-use-cookielib-with-httplib-in-python
-    """
-
-    def __init__(self, host, url, headers={}):
-        self._host = host
-        self._url = url
-        self._headers = {}
-        for key, value in headers.items():
-            self.add_header(key, value)
-
-    def has_header( self, name ):
-        return name in self._headers
-
-    def add_header( self, key, val ):
-        self._headers[key.capitalize()] = val
-
-    def add_unredirected_header(self, key, val):
-        self._headers[key.capitalize()] = val
-
-    def is_unverifiable(self):
-        return True
-
-    def get_type(self):
-        # TODO: implement other protocols support
-        return 'https'
-
-    def get_full_url(self):
-        # TODO: implement other protocols support
-        return 'https://' + self._host[0] + ":" + str(self._host[1]) + self._url
-
-    def get_header(self, header_name, default=None):
-        return self._headers.get( header_name, default )
-
-    def get_host( self ):
-        return self._host[0]
-
-    get_origin_req_host = get_host
-
-    def get_headers(self):
-        return self._headers
     
 class SSLCtxSessionMiddleware(object):
     """Store an SSL Context object in session middleware for client callouts"""
@@ -578,7 +533,7 @@ class NDGSecurityProxy(Proxy):
             if request_path and request_path[0] == '/':
                 request_path = request_path[1:]
                 
-            path = urlparse.urljoin(self.path, request_path)
+            path = urljoin(self.path, request_path)
         else:
             path = path_info
         if environ.get('QUERY_STRING'):
@@ -588,21 +543,21 @@ class NDGSecurityProxy(Proxy):
                      path,
                      body, headers)
         res = conn.getresponse()
-        headers_out = parse_headers(res.msg)
-                
+        
         # Handle a security redirect - if not handled it returns None and the
         # original response is returned
-        redirectRes = self._handleSecuredRedirect(res.status, 
+        redirectRes = self._handleSecuredRedirect(res, 
                                                   environ['REQUEST_METHOD'],
                                                   body,
-                                                  headers_out,
                                                   path,
                                                   sslCtx)
         if redirectRes is None:
             _res = res
         else:
-            _res = redirectRes  
+            _res = redirectRes
             
+        headers_out = parse_headers(_res.msg)    
+        
         status = '%s %s' % (_res.status, _res.reason)        
         start_response(status, headers_out)
         # @@: Default?
@@ -614,90 +569,95 @@ class NDGSecurityProxy(Proxy):
         conn.close()
         return [body]
 
-    def _handleSecuredRedirect(self, status, action, body, headers_out, path, 
-                               sslCtx):
+    def _handleSecuredRedirect(self, response, action, body, path, sslCtx):
         '''Intercept security challenges - these are inferred by checking for a
         302 response with a location header requesting a HTTPS endpoint
         '''
-        if status != httplib.FOUND:
+        
+        if response.status != httplib.FOUND:
+            log.debug('_handleSecuredRedirect: No HTTP redirect found in '
+                      'response - passing back to caller')
             return
         
-        # Get redirect location
-        authnRedirectURI = None
-        for k, v in headers_out:
-            if k == 'Location':
-                authnRedirectURI = v
-                break
-            
-        if authnRedirectURI is None:
-            log.error('No redirect location set for %r response from %r',
-                                                        httplib.FOUND, path)
+        # Check for redirect location
+        authn_redirect_uri = response.getheader('Location')
+        if authn_redirect_uri is None:
+            log.error('_handleSecuredRedirect: no redirect location set for %r '
+                      'response from %r', httplib.FOUND, path)
             # Let client decide what to do with this response
             return 
         
-        # Check the scheme and only apply the redirect here if it HTTPS
-        parsedAuthnRedirectURI = urlparse.urlparse(authnRedirectURI)
-        if parsedAuthnRedirectURI.scheme != 'https':
+        # Check the scheme and only follow the redirect here if it HTTPS
+        parsed_authn_redirect_uri = urlparse(authn_redirect_uri)
+        if parsed_authn_redirect_uri.scheme != 'https':
+            log.info('_handleSecuredRedirect: Non-HTTPS redirect location set '
+                     'for %r response from %r - returning', httplib.FOUND, path)
             return
         
-        host, portStr = parsedAuthnRedirectURI.netloc.split(':', 1)
+        # Prepare request authentication redirect location
+        host, portStr = parsed_authn_redirect_uri.netloc.split(':', 1)
         port = int(portStr)
-        redirectPath = self.__class__._makeUriPath(parsedAuthnRedirectURI)
+        authn_redirect_path = self.__class__._makeUriPath(
+                                                    parsed_authn_redirect_uri)
         
-        # Redirect to authentication endpoint uses GET method
-        conn = pyopenssl.HTTPSConnection(host, port=port, ssl_context=sslCtx)
-        conn.request('GET', redirectPath)
-        res = conn.getresponse()
-        authnRedirectHeaders = parse_headers(res.msg)
-        
+        # Process cookies from the response passed into this function and set 
+        # them in the authentication request.  Use cookielib with fake urllib2
+        # HTTP request class needed to interface with
+        response.info = lambda : response.msg
+        authn_redirect_req = FakeUrllib2HTTPRequest(parsed_authn_redirect_uri)
         cookie_jar = CookieJar()
+        cookie_jar.extract_cookies(response, authn_redirect_req)
+        
+        authn_redirect_ip_hdrs = authn_redirect_req.get_headers()
+        
+        # Redirect to HTTPS authentication endpoint uses GET method
+        authn_conn = pyopenssl.HTTPSConnection(host, port=port, 
+                                               ssl_context=sslCtx)
+        
+        authn_conn.request('GET', authn_redirect_path, None, 
+                           authn_redirect_ip_hdrs)
+        
+        authn_response = authn_conn.getresponse()
         
         # Hack to make httplib response urllib2.Response-like
-        res.info = lambda : res.msg
-        authnRedirectURI_req = FakeHTTPRequest((host, portStr), redirectPath, 
-                                               {})
-        cookie_jar.extract_cookies(res, authnRedirectURI_req)
+        authn_response.info = lambda : authn_response.msg
+        cookie_jar.extract_cookies(authn_response, authn_redirect_req)
         
-        if res.status == httplib.FOUND:
+        if authn_response.status == httplib.FOUND:
             # Get redirect location
-            returnURI = None
-            for k, v in authnRedirectHeaders:
-                if k == 'Location':
-                    returnURI = v
-                    break
-                
-            if returnURI is None:
-                log.error('No redirect location set for %r response from %r',
-                                            httplib.FOUND, authnRedirectURI)
+            return_uri = authn_response.getheader('Location')
+            if return_uri is None:
+                log.error('_handleSecuredRedirect: no redirect location set '
+                          'for %r response from %r', httplib.FOUND, 
+                          authn_redirect_uri)
                 # Return the response and let the client decide what to do with
                 # it
-                return res
+                return authn_response
             
             # Check URI for HTTP scheme
-            parsedReturnURI = urlparse.urlparse(returnURI)
-            if parsedReturnURI.scheme != 'http':
+            parsed_return_uri = urlparse(return_uri)
+            if parsed_return_uri.scheme != 'http':
                 # Expecting http - don't process but instead return to client
-                log.error('Return URI %r is not HTTP, passing back original '
-                          'response', returnURI)
+                log.error('_handleSecuredRedirect: return URI %r is not HTTP, '
+                          'passing back original response', return_uri)
                 return
             
             # Make path
-            returnUriPath = self.__class__._makeUriPath(parsedReturnURI)
+            return_uri_path = self.__class__._makeUriPath(parsed_return_uri)
             
             # Get host and port number
-            returnUriHost, returnUriPortStr = parsedReturnURI.netloc.split(':', 
+            returnUriHost, returnUriPortStr = parsed_return_uri.netloc.split(':', 
                                                                            1)
             returnUriPort = int(returnUriPortStr)
             
             # Add any cookies to header
-            return_req = FakeHTTPRequest((returnUriHost, returnUriPortStr), 
-                                         returnUriPath, {})
+            return_req = FakeUrllib2HTTPRequest(parsed_return_uri)
             cookie_jar.add_cookie_header(return_req)
             return_headers = return_req.get_headers()
             
             # Invoke return URI passing headers            
             conn = httplib.HTTPConnection(returnUriHost, port=returnUriPort)
-            conn.request(action, returnUriPath, body, return_headers)
+            conn.request(action, return_uri_path, body, return_headers)
             returnUriRes = conn.getresponse()
             return returnUriRes
         else:
