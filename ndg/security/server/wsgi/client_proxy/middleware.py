@@ -1,8 +1,13 @@
-'''
-Created on 21 Dec 2010
+"""Middleware for NDG Security HTTP Proxy
 
-@author: pjkersha
-'''
+MashMyData Project
+"""
+__author__ = "P J Kershaw"
+__date__ = "21/12/10"
+__copyright__ = "(C) 2011 Science and Technology Facilities Council"
+__license__ = "BSD - see LICENSE file in top-level directory"
+__contact__ = "Philip.Kershaw@stfc.ac.uk"
+__revision__ = "$Id$"
 import logging
 log = logging.getLogger(__name__)
 
@@ -23,7 +28,7 @@ from OpenSSL import SSL, crypto
 
 from myproxy.client import MyProxyClient, MyProxyClientError
 from ndg.security.common.utils import pyopenssl, FakeUrllib2HTTPRequest
-    
+from ndg.security.server.wsgi.utils import FileObjResponseIterator    
     
 class SSLCtxSessionMiddleware(object):
     """Store an SSL Context object in session middleware for client callouts"""
@@ -511,21 +516,16 @@ class NDGSecurityProxy(Proxy):
                     continue
                 headers[key] = value
         headers['host'] = self.host
+        
         if 'REMOTE_ADDR' in environ:
             headers['x-forwarded-for'] = environ['REMOTE_ADDR']
+            
         if environ.get('CONTENT_TYPE'):
             headers['content-type'] = environ['CONTENT_TYPE']
+            
         if environ.get('CONTENT_LENGTH'):
-            if environ['CONTENT_LENGTH'] == '-1':
-                # This is a special case, where the content length is basically undetermined
-                body = environ['wsgi.input'].read(-1)
-                headers['content-length'] = str(len(body))
-            else:
+            if environ['CONTENT_LENGTH'] != '-1':
                 headers['content-length'] = environ['CONTENT_LENGTH'] 
-                length = int(environ['CONTENT_LENGTH'])
-                body = environ['wsgi.input'].read(length)
-        else:
-            body = ''
             
         path_info = urllib.quote(environ['PATH_INFO'])
         if self.path:            
@@ -536,21 +536,20 @@ class NDGSecurityProxy(Proxy):
             path = urljoin(self.path, request_path)
         else:
             path = path_info
+            
         if environ.get('QUERY_STRING'):
             path += '?' + environ['QUERY_STRING']
             
         conn.request(environ['REQUEST_METHOD'],
                      path,
-                     body, headers)
+                     environ['wsgi.input'], 
+                     headers)
         res = conn.getresponse()
+        conn.close()
         
         # Handle a security redirect - if not handled it returns None and the
         # original response is returned
-        redirectRes = self._handleSecuredRedirect(res, 
-                                                  environ['REQUEST_METHOD'],
-                                                  body,
-                                                  path,
-                                                  sslCtx)
+        redirectRes = self._handleSecuredRedirect(res, sslCtx)
         if redirectRes is None:
             _res = res
         else:
@@ -560,16 +559,13 @@ class NDGSecurityProxy(Proxy):
         
         status = '%s %s' % (_res.status, _res.reason)        
         start_response(status, headers_out)
-        # @@: Default?
-        length = _res.getheader('content-length')
-        if length is not None:
-            body = _res.read(int(length))
-        else:
-            body = _res.read()
-        conn.close()
-        return [body]
+        
+        length = int(_res.getheader('content-length', '-1'))
+        response = FileObjResponseIterator(_res.fp, file_size=length)
 
-    def _handleSecuredRedirect(self, response, action, body, path, sslCtx):
+        return response
+
+    def _handleSecuredRedirect(self, response, sslCtx):
         '''Intercept security challenges - these are inferred by checking for a
         302 response with a location header requesting a HTTPS endpoint
         '''
@@ -583,7 +579,7 @@ class NDGSecurityProxy(Proxy):
         authn_redirect_uri = response.getheader('Location')
         if authn_redirect_uri is None:
             log.error('_handleSecuredRedirect: no redirect location set for %r '
-                      'response from %r', httplib.FOUND, path)
+                      'response- returning', httplib.FOUND)
             # Let client decide what to do with this response
             return 
         
@@ -591,13 +587,13 @@ class NDGSecurityProxy(Proxy):
         parsed_authn_redirect_uri = urlparse(authn_redirect_uri)
         if parsed_authn_redirect_uri.scheme != 'https':
             log.info('_handleSecuredRedirect: Non-HTTPS redirect location set '
-                     'for %r response from %r - returning', httplib.FOUND, path)
+                     'for %r response - returning', httplib.FOUND)
             return
         
         # Prepare request authentication redirect location
         host, portStr = parsed_authn_redirect_uri.netloc.split(':', 1)
         port = int(portStr)
-        authn_redirect_path = self.__class__._makeUriPath(
+        authn_redirect_path = self.__class__._make_uri_path(
                                                     parsed_authn_redirect_uri)
         
         # Process cookies from the response passed into this function and set 
@@ -618,6 +614,7 @@ class NDGSecurityProxy(Proxy):
                            authn_redirect_ip_hdrs)
         
         authn_response = authn_conn.getresponse()
+        authn_conn.close()
         
         # Hack to make httplib response urllib2.Response-like
         authn_response.info = lambda : authn_response.msg
@@ -643,12 +640,12 @@ class NDGSecurityProxy(Proxy):
                 return
             
             # Make path
-            return_uri_path = self.__class__._makeUriPath(parsed_return_uri)
+            return_uri_path = self.__class__._make_uri_path(parsed_return_uri)
             
             # Get host and port number
-            returnUriHost, returnUriPortStr = parsed_return_uri.netloc.split(':', 
-                                                                           1)
-            returnUriPort = int(returnUriPortStr)
+            (return_uri_host, 
+             return_uri_port_str) = parsed_return_uri.netloc.split(':', 1)
+            return_uri_port = int(return_uri_port_str)
             
             # Add any cookies to header
             return_req = FakeUrllib2HTTPRequest(parsed_return_uri)
@@ -656,15 +653,19 @@ class NDGSecurityProxy(Proxy):
             return_headers = return_req.get_headers()
             
             # Invoke return URI passing headers            
-            conn = httplib.HTTPConnection(returnUriHost, port=returnUriPort)
-            conn.request(action, return_uri_path, body, return_headers)
-            returnUriRes = conn.getresponse()
-            return returnUriRes
+            return_conn = httplib.HTTPConnection(return_uri_host, 
+                                                 port=return_uri_port)
+            
+            return_conn.request('GET', return_uri_path, None, return_headers)
+            return_uri_res = return_conn.getresponse()
+            return_conn.close()
+            
+            return return_uri_res
         else:
             return res
     
     @staticmethod
-    def _makeUriPath(parsedUri):
+    def _make_uri_path(parsedUri):
         '''Make a URI path from path, query argument and fragment components
         of a parsed uri object
         

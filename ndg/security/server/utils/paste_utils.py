@@ -14,7 +14,6 @@ import paste.httpserver
 from threading import Thread
 from paste.deploy import loadapp
 from paste.script.util.logging_config import fileConfig
-from OpenSSL import SSL
 
 
 class PasteDeployAppServer(object):
