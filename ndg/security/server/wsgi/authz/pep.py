@@ -15,9 +15,13 @@ from time import time
 
 import webob
 
-from ndg.saml.saml2.core import DecisionType
+from ndg.saml.saml2.core import DecisionType, NameID
+from ndg.saml.saml2.binding.soap.client.requestbase import \
+                                                        RequestBaseSOAPBinding
 from ndg.saml.saml2.binding.soap.client.authzdecisionquery import \
                                             AuthzDecisionQuerySslSOAPBinding
+from ndg.saml.saml2.binding.soap.client.xacmlauthzdecisionquery import \
+                                        XACMLAuthzDecisionQuerySslSOAPBinding
                                             
 from ndg.xacml.core import Identifiers as XacmlIdentifiers
 from ndg.xacml.core import context as _xacmlCtx
@@ -40,7 +44,7 @@ class SamlPepFilterConfigError(Exception):
     """Error with SAML PEP configuration settings"""
     
     
-class SamlPepFilter(SessionMiddlewareBase):
+class SamlPepFilterBase(SessionMiddlewareBase):
     '''Policy Enforcement Point for ESG with SAML based Interface
     
     @requires: ndg.security.server.wsgi.session.SessionHandlerMiddleware 
@@ -128,9 +132,10 @@ class SamlPepFilter(SessionMiddlewareBase):
         return self.__client
 
     def _setClient(self, value):
-        if not isinstance(value, basestring):
-            raise TypeError('Expecting string type for "client" attribute; '
-                            'got %r' % type(value))
+        if not isinstance(value, RequestBaseSOAPBinding):
+            raise TypeError('Expecting type %r for "client" attribute; '
+                            'got %r' %
+                            (type(RequestBaseSOAPBinding), type(value)))
         self.__client = value
 
     client = property(_getClient, _setClient, 
@@ -196,10 +201,6 @@ class SamlPepFilter(SessionMiddlewareBase):
         dictionary
         @raise SamlPepFilterConfigError: missing option setting(s)
         '''
-        # Parse authorisation decision query options
-        queryPrefix = prefix + self.__class__.AUTHZ_DECISION_QUERY_PARAMS_PREFIX
-        self.client.parseKeywords(prefix=queryPrefix, **kw)
-            
         # Parse other options
         for name in SamlPepFilter.PARAM_NAMES:
             paramName = prefix + name
@@ -212,6 +213,11 @@ class SamlPepFilter(SessionMiddlewareBase):
                 # Policy file setting is optional
                 raise SamlPepFilterConfigError('Missing option %r' % paramName)
             
+
+        # Parse authorisation decision query options
+        queryPrefix = prefix + self.__class__.AUTHZ_DECISION_QUERY_PARAMS_PREFIX
+        self.client.parseKeywords(prefix=queryPrefix, **kw)
+
         # Initialise the local PDP  
         if self.localPolicyFilePath:
             self.__localPdp = PDP.fromPolicySource(self.localPolicyFilePath, 
@@ -266,87 +272,8 @@ class SamlPepFilter(SessionMiddlewareBase):
         @rtype: iterable
         @return: response
         """
-        request = webob.Request(environ)
-        requestURI = request.url
-        
-        # Apply local PDP if set
-        if not self.isApplicableRequest(requestURI):
-            # The local PDP has returned a decision that the requested URI is
-            # not applicable and so the authorisation service need not be 
-            # invoked.  This step is an efficiency measure to avoid multiple
-            # callouts to the authorisation service for resources which 
-            # obviously don't need any restrictions 
-            return self._app(environ, start_response)
-            
-        # Check for cached decision
-        if self.cacheDecisions:
-            assertions = self._retrieveCachedAssertions(requestURI)
-        else:
-            assertions = None  
-             
-        noCachedAssertion = assertions is None or len(assertions) == 0
-        if noCachedAssertion:
-            # No stored decision in cache, invoke the authorisation service   
-            self.client.resourceURI = request.url
-            
-            # Nb. user may not be logged in hence REMOTE_USER is not set
-            self.client.subjectID = request.remote_user or ''
-            
-            samlAuthzResponse = self.client.send(uri=self.__authzServiceURI)
-            assertions = samlAuthzResponse.assertions
-            
-            # Record the result in the user's session to enable later 
-            # interrogation by any result handler Middleware
-            self.saveResultCtx(self.client.query, samlAuthzResponse)
-        
-        
-        # Set HTTP 403 Forbidden response if any of the decisions returned are
-        # deny or indeterminate status
-        failDecisions = (DecisionType.DENY, DecisionType.INDETERMINATE)
-        
-        # Review decision statement(s) in assertions and enforce the decision
-        assertion = None
-        for assertion in assertions:
-            for authzDecisionStatement in assertion.authzDecisionStatements:
-                if authzDecisionStatement.decision.value in failDecisions:
-                    response = webob.Response()
-                    
-                    if not self.client.subjectID:
-                        # Access failed and the user is not logged in
-                        response.status = httplib.UNAUTHORIZED
-                    else:
-                        # The user is logged in but not authorised
-                        response.status = httplib.FORBIDDEN
-                        
-                    response.body = 'Access denied to %r for user %r' % (
-                                                     self.client.resourceURI,
-                                                     self.client.subjectID)
-                    response.content_type = 'text/plain'
-                    log.info(response.body)
-                    return response(environ, start_response)
-
-        if assertion is None:
-            log.error("No assertions set in authorisation decision response "
-                      "from %r", self.authzServiceURI)
-            
-            response = webob.Response()
-            response.status = httplib.FORBIDDEN
-            response.body = ('An error occurred retrieving an access decision '
-                             'for %r for user %r' % (
-                                             self.client.resourceURI,
-                                             self.client.subjectID))
-            response.content_type = 'text/plain'
-            log.info(response.body)
-            return response(environ, start_response)     
-               
-        # Cache assertion if flag is set and it's one that's been freshly 
-        # obtained from an authorisation decision query rather than one 
-        # retrieved from the cache
-        if self.cacheDecisions and noCachedAssertion:
-            self._cacheAssertions(request.url, [assertion])
-            
-        # If got through to here then all is well, call next WSGI middleware/app
-        return self._app(environ, start_response)
+        raise NotImplementedError("SamlPepFilterBase must be subclassed to"
+                                  " implement the enforce method.")
 
     def _retrieveCachedAssertions(self, resourceId):
         """Return assertions containing authorisation decision for the given
@@ -470,4 +397,96 @@ class SamlPepFilter(SessionMiddlewareBase):
         
         return request
         
+class SamlPepFilter(SamlPepFilterBase):
 
+    def enforce(self, environ, start_response):
+        """Get access control decision from PDP(s) and enforce the decision
+        
+        @type environ: dict
+        @param environ: WSGI environment variables dictionary
+        @type start_response: function
+        @param start_response: standard WSGI start response function
+        @rtype: iterable
+        @return: response
+        """
+        request = webob.Request(environ)
+        requestURI = request.url
+        
+        # Apply local PDP if set
+        if not self.isApplicableRequest(requestURI):
+            # The local PDP has returned a decision that the requested URI is
+            # not applicable and so the authorisation service need not be 
+            # invoked.  This step is an efficiency measure to avoid multiple
+            # callouts to the authorisation service for resources which 
+            # obviously don't need any restrictions 
+            return self._app(environ, start_response)
+            
+        # Check for cached decision
+        if self.cacheDecisions:
+            assertions = self._retrieveCachedAssertions(requestURI)
+        else:
+            assertions = None  
+             
+        noCachedAssertion = assertions is None or len(assertions) == 0
+        if noCachedAssertion:
+            # No stored decision in cache, invoke the authorisation service   
+            self.client.resourceURI = request.url
+            
+            # Nb. user may not be logged in hence REMOTE_USER is not set
+            self.client.subjectID = request.remote_user or ''
+            
+            samlAuthzResponse = self.client.send(uri=self.authzServiceURI)
+            assertions = samlAuthzResponse.assertions
+            
+            # Record the result in the user's session to enable later 
+            # interrogation by any result handler Middleware
+            self.saveResultCtx(self.client.query, samlAuthzResponse)
+        
+        
+        # Set HTTP 403 Forbidden response if any of the decisions returned are
+        # deny or indeterminate status
+        failDecisions = (DecisionType.DENY, DecisionType.INDETERMINATE)
+        
+        # Review decision statement(s) in assertions and enforce the decision
+        assertion = None
+        for assertion in assertions:
+            for authzDecisionStatement in assertion.authzDecisionStatements:
+                if authzDecisionStatement.decision.value in failDecisions:
+                    response = webob.Response()
+                    
+                    if not self.client.subjectID:
+                        # Access failed and the user is not logged in
+                        response.status = httplib.UNAUTHORIZED
+                    else:
+                        # The user is logged in but not authorised
+                        response.status = httplib.FORBIDDEN
+                        
+                    response.body = 'Access denied to %r for user %r' % (
+                                                     self.client.resourceURI,
+                                                     self.client.subjectID)
+                    response.content_type = 'text/plain'
+                    log.info(response.body)
+                    return response(environ, start_response)
+
+        if assertion is None:
+            log.error("No assertions set in authorisation decision response "
+                      "from %r", self.authzServiceURI)
+            
+            response = webob.Response()
+            response.status = httplib.FORBIDDEN
+            response.body = ('An error occurred retrieving an access decision '
+                             'for %r for user %r' % (
+                                             self.client.resourceURI,
+                                             self.client.subjectID))
+            response.content_type = 'text/plain'
+            log.info(response.body)
+            return response(environ, start_response)     
+               
+        # Cache assertion if flag is set and it's one that's been freshly 
+        # obtained from an authorisation decision query rather than one 
+        # retrieved from the cache
+        if self.cacheDecisions and noCachedAssertion:
+            self._cacheAssertions(request.url, [assertion])
+            
+        # If got through to here then all is well, call next WSGI middleware/app
+        return self._app(environ, start_response)

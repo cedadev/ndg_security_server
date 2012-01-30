@@ -18,7 +18,8 @@ from uuid import uuid4
 
 from ndg.saml.saml2 import core as _saml
 from ndg.saml.common import SAMLVersion
-
+from ndg.saml.saml2.xacml_profile import (XACMLAuthzDecisionQuery,
+                                          XACMLAuthzDecisionStatement)
 
 from ndg.xacml.core import Identifiers
 from ndg.xacml.core.context.pdp import PDP
@@ -29,6 +30,7 @@ from ndg.xacml.core.attributevalue import (
     AttributeValue as XacmlAttributeValue)
 from ndg.xacml.parsers.etree.factory import ReaderFactory as \
     XacmlPolicyReaderFactory
+from ndg.xacml.utils.xpath_selector import EtreeXPathSelector
 
 from ndg.security.server.xacml.pip.saml_pip import PIP
 from ndg.security.common.utils.factory import importModuleObject
@@ -46,9 +48,12 @@ class SamlPEPRequest(object):
         return self.__authzDecisionQuery
 
     def _setAuthzDecisionQuery(self, value):
-        if not isinstance(value, _saml.AuthzDecisionQuery):
-            raise TypeError('Expecting %r type for "response" attribute, got %r'
-                            % (_saml.Response, type(value)))
+        if not (isinstance(value, _saml.AuthzDecisionQuery) or
+                isinstance(value, XACMLAuthzDecisionQuery)):
+            raise TypeError('Expecting %r or %r type for "authzDecisionQuery" '
+                            'attribute, got %r' %
+                            (_saml.AuthzDecisionQuery, XACMLAuthzDecisionQuery,
+                             type(value)))
         self.__authzDecisionQuery = value
         
     authzDecisionQuery = property(_getAuthzDecisionQuery, 
@@ -323,50 +328,43 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
         @rtype: ndg.saml.saml2.core.Response
         """
         samlAuthzDecisionQuery = pepRequest.authzDecisionQuery
-        
-        xacmlRequest = self._createXacmlRequestCtx(samlAuthzDecisionQuery)
+
+        xacml_profile = isinstance(samlAuthzDecisionQuery,
+                                   XACMLAuthzDecisionQuery)
+        if xacml_profile:
+            # Using XACML profile so the Request is passed in the query.
+            xacmlRequest = samlAuthzDecisionQuery.xacmlContextRequest
+        else:
+            xacmlRequest = self._createXacmlRequestCtx(samlAuthzDecisionQuery)
         
         # Add a reference to this context so that the PDP can invoke queries
         # back to the PIP
         xacmlRequest.ctxHandler = self
-        
+
+        # Set XPath implementation for attribute selector.
+        ### TODO make this configurable?
+        if xacmlRequest.elem is not None:
+            xacmlRequest.attributeSelector = \
+                EtreeXPathSelector(xacmlRequest.elem)
+
         # Call the PDP
         xacmlResponse = self.pdp.evaluate(xacmlRequest)
         
         # Create the SAML Response
-        samlResponse = self._createSAMLResponseAssertion(samlAuthzDecisionQuery,
-                                                         pepRequest.response)
-        
-        # Assume only a single assertion authorisation decision statements
-        samlAuthzDecisionStatement = samlResponse.assertions[0
-                                                ].authzDecisionStatements[0]
-        
-        # Convert the decision status
-        if (xacmlResponse.results[0].decision == 
-            _xacmlContext.result.Decision.PERMIT):
-            log.info("PDP granted access for URI path [%s]", 
-                     samlAuthzDecisionQuery.resource)
-            
-            samlAuthzDecisionStatement.decision = _saml.DecisionType.PERMIT
-        
-        # Nb. Mapping XACML NotApplicable => SAML INDETERMINATE
-        elif (xacmlResponse.results[0].decision in 
-              (_xacmlContext.result.Decision.INDETERMINATE,
-               _xacmlContext.result.Decision.NOT_APPLICABLE)):
-            log.info("PDP returned a status of [%s] for URI path [%s]; "
-                     "mapping to SAML response [%s] ...", 
-                     xacmlResponse.results[0].decision,
-                     samlAuthzDecisionQuery.resource,
-                     _saml.DecisionType.INDETERMINATE) 
-            
-            samlAuthzDecisionStatement.decision = \
-                                                _saml.DecisionType.INDETERMINATE
+        (samlResponse, assertion) = self._createSAMLResponseAssertion(
+                                    samlAuthzDecisionQuery, pepRequest.response)
+
+        # Add decision statement to assertion.
+        if xacml_profile:
+            # Using XACML profile so the Response is returned in the decision
+            # statement.
+            self._createXacmlAuthzDecisionStatement(assertion,
+                                                    samlAuthzDecisionQuery,
+                                                    xacmlResponse)
         else:
-            log.info("PDP returned a status of [%s] denying access for URI "
-                     "path [%s]", _xacmlContext.result.Decision.DENY,
-                     samlAuthzDecisionQuery.resource) 
-            
-            samlAuthzDecisionStatement.decision = _saml.DecisionType.DENY
+            self._createSamlAuthzDecisionStatement(assertion,
+                                                   samlAuthzDecisionQuery,
+                                                   xacmlResponse)
 
         return samlResponse
         
@@ -397,6 +395,8 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
     def _createXacmlRequestCtx(self, samlAuthzDecisionQuery):
         """Translate SAML authorisation decision query into a XACML request
         context
+        @param authzDecisionQuery: SAML Authorisation Decision Query
+        @type authzDecisionQuery: ndg.saml.saml2.core.AuthzDecisionQuery
         """
         xacmlRequest = _xacmlContext.request.Request()
         xacmlSubject = _xacmlContext.subject.Subject()
@@ -505,23 +505,80 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
         assertion.conditions.notBefore = now
         assertion.conditions.notOnOrAfter = now + timedelta(
                                                 seconds=self.assertionLifetime)
-               
-        assertion.subject = _saml.Subject()
-        assertion.subject.nameID = _saml.NameID()
-        assertion.subject.nameID.format = \
-            authzDecisionQuery.subject.nameID.format
-        assertion.subject.nameID.value = \
-            authzDecisionQuery.subject.nameID.value
+        ### TODO Better way to do this?
+        if hasattr(authzDecisionQuery, 'subject'):
+            assertion.subject = _saml.Subject()
+            assertion.subject.nameID = _saml.NameID()
+            assertion.subject.nameID.format = \
+                authzDecisionQuery.subject.nameID.format
+            assertion.subject.nameID.value = \
+                authzDecisionQuery.subject.nameID.value
         
-        authzDecisionStatement = _saml.AuthzDecisionStatement()
-        assertion.authzDecisionStatements.append(authzDecisionStatement)
-                    
-        authzDecisionStatement.resource = authzDecisionQuery.resource
-        
+        return (response, assertion)
+
+    def _createSamlAuthzDecisionStatement(self, assertion,
+                                          authzDecisionQuery,
+                                          xacmlResponse):
+        """Adds an AuthzDecisionStatement to an assertion, converting the XACML
+        response decision to a SAML decision.
+        @param assertion: SAML assertion
+        @type assertion: ndg.saml.saml2.core.Assertion
+        @param authzDecisionQuery: SAML Authorisation Decision Query
+        @type authzDecisionQuery: ndg.saml.saml2.core.AuthzDecisionQuery
+        @param xacmlResponse: XACML response
+        @type xacmlResponse: ndg.xacml.core.context.Response
+        """
+        samlAuthzDecisionStatement = _saml.AuthzDecisionStatement()
+        assertion.authzDecisionStatements.append(samlAuthzDecisionStatement)
+
+        samlAuthzDecisionStatement.resource = authzDecisionQuery.resource
+
         for action in authzDecisionQuery.actions:
-            authzDecisionStatement.actions.append(_saml.Action())
-            authzDecisionStatement.actions[-1].namespace = action.namespace
-            authzDecisionStatement.actions[-1].value = action.value
+            samlAuthzDecisionStatement.actions.append(_saml.Action())
+            samlAuthzDecisionStatement.actions[-1].namespace = action.namespace
+            samlAuthzDecisionStatement.actions[-1].value = action.value
 
-        return response
+        # Convert the decision status
+        if (xacmlResponse.results[0].decision ==
+            _xacmlContext.result.Decision.PERMIT):
+            log.info("PDP granted access for URI path [%s]",
+                     authzDecisionQuery.resource)
 
+            samlAuthzDecisionStatement.decision = _saml.DecisionType.PERMIT
+
+        # Nb. Mapping XACML NotApplicable => SAML INDETERMINATE
+        elif (xacmlResponse.results[0].decision in
+              (_xacmlContext.result.Decision.INDETERMINATE,
+               _xacmlContext.result.Decision.NOT_APPLICABLE)):
+            log.info("PDP returned a status of [%s] for URI path [%s]; "
+                     "mapping to SAML response [%s] ...", 
+                     xacmlResponse.results[0].decision,
+                     authzDecisionQuery.resource,
+                     _saml.DecisionType.INDETERMINATE)
+
+            samlAuthzDecisionStatement.decision = \
+                                                _saml.DecisionType.INDETERMINATE
+        else:
+            log.info("PDP returned a status of [%s] denying access for URI "
+                     "path [%s]", _xacmlContext.result.Decision.DENY,
+                     authzDecisionQuery.resource)
+
+            samlAuthzDecisionStatement.decision = _saml.DecisionType.DENY
+
+    def _createXacmlAuthzDecisionStatement(self, assertion,
+                                           authzDecisionQuery,
+                                           xacmlResponse):
+        """Adds an AuthzDecisionStatement to an assertion including the XACML
+        response.
+        @param assertion: SAML assertion
+        @type assertion: ndg.saml.saml2.core.Assertion
+        @param authzDecisionQuery: SAML Authorisation Decision Query
+        @type authzDecisionQuery: ndg.saml.saml2.core.AuthzDecisionQuery
+        @param xacmlResponse: XACML response
+        @type xacmlResponse: ndg.xacml.core.context.Response
+        """
+        authzDecisionStatement = XACMLAuthzDecisionStatement()
+        authzDecisionStatement.xacmlContextResponse = xacmlResponse
+        if authzDecisionQuery.returnContext:
+            authzDecisionStatement.xacmlContextRequest = authzDecisionQuery.xacmlContextRequest
+        assertion.statements.append(authzDecisionStatement)

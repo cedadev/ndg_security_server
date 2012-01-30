@@ -19,10 +19,8 @@ from string import Template
 
 from sqlalchemy import create_engine, exc
 
-try: # >= python 2.5
-    from xml.etree import ElementTree
-except ImportError:
-    import ElementTree
+from ndg.security.common.config import Config, importElementTree
+ElementTree = importElementTree()
 
 from ndg.saml.utils import SAMLDateTime
 from ndg.saml.common.xml import SAMLConstants

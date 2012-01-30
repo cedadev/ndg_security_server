@@ -23,6 +23,7 @@ from authkit.authenticate.multi import MultiHandler
 from ndg.security.common.utils.classfactory import importClass
 from ndg.security.server.wsgi import NDGSecurityMiddlewareBase
 from ndg.security.server.wsgi.authz.pep import SamlPepFilter
+from ndg.security.server.wsgi.authz.pep_xacml_profile import XacmlSamlPepFilter
 from ndg.security.server.wsgi.authz.result_handler import \
     PEPResultHandlerMiddlewareBase
 from ndg.security.server.wsgi.authz.result_handler.basic import \
@@ -72,7 +73,7 @@ class AuthorisationFilterConfigError(Exception):
     """AuthorisationFilterBase configuration related exceptions"""
  
    
-class AuthorisationFilter(object):
+class AuthorisationFilterBase(object):
     '''NDG Security Authorisation filter wraps the Policy Enforcement Point 
     (PEP) filter to intercept requests and enforce access control decisions and
     result handler middleware which enables a customised response given an
@@ -113,10 +114,10 @@ class AuthorisationFilter(object):
             app = Cascade([app, staticApp], catch=(httplib.NOT_FOUND,))
 
         pepPrefix = prefix + cls.PEP_PARAM_PREFIX
-        pepFilter = SamlPepFilter.filter_app_factory(app, 
-                                                     global_conf, 
-                                                     prefix=pepPrefix, 
-                                                     **app_conf)
+        pepFilter = cls.PEP_FILTER.filter_app_factory(app, 
+                                                      global_conf, 
+                                                      prefix=pepPrefix, 
+                                                      **app_conf)
         
         # Now add the multi-handler to enable result handler to be invoked on
         # 403 forbidden status from upstream middleware 
@@ -141,3 +142,17 @@ class AuthorisationFilter(object):
                         Http403ForbiddenStatusHandler.intercept)
         
         return app
+
+
+class AuthorisationFilter(AuthorisationFilterBase):
+    '''AuthorisationFilter implementation that uses the pure SAML in requests to
+    the PEP.
+    '''
+    PEP_FILTER = SamlPepFilter
+
+
+class XACMLAuthorisationFilter(AuthorisationFilterBase):
+    '''AuthorisationFilter implementation that uses the XACML profile for SAML
+    when making requests to the PEP.
+    '''
+    PEP_FILTER = XacmlSamlPepFilter
