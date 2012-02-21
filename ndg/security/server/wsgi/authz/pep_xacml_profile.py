@@ -161,6 +161,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
                                             request.body_file_seekable.read(),
                                             subjectID,
                                             self.subjectIdFormat)
+            request.body_file_seekable.seek(0)
             self.client.query.xacmlContextRequest = xacmlContextRequest
             samlAuthzResponse = self.client.send(uri=self.authzServiceURI)
             assertions = samlAuthzResponse.assertions
