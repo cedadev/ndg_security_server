@@ -11,10 +11,12 @@ __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = '$Id$'
 
 # Bootstrap setuptools if necessary.
-from ez_setup import use_setuptools
-use_setuptools()
-
-from setuptools import setup, find_packages
+try:
+    from setuptools import setup, find_packages
+except ImportError:
+    from ez_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup
 
 _entryPoints = """
     [console_scripts] 
@@ -75,6 +77,7 @@ setup(
                                 'WebOb',
                                 'beaker',
                                 'AuthKit',
+                                'SQLAlchemy'
                             ],
     extras_require = {
         'xacml':  ["ndg_xacml"],

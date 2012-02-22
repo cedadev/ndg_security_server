@@ -322,13 +322,18 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
                 
             # Reset cookie removing user data by accessing the Auth ticket 
             # function available from environ
-            setUser = environ[
-                    SessionHandlerMiddleware.AUTH_TKT_SET_USER_ENVIRON_KEYNAME]
-            setUser(session[SessionHandlerMiddleware.USERNAME_SESSION_KEYNAME])
-            
-            # Also reset the environment variable to prevent AuthKit from
-            # restoring the AX values in the cookie.
-            environ[SessionHandlerMiddleware.USERDATA_ENVIRON_KEYNAME] = ''      
+#            setUser = environ[
+#                    SessionHandlerMiddleware.AUTH_TKT_SET_USER_ENVIRON_KEYNAME]
+#            setUser(session[SessionHandlerMiddleware.USERNAME_SESSION_KEYNAME])
+#            
+#            # Also reset the environment variable to prevent AuthKit from
+#            # restoring the AX values in the cookie.
+#            environ[SessionHandlerMiddleware.USERDATA_ENVIRON_KEYNAME] = ''    
+            # Try using logout Paste method to delete the cookie altogether
+            # logged in state should be managed by the beaker session cookie
+            # P J Kershaw 22/02/12
+            _logout_user = environ['paste.auth_tkt.logout_user']  
+            _logout_user()
         else:
             log.debug("SessionHandlerMiddleware.__call__: REMOTE_USER_DATA "
                       "is not set")

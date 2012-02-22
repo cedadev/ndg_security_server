@@ -29,7 +29,8 @@ from OpenSSL import SSL, crypto
 from myproxy.client import MyProxyClient, MyProxyClientError
 from ndg.security.common.utils import pyopenssl, FakeUrllib2HTTPRequest
 from ndg.security.server.wsgi.utils import FileObjResponseIterator    
-    
+
+
 class SSLCtxSessionMiddleware(object):
     """Store an SSL Context object in session middleware for client callouts"""
     PARAM_NAMES = (
