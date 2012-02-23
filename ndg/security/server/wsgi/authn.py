@@ -407,10 +407,7 @@ class AuthnRedirectResponseMiddleware(AuthnRedirectMiddleware):
         
         # Check for return to address in URI query args set by 
         # AuthnRedirectInitiatorMiddleware in application code stack
-        if environ['REQUEST_METHOD'] == "GET":
-            params = dict(parse_querystring(environ))
-        else:
-            params = {}
+        params = dict(parse_querystring(environ))
         
         # Store the return URI query argument in a beaker session
         quotedReferrer = params.get(self.__class__.RETURN2URI_ARGNAME, '')
