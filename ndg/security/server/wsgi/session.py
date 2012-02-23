@@ -95,6 +95,7 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
     }
     
     AUTH_TKT_SET_USER_ENVIRON_KEYNAME = 'paste.auth_tkt.set_user'
+    AUTH_TKT_LOGOUT_USER_ENVIRON_KEYNAME = 'paste.auth_tkt.logout_user'
     
     LOGOUT_RETURN2URI_ARGNAME = 'ndg.security.logout.r'
     LOGOUT_REDIRECT_STATUS_CODE = 302
@@ -252,7 +253,18 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
         @param session: beaker session
         @type session: beaker.session.SessionObject
         """
-        
+        # If a session has already been started, set the REMOTE_USER in the
+        # environ so that it is available to other middleware.
+        if SessionHandlerMiddleware.USERNAME_SESSION_KEYNAME in session:
+            username = session[
+                            SessionHandlerMiddleware.USERNAME_SESSION_KEYNAME]
+            environ[SessionHandlerMiddleware.USERNAME_ENVIRON_KEYNAME
+                    ] = username
+            log.debug("SessionHandlerMiddleware.__call__: existing session "
+                      "username=%s", username)
+            # Session data has already been set up.
+            return
+
         # Set user id
         if (SessionHandlerMiddleware.USERNAME_SESSION_KEYNAME not in session
             and SessionHandlerMiddleware.USERNAME_ENVIRON_KEYNAME in environ):
@@ -320,19 +332,10 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
                               sessionManagerURI, 
                               sessionId)
                 
-            # Reset cookie removing user data by accessing the Auth ticket 
-            # function available from environ
-#            setUser = environ[
-#                    SessionHandlerMiddleware.AUTH_TKT_SET_USER_ENVIRON_KEYNAME]
-#            setUser(session[SessionHandlerMiddleware.USERNAME_SESSION_KEYNAME])
-#            
-#            # Also reset the environment variable to prevent AuthKit from
-#            # restoring the AX values in the cookie.
-#            environ[SessionHandlerMiddleware.USERDATA_ENVIRON_KEYNAME] = ''    
-            # Try using logout Paste method to delete the cookie altogether
-            # logged in state should be managed by the beaker session cookie
-            # P J Kershaw 22/02/12
-            _logout_user = environ['paste.auth_tkt.logout_user']  
+            # Call AuthKit logout method to clear the AuthKit cookie. The
+            # session is now bound to the beaker session.
+            _logout_user = environ[
+                SessionHandlerMiddleware.AUTH_TKT_LOGOUT_USER_ENVIRON_KEYNAME]
             _logout_user()
         else:
             log.debug("SessionHandlerMiddleware.__call__: REMOTE_USER_DATA "
