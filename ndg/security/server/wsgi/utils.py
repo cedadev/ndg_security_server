@@ -30,6 +30,7 @@ class FileObjResponseIterator(object):
         'content_length',
         'content_range',
         'content_range_hdr',
+        'closed_method'
     )
     
     
@@ -59,7 +60,20 @@ class FileObjResponseIterator(object):
         '''
         self.file_obj = file_obj
         self.file_size = file_size
-        
+
+        # Find method of determining whether the file object is closed.
+        if hasattr(file_obj, 'closed'):
+            # Standard file interface has optional 'closed' attribute.
+            self.closed_method = lambda : self.file_obj.closed
+        elif hasattr(file_obj, 'isclosed'):
+            # httplib.HTTPResponse has a non-standard 'isclosed' method.
+            self.closed_method = self.file_obj.isclosed
+        elif hasattr(file_obj, 'fp'):
+            # urllib.addbase and derived classes returned by urllib and urllib2:
+            self.closed_method = lambda : self.fp is None
+        else:
+            self.closed_method = None
+
         # the length of the content to return - this will be different to the
         # file size if the client a byte range header field setting
         self.content_length = 0
@@ -125,7 +139,11 @@ class FileObjResponseIterator(object):
                 self.__class__.CONTENT_RANGE_FORMAT_STR % 
                                         (self.content_range + (self.file_size,))
             )
-            self.file_obj.seek(start)
+            try:
+                self.file_obj.seek(start)
+            except AttributeError:
+                # File seek method is optional.
+                pass
         else:            
             # Set the total content length to return
             self.content_length = self.file_size
@@ -142,10 +160,20 @@ class FileObjResponseIterator(object):
         
         # Leave read_lengths attribute intact
         read_lengths = self.read_lengths[:]
-        while len(read_lengths) > 0:
-            output = self.file_obj.read(read_lengths[-1])
-            read_lengths.pop()
+        while (self.content_length < 0) or (len(read_lengths) > 0):
+            if self.content_length < 0:
+                if self.closed_method():
+                    return
+                amt = self.block_size
+            else:
+                amt = read_lengths.pop()
+            output = self.file_obj.read(amt)
             yield output
+
+    def close(self):
+        """Closes the file object.
+        """
+        self.file_obj.close()
 
     @property
     def block_size(self):
@@ -163,5 +191,3 @@ class FileObjResponseIterator(object):
         if self.__block_size < 0:
             raise ValueError('Expecting positive integer value for block size '
                              'attribute')
-
-
