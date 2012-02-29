@@ -201,10 +201,12 @@ class NDGSecurityProxyMiddleware(object):
 
     PARAM_NAMES = (
         'ctxEnvKeyName',
+        'localAddresses'
     )
     __slots__ = (
         '_app',
-        '_fqdn',
+        '__fqdn',
+        '__local_address_components',
         '__proxy'
     )
     __slots__ += tuple(['__' + i for i in PARAM_NAMES])
@@ -212,7 +214,9 @@ class NDGSecurityProxyMiddleware(object):
 
     def __init__(self, app):
         self._app = app
-        self._fqdn = socket.getfqdn()
+        self.__fqdn = socket.getfqdn()
+        self.__localAddresses = None
+        self.__local_address_components = None
         self.__proxy = None
         self.__ctxEnvKeyName = \
             self.__class__.DEFAULT_CTX_ENV_KEYNAME
@@ -254,6 +258,12 @@ class NDGSecurityProxyMiddleware(object):
                     paramName = k
                 if paramName in self.__class__.PARAM_NAMES:
                     setattr(self, paramName, local_conf[k])
+        if self.__localAddresses:
+            self.__local_address_components = []
+            for addr in [h.strip() for h in self.__localAddresses.split(',')]:
+                parts = addr.partition(':')
+                self.__local_address_components.append(
+                    (parts[0], parts[2] if len(parts) >= 3 else None))
         self.__proxy = NDGSecurityProxy()
 
     @property
@@ -266,6 +276,17 @@ class NDGSecurityProxyMiddleware(object):
             raise TypeError('Expecting string type for "ctxEnvKeyName" '
                             'attribute; got %r' % type(val))
         self.__ctxEnvKeyName = val
+
+    @property
+    def localAddresses(self):
+        return self.__localAddresses
+
+    @localAddresses.setter
+    def localAddresses(self, val):
+        if not isinstance(val, basestring):
+            raise TypeError('Expecting string type for "localAddresses" '
+                            'attribute; got %r' % type(val))
+        self.__localAddresses = val
 
     @classmethod
     def filter_app_factory(cls, app, app_conf, **kw):
@@ -292,19 +313,30 @@ class NDGSecurityProxyMiddleware(object):
         @rtype: bool
         @return: True if the request is one to the local server, otherwise False
         """
-        server_port = request.server_port
+        if self.__local_address_components:
+            addresses =  self.__local_address_components
+        else:
+            server_port = request.server_port
+            addresses = [(self.__fqdn, server_port)]
+
         request_host = request.host.partition(':')[0]
         request_fqdn = socket.gethostbyaddr(request_host)[0]
         request_port = request.host_port
-        if not server_port:
-            server_port = {'http': httplib.HTTP_PORT,
-                           'https': httplib.HTTPS_PORT}.get(request.scheme)
         if not request_port:
             request_port = {'http': httplib.HTTP_PORT,
                             'https': httplib.HTTPS_PORT}.get(request.scheme)
-        server_port = int(server_port)
         request_port = int(request_port)
-        result = (request_fqdn == self._fqdn) and (request_port == server_port)
+
+        result = False
+        for (server_host, server_port) in addresses:
+            if not server_port:
+                server_port = {'http': httplib.HTTP_PORT,
+                               'https': httplib.HTTPS_PORT}.get(request.scheme)
+            server_port = int(server_port)
+            result = ((request_fqdn == server_host) and
+                      (request_port == server_port))
+            if result:
+                break
         log.debug("Call for %s://%s:%s is %s", request.scheme, request_fqdn,
                   request_port, ("local" if result else "proxied"))
         return result
