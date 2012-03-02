@@ -321,7 +321,10 @@ class NDGSecurityProxyMiddleware(object):
 
         request_host = request.host.partition(':')[0]
         request_fqdn = socket.gethostbyaddr(request_host)[0]
-        request_port = request.host_port
+        if hasattr(request, 'host_port'):
+            request_port = request.host_port
+        else:
+            request_port = None
         if not request_port:
             request_port = {'http': httplib.HTTP_PORT,
                             'https': httplib.HTTPS_PORT}.get(request.scheme)
@@ -434,7 +437,8 @@ class NDGSecurityProxy(object):
 
         url = urlparse.urlunsplit((scheme, host, path, query, None))
         request = urllib2.Request(url, headers=headers)
-        config = httpsclientutils.Configuration(sslCtx, True)
+        config = httpsclientutils.Configuration(sslCtx,
+                                                log.isEnabledFor(logging.DEBUG))
         (return_code, return_message, response) = httpsclientutils.open_url(
                                                                 request, config)
         status = '%s %s' % (return_code, return_message)
