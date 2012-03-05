@@ -195,13 +195,11 @@ class NDGSecurityProxyMiddleware(object):
     """Middleware to call NDGSecurityProxy if a request is not for the local
     host and port.
     """
-    DEFAULT_CTX_ENV_KEYNAME = "ssl_ctx"
     DEFAULT_PARAM_PREFIX = 'ndg_security_proxy.'
     DEFAULT_PASTE_PROXY_PARAM_PREFIX = 'proxy.'
 
     PARAM_NAMES = (
-        'ctxEnvKeyName',
-        'localAddresses'
+        'localAddresses',
     )
     __slots__ = (
         '_app',
@@ -218,8 +216,6 @@ class NDGSecurityProxyMiddleware(object):
         self.__localAddresses = None
         self.__local_address_components = None
         self.__proxy = None
-        self.__ctxEnvKeyName = \
-            self.__class__.DEFAULT_CTX_ENV_KEYNAME
 
     def initialise(self, app_conf,
                    prefix=DEFAULT_PARAM_PREFIX,
@@ -264,18 +260,7 @@ class NDGSecurityProxyMiddleware(object):
                 parts = addr.partition(':')
                 self.__local_address_components.append(
                     (parts[0], parts[2] if len(parts) >= 3 else None))
-        self.__proxy = NDGSecurityProxy()
-
-    @property
-    def ctxEnvKeyName(self):
-        return self.__ctxEnvKeyName
-
-    @ctxEnvKeyName.setter
-    def ctxEnvKeyName(self, val):
-        if not isinstance(val, basestring):
-            raise TypeError('Expecting string type for "ctxEnvKeyName" '
-                            'attribute; got %r' % type(val))
-        self.__ctxEnvKeyName = val
+        self.__proxy = NDGSecurityProxy(**proxyKw)
 
     @property
     def localAddresses(self):
@@ -344,21 +329,6 @@ class NDGSecurityProxyMiddleware(object):
                   request_port, ("local" if result else "proxied"))
         return result
 
-    def _get_ssl_context(self, request):
-        """Retrieves the SSL context from the WSGI environ.
-        @type request: WebOb.request
-        @param request: request
-        @rtype: OpenSSL ssl_context
-        @return: SSL context
-        """
-        if self.__ctxEnvKeyName in request.environ:
-            ssl_context = request.environ[self.__ctxEnvKeyName]
-        else:
-            raise httpexceptions.HTTPInternalServerError(
-                'Expecting SSL context assigned to %r environ key' %
-                self.__ctxEnvKeyName)
-        return ssl_context
-
 
 class NDGSecurityProxy(object):
     """HTTP proxy that uses an SSL context taken from the WSGI environ for HTTPS
@@ -372,12 +342,21 @@ class NDGSecurityProxy(object):
     """
     DEFAULT_CTX_ENV_KEYNAME = "ssl_ctx"
     __slots__ = (
-        '__ctxEnvKeyName'
+        '__ctxEnvKeyName',
+        '__http_proxy',
+        '__https_proxy',
+        '__no_proxy',
+        '__proxies'
     )
 
-    def __init__(self):
-        self.__ctxEnvKeyName = \
-            self.__class__.DEFAULT_CTX_ENV_KEYNAME
+    def __init__(self, ctxEnvKeyName=None,
+                 http_proxy=None, https_proxy=None, no_proxy=None):
+        self.__ctxEnvKeyName = (self.__class__.DEFAULT_CTX_ENV_KEYNAME
+                                if ctxEnvKeyName is None else ctxEnvKeyName)
+        self.__proxies = None
+        self.http_proxy = http_proxy
+        self.https_proxy = https_proxy
+        self.no_proxy = no_proxy
 
     @property
     def ctxEnvKeyName(self):
@@ -389,6 +368,45 @@ class NDGSecurityProxy(object):
             raise TypeError('Expecting string type for "ctxEnvKeyName" '
                             'attribute; got %r' % type(val))
         self.__ctxEnvKeyName = val
+
+    @property
+    def http_proxy(self):
+        return self.__http_proxy
+
+    @http_proxy.setter
+    def http_proxy(self, val):
+        if not isinstance(val, basestring):
+            raise TypeError('Expecting string type for "http_proxy" '
+                            'attribute; got %r' % type(val))
+        self.__http_proxy = val
+        if self.__proxies is None:
+            self.__proxies = {}
+        self.__proxies['http'] = val
+
+    @property
+    def https_proxy(self):
+        return self.__https_proxy
+
+    @https_proxy.setter
+    def https_proxy(self, val):
+        if not isinstance(val, basestring):
+            raise TypeError('Expecting string type for "https_proxy" '
+                            'attribute; got %r' % type(val))
+        self.__https_proxy = val
+        if self.__proxies is None:
+            self.__proxies = {}
+        self.__proxies['https'] = val
+
+    @property
+    def no_proxy(self):
+        return self.__no_proxy
+
+    @no_proxy.setter
+    def no_proxy(self, val):
+        if not isinstance(val, basestring):
+            raise TypeError('Expecting string type for "no_proxy" '
+                            'attribute; got %r' % type(val))
+        self.__no_proxy = val
 
     def __call__(self, environ, start_response):
         """Rerieves the SSL context from the environ and forwards the request to
@@ -438,7 +456,9 @@ class NDGSecurityProxy(object):
         url = urlparse.urlunsplit((scheme, host, path, query, None))
         request = urllib2.Request(url, headers=headers)
         config = httpsclientutils.Configuration(sslCtx,
-                                                log.isEnabledFor(logging.DEBUG))
+                                                log.isEnabledFor(logging.DEBUG),
+                                                proxies=self.__proxies,
+                                                no_proxy=self.no_proxy)
         (return_code, return_message, response) = httpsclientutils.open_url(
                                                                 request, config)
         status = '%s %s' % (return_code, return_message)
