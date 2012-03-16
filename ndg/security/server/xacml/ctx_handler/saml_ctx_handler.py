@@ -101,20 +101,32 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
         self.__xacmlExtFunc = None
 
     def _getXacmlExtFunc(self):
-        """Get XACML extensions function"""
+        """Get XACML extensions functions"""
         return self.__xacmlExtFunc
 
     def _setXacmlExtFunc(self, value):
-        """Set XACML extensions function"""
+        """Set XACML extensions functions"""
+        self.__xacmlExtFunc = []
         if isinstance(value, basestring):
-            self.__xacmlExtFunc = importModuleObject(value)
+            for fnspec in value.split():
+                log.debug("XACML extension function: %s", fnspec)
+                self.__xacmlExtFunc.append(importModuleObject(fnspec))
             
         elif callable(value):
-            self.__xacmlExtFunc = value
-            
+            self.__xacmlExtFunc.append(value)
         else:
-            raise TypeError('Expecting module object import path string or '
-                            'callable; got %r' % type(value))
+            try:
+                for fn in value:
+                    if callable(fn):
+                        self.__xacmlExtFunc.append(fn)
+                    else:
+                        raise TypeError(
+                            'Expecting module object import path strings or '
+                            'callable/callable list; got %r' % type(value))
+            except TypeError:
+                raise TypeError(
+                            'Expecting module object import path strings or '
+                            'callable/callable list; got %r' % type(value))
             
     xacmlExtFunc = property(_getXacmlExtFunc, _setXacmlExtFunc, 
                             doc="Function or other callable which will be "
@@ -124,13 +136,14 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
                                 "arguments and any return value is ignored")   
     
     def load(self):
-        """Load Policy file, mapping file and extensions function.  In each case
-        load only if they're set
+        """Load Policy file, mapping file and extensions functions.  In each
+        case load only if they're set.
         """  
         # This must be called first before the policy is loaded so that any
         # new custom types are added before a parse is attempted.          
         if self.xacmlExtFunc:
-            self.xacmlExtFunc()
+            for fn in self.xacmlExtFunc:
+                fn()
             
         if self.policyFilePath:
             self.pdp = PDP.fromPolicySource(self.policyFilePath, 
