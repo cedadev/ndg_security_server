@@ -7,7 +7,7 @@ __date__ = "06/08/10"
 __copyright__ = "(C) 2010 Science and Technology Facilities Council"
 __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
-__revision__ = '$Id:$'
+__revision__ = '$Id$'
 import logging
 log = logging.getLogger(__name__)
 
@@ -509,14 +509,15 @@ class PIP(PIPInterface):
             samlAttribute = SamlAttribute()
             samlAttribute.name = attributeId
             samlAttribute.nameFormat = attributeFormat
-            self.attributeQueryBinding.query.attributes.append(samlAttribute)
+            self.attributeQueryBinding.subjectIdFormat = \
+                                                        self.subjectAttributeId
+            query = self.attributeQueryBinding.makeQuery()
+            query.attributes.append(samlAttribute)
             
             # Dispatch query
             try:
-                self.attributeQueryBinding.subjectID = subjectId
-                self.attributeQueryBinding.subjectIdFormat = \
-                                                    self.subjectAttributeId
-                response = self.attributeQueryBinding.send(
+                self.attributeQueryBinding.setQuerySubjectId(query, subjectId)
+                response = self.attributeQueryBinding.send(query,
                                                     uri=attributeAuthorityURI)
                 
                 log.debug('Retrieved response from attribute service %r',
@@ -528,10 +529,7 @@ class PIP(PIPInterface):
             finally:
                 # !Ensure relevant query attributes are reset ready for any 
                 # subsequent query!
-                self.attributeQueryBinding.subjectID = ''
                 self.attributeQueryBinding.subjectIdFormat = ''
-                self.attributeQueryBinding.query.attributes = SamlTypedList(
-                                                                SamlAttribute)
         
             if assertions is None:
                 assertions = SamlTypedList(SamlAssertion)

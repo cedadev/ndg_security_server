@@ -15,13 +15,11 @@ from time import time
 
 import webob
 
-from ndg.saml.saml2.core import DecisionType, NameID
+from ndg.saml.saml2.core import DecisionType
 from ndg.saml.saml2.binding.soap.client.requestbase import \
                                                         RequestBaseSOAPBinding
 from ndg.saml.saml2.binding.soap.client.authzdecisionquery import \
                                             AuthzDecisionQuerySslSOAPBinding
-from ndg.saml.saml2.binding.soap.client.xacmlauthzdecisionquery import \
-                                        XACMLAuthzDecisionQuerySslSOAPBinding
                                             
 from ndg.xacml.core import Identifiers as XacmlIdentifiers
 from ndg.xacml.core import context as _xacmlCtx
@@ -411,6 +409,8 @@ class SamlPepFilter(SamlPepFilterBase):
         """
         request = webob.Request(environ)
         requestURI = request.url
+        # Nb. user may not be logged in hence REMOTE_USER is not set
+        remoteUser = request.remote_user or ''
         
         # Apply local PDP if set
         if not self.isApplicableRequest(requestURI):
@@ -430,17 +430,17 @@ class SamlPepFilter(SamlPepFilterBase):
         noCachedAssertion = assertions is None or len(assertions) == 0
         if noCachedAssertion:
             # No stored decision in cache, invoke the authorisation service   
-            self.client.resourceURI = request.url
+            query = self.client.makeQuery()
+            query.resource = request.url
+            self.client.setQuerySubjectId(query, remoteUser)
             
-            # Nb. user may not be logged in hence REMOTE_USER is not set
-            self.client.subjectID = request.remote_user or ''
-            
-            samlAuthzResponse = self.client.send(uri=self.authzServiceURI)
+            samlAuthzResponse = self.client.send(query,
+                                                 uri=self.authzServiceURI)
             assertions = samlAuthzResponse.assertions
             
             # Record the result in the user's session to enable later 
             # interrogation by any result handler Middleware
-            self.saveResultCtx(self.client.query, samlAuthzResponse)
+            self.saveResultCtx(query, samlAuthzResponse)
         
         
         # Set HTTP 403 Forbidden response if any of the decisions returned are
@@ -454,7 +454,7 @@ class SamlPepFilter(SamlPepFilterBase):
                 if authzDecisionStatement.decision.value in failDecisions:
                     response = webob.Response()
                     
-                    if not self.client.subjectID:
+                    if not remoteUser:
                         # Access failed and the user is not logged in
                         response.status = httplib.UNAUTHORIZED
                     else:
@@ -462,8 +462,8 @@ class SamlPepFilter(SamlPepFilterBase):
                         response.status = httplib.FORBIDDEN
                         
                     response.body = 'Access denied to %r for user %r' % (
-                                                     self.client.resourceURI,
-                                                     self.client.subjectID)
+                                                                     requestURI,
+                                                                     remoteUser)
                     response.content_type = 'text/plain'
                     log.info(response.body)
                     return response(environ, start_response)
@@ -476,8 +476,8 @@ class SamlPepFilter(SamlPepFilterBase):
             response.status = httplib.FORBIDDEN
             response.body = ('An error occurred retrieving an access decision '
                              'for %r for user %r' % (
-                                             self.client.resourceURI,
-                                             self.client.subjectID))
+                                                                 requestURI,
+                                                                 remoteUser))
             response.content_type = 'text/plain'
             log.info(response.body)
             return response(environ, start_response)     

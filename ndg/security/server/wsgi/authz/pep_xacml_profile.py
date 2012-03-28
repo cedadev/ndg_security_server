@@ -145,7 +145,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
             return self._app(environ, start_response)
 
         # Check for cached decision
-        # Note: 
+        # Note: this must be False if request can contain ResourceContent.
         if self.cacheDecisions:
             assertions = self._retrieveCachedAssertions(requestURI)
         else:
@@ -162,8 +162,10 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
                                             subjectID,
                                             self.subjectIdFormat)
             request.body_file_seekable.seek(0)
-            self.client.query.xacmlContextRequest = xacmlContextRequest
-            samlAuthzResponse = self.client.send(uri=self.authzServiceURI)
+            query = self.client.makeQuery()
+            query.xacmlContextRequest = xacmlContextRequest
+            samlAuthzResponse = self.client.send(query,
+                                                 uri=self.authzServiceURI)
             assertions = samlAuthzResponse.assertions
             
             # SamlPepFilter has the following, which cannot be used here as
