@@ -168,6 +168,8 @@ class FileObjResponseIterator(object):
             else:
                 amt = read_lengths.pop()
             output = self.file_obj.read(amt)
+            if not output:
+                self.close()
             yield output
 
     def close(self):
