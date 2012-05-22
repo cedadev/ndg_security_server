@@ -24,8 +24,7 @@ from ndg.xacml.core.attributevalue import AttributeValueClassFactory as \
 from ndg.xacml.core.context.pipinterface import PIPInterface
 from ndg.xacml.core.context.request import Request as XacmlRequestCtx
 
-from ndg.saml.saml2.core import (AttributeQuery as SamlAttributeQuery, 
-                                 Attribute as SamlAttribute,
+from ndg.saml.saml2.core import (Attribute as SamlAttribute,
                                  Assertion as SamlAssertion)
 from ndg.saml.utils import TypedList as SamlTypedList
 from ndg.saml.saml2.binding.soap.client.attributequery import \
