@@ -19,7 +19,14 @@ import os
 import traceback
 import re
 
-from elementtree import ElementTree
+try:
+    from xml.etree import ElementTree
+except ImportError, e:
+    import warnings
+    warnings.warn('xml.etree import failed with message %s, trying import from '
+                  'elementtree site package instead...' % e)
+    from elementtree import ElementTree
+    
 from openid.yadis.manager import Discovery
 
 from ndg.security.common.X509 import X509Cert
