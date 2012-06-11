@@ -1056,7 +1056,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
             self._createResponse(oidRequest, identifier=identityURI)
                     
         except (OpenIDProviderMissingRequiredAXAttrs,
-                OpenIDProviderMissingAXResponseHandler):
+                OpenIDProviderMissingAXResponseHandler), e:
             log.error("%s type exception raised setting response following ID "
                       "Approval: %s", e.__class__.__name__, 
                       traceback.format_exc())
@@ -1406,7 +1406,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         if not isinstance(oidResponse, server.OpenIDResponse):
             log.error("OpenID Response is %r type, expecting %r",
                       type(oidResponse), server.OpenIDResponse)
-            return self._render.errorPage(environ, start_response,
+            return self._render.errorPage(self.environ, self.start_response,
                                           "Error setting a response.  Please "
                                           "report this fault to your site "
                                           "administrator.",
@@ -1416,7 +1416,8 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
             webresponse = self.oidserver.encodeResponse(oidResponse)
         except server.EncodingError, why:
             text = why.response.encodeToKVForm()
-            response = self._render.errorPage(environ, start_response, text)
+            response = self._render.errorPage(self.environ, self.start_response, 
+                                              text)
             return response
         
         hdr = webresponse.headers.items()

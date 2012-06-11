@@ -195,20 +195,18 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
             
         try:
             result = connection.execute(query)
+            nEntries = int([r[0] for r in result][0])
 
         except (exc.ProgrammingError, exc.OperationalError):
             raise AuthNInterfaceRetrieveError("Error with SQL: %s" %
                                               traceback.format_exc())
-        finally:
-            connection.close()
-            
-        try:
-            nEntries = int([r[0] for r in result][0])
-            
         except (ValueError, TypeError), e:
             raise AuthNInterfaceRetrieveError("Expecting integer count result "
                                               "from login SQL query: %s" %
                                               traceback.format_exc())
+        finally:
+            connection.close()
+            
         if nEntries < 1:
             raise AuthNInterfaceInvalidCredentials("Logon query %r: invalid "
                                                    "password for user %r" % 
@@ -270,15 +268,15 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
                             SQLAlchemyAuthnInterface.USERNAME_SQLQUERY_KEYNAME))
         
         try:
-            result = connection.execute(query)
+            result = connection.execute(query)            
+            userIdentifiers = tuple([i[0] for i in result.fetchall()])
 
         except (exc.ProgrammingError, exc.OperationalError):
             raise AuthNInterfaceRetrieveError("Error with SQL query: %s" %
                                               traceback.format_exc())
         finally:
             connection.close()
-            
-        userIdentifiers = tuple([i[0] for i in result.fetchall()])     
+
         if len(userIdentifiers) == 0:
             raise AuthNInterfaceInvalidCredentials('No entries for "%s" user' % 
                                                    username)

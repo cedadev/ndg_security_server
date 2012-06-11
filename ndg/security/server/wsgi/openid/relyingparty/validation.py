@@ -18,6 +18,11 @@ log = logging.getLogger(__name__)
 import os
 import traceback
 import re
+ 
+# For SSL-based validation classes  
+import urllib2
+from M2Crypto import SSL
+from M2Crypto.m2urllib2 import build_opener
 
 try:
     from xml.etree import ElementTree
@@ -32,6 +37,7 @@ from openid.yadis.manager import Discovery
 from ndg.security.common.X509 import X509Cert
 from ndg.security.common.utils.etree import QName
 from ndg.security.common.utils.classfactory import instantiateClass
+
 
 class _ConfigBase(object):
     """Base class for IdP Validator and Attribute Provider configuration
@@ -59,7 +65,7 @@ class _ConfigBase(object):
     def _set_configFile(self, configFile):
         if not isinstance(configFile, basestring):
             raise TypeError('Expecting string type for configFile; got %r' %
-                            type(className))
+                            type(configFile))
         self.__configFile = configFile
 
     configFile = property(fget=_get_configFile,
@@ -284,11 +290,7 @@ class SSLIdPValidator(object):
         @raise IdPInvalidException:
         @raise ConfigException:''' 
         raise NotImplementedError()
-    
-    
-import urllib2
-from M2Crypto import SSL
-from M2Crypto.m2urllib2 import build_opener
+
 
 class SSLClientAuthNValidator(SSLIdPValidator):
     """HTTPS based validation with the addition that this client can provide
@@ -320,8 +322,13 @@ class SSLClientAuthNValidator(SSLIdPValidator):
                             (type(value), 
                              name, 
                              SSLClientAuthNValidator.PARAMETERS[name]))
-            
-        super(SSLClientAuthNValidator, self).__setattr__(name, value)
+        
+        if name.endswith('Path'):
+            value_ = os.path.expandvars(value)
+        else:
+            value_ = value
+              
+        super(SSLClientAuthNValidator, self).__setattr__(name, value_)
         
     def initialize(self, ctx, **parameters):
         '''@param ctx: SSL context
@@ -332,14 +339,32 @@ class SSLClientAuthNValidator(SSLIdPValidator):
         ''' 
         for name, val in parameters.items():
             setattr(self, name, os.path.expandvars(val))
-             
-        ctx.load_verify_locations(capath=self.caCertDirPath)
+        
+        if not self.caCertDirPath:
+            log.warning('No CA certificate directory set for validator: %r; '
+                        'OpenID Provider peer certificates verification may '
+                        'fail during OpenID discovery stage.',
+                        type(self))
+                 
+            ctx.load_verify_locations(capath=self.caCertDirPath)
+            
         if self.certFilePath and self.priKeyFilePath:
             ctx.load_cert(self.certFilePath, 
                           keyfile=self.priKeyFilePath, 
                           callback=lambda *arg, **kw: self.priKeyPwd)
-            
-        if self.configFilePath is not None:
+        else:
+            log.info('No certificate/private key file set for validator: %r; '
+                     'this relying party will not send authentication '
+                     'credentials to OpenID Providers during OpenID discovery '
+                     'stage.',
+                     type(self))
+               
+        if not self.configFilePath:
+            log.warning('No configuration file set for validator: %r; checking '
+                        'of OpenID Provider hostnames is disabled',
+                        type(self))
+            self.validIdPNames = []
+        else:
             # Simple file format - one IdP server name per line
             cfgFile = open(self.configFilePath)
             self.validIdPNames = [l.strip() for l in cfgFile.readlines()
@@ -355,6 +380,9 @@ class SSLClientAuthNValidator(SSLIdPValidator):
         
         @raise IdPInvalidException: if none of the certificates in the chain
         have DN common names matching the list of valid IdPs'''
+        if len(self.validIdPNames) == 0:
+            return
+        
         x509CertChain = x509StoreCtx.get1_chain()
         dnList = []
         for cert in x509CertChain:

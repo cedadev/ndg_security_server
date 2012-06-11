@@ -202,6 +202,10 @@ class SQLAlchemyAXInterface(AXInterface):
             
         try:
             result = connection.execute(query)
+            attributeValues = result.fetchall()[0]
+        except IndexError:
+            raise AXInterfaceRetrieveError("No attributes returned for "
+                                           "query=\"%s\"" % query)
 
         except (exc.ProgrammingError, exc.OperationalError):
             raise AXInterfaceRetrieveError("SQL error: %s" %
@@ -209,12 +213,6 @@ class SQLAlchemyAXInterface(AXInterface):
         finally:
             connection.close()
 
-        try:
-            attributeValues = result.fetchall()[0]
-        except IndexError:
-            raise AXInterfaceRetrieveError("No attributes returned for "
-                                           "query=\"%s\"" % query)
-        
         if len(self.attributeNames) != len(attributeValues):
             raise AXInterfaceConfigError("Attribute query results %r, don't "
                                          "match the attribute names specified "
