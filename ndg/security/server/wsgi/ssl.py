@@ -18,14 +18,13 @@ log = logging.getLogger(__name__)
 import os
 # Pattern matching to determine which URI paths to apply SSL AuthN to and to
 # parse SSL certificate environment variable
-import re 
+import re     
+from datetime import datetime
 
-# Decode SSL certificate environment variable
-import base64        
+from OpenSSL import crypto
 
 from ndg.security.server.wsgi import NDGSecurityMiddlewareBase
-from ndg.security.common.X509 import X509Stack, X509Cert, X509CertError, X500DN
-    
+
 
 class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
     """Perform SSL peer certificate authentication making use of Apache
@@ -87,8 +86,6 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
                                                        prefix=prefix,
                                                        **app_conf)
 
-        self.__caCertFilePathList = None
-        self.__caCertStack = None
         self.__clientCertDNMatchList = None
         self.__clientCert = None
         self.__sslClientCertKeyName = None
@@ -108,7 +105,7 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
         # step can be configured in the Apache config file.  The latter will
         # correctly verify proxy certificates if the environment variable
         # OPENSSL_ALLOW_PROXY_CERTS is set in the start up.  The verification
-        # code in isValidClientCert can't correctly verify proxy certificates 
+        # code in is_valid_client_cert can't correctly verify proxy certificates 
         # because only a single certificate is passed in the SSL_CLIENT_CERT 
         # environ variable and not the complete certificate chain
         self.caCertStack = app_conf.get(caCertFilePathListParamName, [])
@@ -158,62 +155,6 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
                           _setSslKeyName, 
                           doc="SslKeyName's Docstring")
 
-               
-    def _setCACertStack(self, caCertList):
-        '''Read CA certificates from file and add them to an X.509 Cert.
-        stack
-        
-        @type caCertList: basestring, list, tuple or 
-        ndg.security.common.X509.X509Stack
-        @param caCertList: list of file paths for CA certificates to
-        be used to verify certificate used to sign message.  If a single
-        string, it will be parsed into a list based on space separator to 
-        delimit items'''
-        
-        if isinstance(caCertList, X509Stack):
-            self.__caCertFilePathList = []
-            self.__caCertStack = caCertList
-            return
-        
-        else:
-            if isinstance(caCertList, basestring):
-                # Try parsing a space separated list of file paths
-                self.__caCertFilePathList = caCertList.split()
-                
-            elif isinstance(caCertList, (list, tuple)):
-                self.__caCertFilePathList = caCertList
-            else:
-                raise TypeError('Expecting a list or tuple for '
-                                '"caCertList"')
-    
-            self.__caCertStack = X509Stack()
-    
-            for caCertFilePath in self.__caCertFilePathList:
-                x509Cert = X509Cert.Read(os.path.expandvars(caCertFilePath))
-                self.__caCertStack.push(x509Cert)
-    
-    def _getCACertStack(self):
-        return self.__caCertStack
-
-    caCertStack = property(fset=_setCACertStack,
-                           fget=_getCACertStack,
-                           doc="CA certificate stack object - "
-                               "peer certificate must validate against one")
-    
-    def _getCACertFilePathList(self):
-        return self.__caCertFilePathList
-    
-    caCertFilePathList = property(fset=_setCACertStack,
-                                  fget=_getCACertFilePathList,
-                                  doc="list of CA certificate file paths - "
-                                      "peer certificate must validate against "
-                                      "one.  This property is set from the "
-                                      "caCertStack property assignment")
-
-    caCertStack = property(fset=_setCACertStack,
-                           fget=_getCACertStack,
-                           doc="CA certificate stack object - "
-                               "peer certificate must validate against one")
         
     def _setClientCertDNMatchList(self, value):
         '''        
@@ -221,31 +162,32 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
         @param value: list of client certificate Distinguished Names as strings
         of X500DN instances'''
         
-        if isinstance(value, basestring):
-            # Try parsing a space separated list of file paths
-            pat = ApacheSSLAuthnMiddleware.CLIENT_CERT_DN_MATCH_LIST_SEP_PAT
-            dnList = pat.split(value)
-            self.__clientCertDNMatchList = [X500DN(dn=dn) for dn in dnList]
-            
-        elif isinstance(value, (list, tuple)):
-            self.__clientCertDNMatchList = []
-            for dn in value:
-                if isinstance(dn, basestring):
-                    self.__clientCertDNMatchList.append(X500DN(dn=dn))
-                elif isinstance(dn, X500DN):
-                    self.__clientCertDNMatchList.append(dn)
-                else:
-                    raise TypeError('Expecting a string, or %r type for "%s" '
-                                    'list item; got %r' % 
-                    (X500DN,
-                     ApacheSSLAuthnMiddleware.CLIENT_CERT_DN_MATCH_LIST_OPTNAME,
-                     type(dn)))
-                    
-        else:
-            raise TypeError('Expecting a string, list or tuple for "%s"; got '
-                            '%r' % 
-                (ApacheSSLAuthnMiddleware.CLIENT_CERT_DN_MATCH_LIST_OPTNAME,
-                 type(value)))
+        raise NotImplementedError('Disable for future release using PyOpenSSL')
+#        if isinstance(value, basestring):
+#            # Try parsing a space separated list of file paths
+#            pat = ApacheSSLAuthnMiddleware.CLIENT_CERT_DN_MATCH_LIST_SEP_PAT
+#            dnList = pat.split(value)
+#            self.__clientCertDNMatchList = [X500DN(dn=dn) for dn in dnList]
+#            
+#        elif isinstance(value, (list, tuple)):
+#            self.__clientCertDNMatchList = []
+#            for dn in value:
+#                if isinstance(dn, basestring):
+#                    self.__clientCertDNMatchList.append(X500DN(dn=dn))
+#                elif isinstance(dn, X500DN):
+#                    self.__clientCertDNMatchList.append(dn)
+#                else:
+#                    raise TypeError('Expecting a string, or %r type for "%s" '
+#                                    'list item; got %r' % 
+#                    (X500DN,
+#                     ApacheSSLAuthnMiddleware.CLIENT_CERT_DN_MATCH_LIST_OPTNAME,
+#                     type(dn)))
+#                    
+#        else:
+#            raise TypeError('Expecting a string, list or tuple for "%s"; got '
+#                            '%r' % 
+#                (ApacheSSLAuthnMiddleware.CLIENT_CERT_DN_MATCH_LIST_OPTNAME,
+#                 type(value)))
     
     def _getClientCertDNMatchList(self):
         return self.__clientCertDNMatchList
@@ -260,7 +202,7 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
 
     clientCert = property(fget=_getClientCert,
                           doc="Client certificate for verification set by "
-                              "isValidClientCert()")
+                              "is_valid_client_cert()")
 
     
     @NDGSecurityMiddlewareBase.initCall         
@@ -293,7 +235,10 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
             return self._setErrorResponse(code=401,
                                           msg='No client SSL Certificate set')
             
-        if self.isValidClientCert():
+        # Parse cert from environ keyword
+        client_cert = self._parse_cert()
+        
+        if self.is_valid_client_cert(client_cert):
             self._setUser()          
             return self._setResponse()
         else:
@@ -333,9 +278,36 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
                                   doc="Check for client X.509 certificate "
                                       "%r setting in environ" %
                                       SSL_CLIENT_CERT_KEYNAME)
-    
-    def isValidClientCert(self):
-        sslClientCert = self.environ[self.sslClientCertKeyName]
+
+    def _parse_cert(self):
+        '''Parse client certificate from environ'''
+        pem_cert = self.environ[self.sslClientCertKeyName]
+        cert = crypto.load_certificate(crypto.FILETYPE_PEM, pem_cert)
+        return cert
+
+    @staticmethod
+    def _is_cert_expired(cert):
+        '''Check if input certificate has expired
+        @param cert: X.509 certificate
+        @type cert: OpenSSL.crypto.X509
+        @return: true if expired, false otherwise
+        @rtype: bool
+        '''
+        notAfter = cert.get_notAfter()
+        dtNotAfter = datetime.strptime(notAfter, '%Y%m%d%H%M%S%fZ')       
+        dtNow = datetime.utcNow()
+        
+        return dtNotAfter < dtNow
+        
+    def is_valid_client_cert(self, cert):
+        '''Check certificate time validity
+        
+        TODO: allow verification against CA certs - current assumption is 
+        that Apache config performs this task!
+        '''
+        return self.__class__._is_cert_expired(cert)
+        
+        
 
         # Certificate string passed through a proxy has spaces in place of
         # newline delimiters.  Fix by re-organising the string into a single 
@@ -343,56 +315,56 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
         # Then, treat as a base64 encoded string decoding and passing as DER
         # format to the X.509 parser
         
-        cert = self.__class__.X509_CERT_PAT.sub('', sslClientCert)
-        derCert = base64.decodestring(cert)
-        self.__clientCert = X509Cert.Parse(derCert, format=X509Cert.formatDER)
-        
-        # Check validity time
-        if not self.__clientCert.isValidTime():
-            return False
-        
-        # Verify against trust root if set.  Alternatively, the verification
-        # step can be configured in the Apache config file.  The latter will
-        # correctly verify proxy certificates if the environment variable
-        # OPENSSL_ALLOW_PROXY_CERTS is set in the start up.  The verification
-        # code HERE can't correctly verify proxy certificates because only a
-        # single certificate is passed in the SSL_CLIENT_CERT environ variable 
-        # and not the complete certificate chain
-        if len(self.caCertStack) == 0:
-            log.warning("No CA certificates set for Client certificate "
-                        "signature verification")
-        else:
-            try:
-                self.caCertStack.verifyCertChain(
-                                            x509Cert2Verify=self.__clientCert)
-
-            except X509CertError, e:
-                log.info("Client certificate verification failed with %s "
-                         "exception: %s" % (type(e), e))
-                return False
-            
-            except Exception, e:
-                log.error("Client certificate verification failed with "
-                          "unexpected exception type %s: %s" % (type(e), e))
-                return False
-           
-        # Verify against list of acceptable DNs if set
-        if len(self.clientCertDNMatchList) > 0:
-            dn = self.__clientCert.dn
-            for expectedDN in self.clientCertDNMatchList: 
-                if dn == expectedDN:
-                    self.environ[
-                        ApacheSSLAuthnMiddleware.AUTHN_SUCCEEDED_ENVIRON_KEYNAME
-                    ] = True
-                    log.debug("Client Certificate DN %s matches DN in "
-                              "permitted DNs list %r", dn, 
-                              self.clientCertDNMatchList)
-                    return True
-                
-            log.debug("No match found for Client Certificate DN %s in "
-                      "permitted DNs list %r", dn, self.clientCertDNMatchList)
-                
-            return False
+#        cert = self.__class__.X509_CERT_PAT.sub('', sslClientCert)
+#        derCert = base64.decodestring(cert)
+#        self.__clientCert = X509Cert.Parse(derCert, format=X509Cert.formatDER)
+#        
+#        # Check validity time
+#        if not self.__clientCert.isValidTime():
+#            return False
+#        
+#        # Verify against trust root if set.  Alternatively, the verification
+#        # step can be configured in the Apache config file.  The latter will
+#        # correctly verify proxy certificates if the environment variable
+#        # OPENSSL_ALLOW_PROXY_CERTS is set in the start up.  The verification
+#        # code HERE can't correctly verify proxy certificates because only a
+#        # single certificate is passed in the SSL_CLIENT_CERT environ variable 
+#        # and not the complete certificate chain
+#        if len(self.caCertStack) == 0:
+#            log.warning("No CA certificates set for Client certificate "
+#                        "signature verification")
+#        else:
+#            try:
+#                self.caCertStack.verifyCertChain(
+#                                            x509Cert2Verify=self.__clientCert)
+#
+#            except X509CertError, e:
+#                log.info("Client certificate verification failed with %s "
+#                         "exception: %s" % (type(e), e))
+#                return False
+#            
+#            except Exception, e:
+#                log.error("Client certificate verification failed with "
+#                          "unexpected exception type %s: %s" % (type(e), e))
+#                return False
+#           
+#        # Verify against list of acceptable DNs if set
+#        if len(self.clientCertDNMatchList) > 0:
+#            dn = self.__clientCert.dn
+#            for expectedDN in self.clientCertDNMatchList: 
+#                if dn == expectedDN:
+#                    self.environ[
+#                        ApacheSSLAuthnMiddleware.AUTHN_SUCCEEDED_ENVIRON_KEYNAME
+#                    ] = True
+#                    log.debug("Client Certificate DN %s matches DN in "
+#                              "permitted DNs list %r", dn, 
+#                              self.clientCertDNMatchList)
+#                    return True
+#                
+#            log.debug("No match found for Client Certificate DN %s in "
+#                      "permitted DNs list %r", dn, self.clientCertDNMatchList)
+#                
+#            return False
 
         self.environ[
             ApacheSSLAuthnMiddleware.AUTHN_SUCCEEDED_ENVIRON_KEYNAME] = True
@@ -441,29 +413,28 @@ class AuthKitSSLAuthnMiddleware(ApacheSSLAuthnMiddleware):
             log.debug("AuthKitSSLAuthnMiddleware: no client certificate set - "
                       "passing request to next middleware in the chain ...")
             
-        elif self.isValidClientCert():
-            # Update session cookie with user ID
-            self._setUser()
-            log.debug("AuthKitSSLAuthnMiddleware: set environ['REMOTE_USER'] = "
-                      "%r" % environ.get('REMOTE_USER'))
+        else:
+            client_cert = self.__class__._parse_cert()
+            if self.is_valid_client_cert(client_cert):
+                # Update session cookie with user ID
+                self._setUser(client_cert)
+                log.debug("AuthKitSSLAuthnMiddleware: set "
+                          "environ['REMOTE_USER'] = %r" % 
+                          environ.get('REMOTE_USER'))
             
-        # ... isValidCert will log warnings/errors no need to flag the False
+        # ... is_valid_cert will log warnings/errors no need to flag the False
         # condition
             
         # Pass request to next middleware in the chain without setting an
         # error response - see method doc string for explanation.
         return self._setResponse()
 
-    def _setUser(self):
+    def _setUser(self, cert):
         """Set user ID in AuthKit cookie from client certificate submitted
         """
-        commonName = self.clientCert.dn['CN']
-        if isinstance(commonName, basestring):
-            userId = commonName
-        else:
-            # Proxy certificate will have multiple CNs
-            userId = commonName[0]
-            
+        subject = cert.get_subject()
+        userId = subject.commonName
+        
         self.environ[
             AuthKitSSLAuthnMiddleware.USERNAME_ENVIRON_KEYNAME] = userId
         self.environ[AuthKitSSLAuthnMiddleware.SET_USER_ENVIRON_KEYNAME](userId)
