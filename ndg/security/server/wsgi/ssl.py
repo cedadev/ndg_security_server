@@ -295,7 +295,7 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
         '''
         notAfter = cert.get_notAfter()
         dtNotAfter = datetime.strptime(notAfter, '%Y%m%d%H%M%S%fZ')       
-        dtNow = datetime.utcNow()
+        dtNow = datetime.utcnow()
         
         return dtNotAfter < dtNow
         

@@ -465,7 +465,7 @@ class MyProxyProvisionedSessionMiddleware(SSLCtxSessionMiddleware):
         x509 = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
         notAfter = x509.get_notAfter()
         dtNotAfter = datetime.strptime(notAfter, '%Y%m%d%H%M%S%fZ')       
-        dtNow = datetime.utcNow()
+        dtNow = datetime.utcnow()
         
         return dtNotAfter < dtNow - self.certExpiryOffset
 

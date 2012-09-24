@@ -15,6 +15,7 @@ from time import time
 
 import webob
 
+from ndg.soap.client import UrlLib2SOAPClientError
 from ndg.saml.saml2.core import DecisionType
 from ndg.saml.saml2.binding.soap.client.requestbase import \
                                                         RequestBaseSOAPBinding
@@ -434,8 +435,27 @@ class SamlPepFilter(SamlPepFilterBase):
             query.resource = request.url
             self.client.setQuerySubjectId(query, remoteUser)
             
-            samlAuthzResponse = self.client.send(query,
-                                                 uri=self.authzServiceURI)
+            try:
+                samlAuthzResponse = self.client.send(query,
+                                                     uri=self.authzServiceURI)
+            except UrlLib2SOAPClientError, e:
+                import traceback
+                
+                log.error("Error, HTTP %s response from authorisation service "
+                          "%r requesting access to %r: %s", 
+                          e.urllib2Response.code,
+                          self.authzServiceURI, 
+                          requestURI,
+                          traceback.format_exc())
+                
+                response = webob.Response()
+                response.status = httplib.FORBIDDEN
+                response.body = ('An error occurred retrieving an access '
+                                 'decision for %r for user %r' % 
+                                 (requestURI, remoteUser))
+                response.content_type = 'text/plain'
+                return response(environ, start_response)
+                         
             assertions = samlAuthzResponse.assertions
             
             # Record the result in the user's session to enable later 
