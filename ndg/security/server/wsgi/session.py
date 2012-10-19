@@ -164,7 +164,9 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
         # Force session deletion if user not logged in - this allows detection
         # of logged in status simply by the presence/absence of the beaker
         # session cookie       
-        if 'REMOTE_USER' not in environ:
+        if 'REMOTE_USER' not in environ and not session.get('username'):
+            log.debug('No "REMOTE_USER" set in environ, deleting session: %s', 
+                      session)
             session.delete()
 
         if self.signoutPath and self.pathInfo == self.signoutPath:

@@ -340,13 +340,13 @@ class SSLClientAuthNValidator(SSLIdPValidator):
         for name, val in parameters.items():
             setattr(self, name, os.path.expandvars(val))
         
-        if not self.caCertDirPath:
+        if self.caCertDirPath:
+            ctx.load_verify_locations(capath=self.caCertDirPath)
+        else:
             log.warning('No CA certificate directory set for validator: %r; '
                         'OpenID Provider peer certificates verification may '
                         'fail during OpenID discovery stage.',
-                        type(self))
-                 
-            ctx.load_verify_locations(capath=self.caCertDirPath)
+                        type(self)) 
             
         if self.certFilePath and self.priKeyFilePath:
             ctx.load_cert(self.certFilePath, 
