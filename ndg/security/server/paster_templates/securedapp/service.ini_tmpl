@@ -22,7 +22,7 @@
 beakerSessionKeyName = beaker.session.ndg.security
 
 portNum = %%{portNumber}
-baseURI = %%{baseURI}
+baseURI = %%{securedAppBaseURI}
 
 # AuthKit Cookie secret used to secure it.  This secret must be the same as the
 # one used in the equivalent services application(s) ini file(s) that serve

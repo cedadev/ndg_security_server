@@ -1,12 +1,13 @@
 '''NDG Security Policy Enforcement Point Module
 
+'''
 __author__ = "P J Kershaw"
 __date__ = "11/07/10"
 __copyright__ = "(C) 2010 Science and Technology Facilities Council"
 __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = '$Id: pep.py 7897 2011-04-27 11:02:23Z pjkersha $'
-'''
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -44,20 +45,19 @@ from ndg.xacml.core.context import XacmlContextBase
 
 
 class XacmlSamlPepFilter(SamlPepFilterBase):
-    '''Policy Enforcement Point for ESG with SAML based Interface
+    '''
+    Policy Enforcement Point for ESG with SAML based Interface
     
-    @requires: ndg.security.server.wsgi.session.SessionHandlerMiddleware 
+    :requires: ndg.security.server.wsgi.session.SessionHandlerMiddleware 
     instance upstream in the WSGI stack.
-    
-    @cvar AUTHZ_DECISION_QUERY_PARAMS_PREFIX: prefix for SAML authorisation
+    :cvar AUTHZ_DECISION_QUERY_PARAMS_PREFIX: prefix for SAML authorisation
     decision query options in config file
-    @type AUTHZ_DECISION_QUERY_PARAMS_PREFIX: string
-    
-    @cvar PARAM_NAMES: list of config option names
-    @type PARAM_NAMES: tuple
-    
-    @ivar __client: SAML authorisation decision query client 
-    @type __client: ndg.saml.saml2.binding.soap.client.authzdecisionquery.AuthzDecisionQuerySslSOAPBinding
+    :type AUTHZ_DECISION_QUERY_PARAMS_PREFIX: string  
+    :cvar PARAM_NAMES: list of config option names
+    :type PARAM_NAMES: tuple
+    :ivar __client: SAML authorisation decision query client 
+    :type __client: ndg.saml.saml2.binding.soap.client.authzdecisionquery.AuthzDecisionQuerySslSOAPBinding
+
     '''
     SUBJECT_ID_FORMAT_PARAM_NAME = 'subjectIdFormat'
 
@@ -98,12 +98,13 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
     def initialise(self, prefix='', **kw):
         '''Initialise object from keyword settings
         
-        @type prefix: basestring
-        @param prefix: prefix for configuration items
-        @type kw: dict        
-        @param kw: configuration settings
+        :type prefix: basestring
+        :param prefix: prefix for configuration items
+        :type kw: dict        
+        :param kw: configuration settings
         dictionary
-        @raise SamlPepFilterConfigError: missing option setting(s)
+        :raise SamlPepFilterConfigError: missing option setting(s)
+
         '''
         self.client = XACMLAuthzDecisionQuerySslSOAPBinding()
         # Additional parameter required for XAML profile:
@@ -125,12 +126,12 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
     def enforce(self, environ, start_response):
         """Get access control decision from PDP(s) and enforce the decision
         
-        @type environ: dict
-        @param environ: WSGI environment variables dictionary
-        @type start_response: function
-        @param start_response: standard WSGI start response function
-        @rtype: iterable
-        @return: response
+        :type environ: dict
+        :param environ: WSGI environment variables dictionary
+        :type start_response: function
+        :param start_response: standard WSGI start response function
+        :rtype: iterable
+        :return: response
         """
         request = webob.Request(environ)
         requestURI = request.url
@@ -204,18 +205,18 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
                                     subjectIdFormat, actions=None):
         """Create a XACML Request. Include post data as resource content if the
         HTTP method is POST.
-        @type httpMethod: str
-        @param httpMethod: HTTP method
-        @type resourceURI: str
-        @param resourceURI: resource URI
-        @type resourceContents: basestr
-        @param resourceContents: resource contents XML as string
-        @type subjectID: str
-        @param subjectID: subject ID
-        @type subjectIdFormat: str
-        @param subjectIdFormat: subject ID format
-        @type actions: list of str
-        @param actions: actions
+        :type httpMethod: str
+        :param httpMethod: HTTP method
+        :type resourceURI: str
+        :param resourceURI: resource URI
+        :type resourceContents: basestr
+        :param resourceContents: resource contents XML as string
+        :type subjectID: str
+        :param subjectID: subject ID
+        :type subjectIdFormat: str
+        :param subjectIdFormat: subject ID format
+        :type actions: list of str
+        :param actions: actions
         """
         if actions is None:
             actions = []
@@ -246,16 +247,16 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
                                       resourceUri, resourceContent, actions):
         """Translate SAML authorisation decision query into a XACML request
         context
-        @type subjectNameIdFormat: str
-        @param subjectNameIdFormat: subject ID format
-        @type subjectNameId: str
-        @param subjectNameId: subject ID
-        @type resourceUri: str
-        @param resourceUri: resource URI
-        @type resourceContent: ElementTree.Element
-        @param resourceContent: data to include as resource content
-        @type actions: list of str
-        @param actions: action values
+        :type subjectNameIdFormat: str
+        :param subjectNameIdFormat: subject ID format
+        :type subjectNameId: str
+        :param subjectNameId: subject ID
+        :type resourceUri: str
+        :param resourceUri: resource URI
+        :type resourceContent: ElementTree.Element
+        :param resourceContent: data to include as resource content
+        :type actions: list of str
+        :param actions: action values
         """
         xacmlRequest = XacmlRequest()
         xacmlSubject = XacmlSubject()
@@ -321,14 +322,14 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
         """Evaluates the assertions from a SAML authorisation response and
         returns either a HTTP status and message indicating that access is not
         granted or the assertion permitting access.
-        @type assertions: list of ndg.saml.xml.etree.AssertionElementTree
-        @param assertions: assertions to evaluate
-        @type subjectID: str
-        @param subjectID: subject used in request
-        @type requestURI: str
-        @param requestURI: request URI
-        @type authzServiceURI: str
-        @param authzServiceURI: authorisation service URI used for request
+        :type assertions: list of ndg.saml.xml.etree.AssertionElementTree
+        :param assertions: assertions to evaluate
+        :type subjectID: str
+        :param subjectID: subject used in request
+        :type requestURI: str
+        :param requestURI: request URI
+        :type authzServiceURI: str
+        :param authzServiceURI: authorisation service URI used for request
         @rtype: tuple (
           ndg.saml.xml.etree.AssertionElementTree,
           int,

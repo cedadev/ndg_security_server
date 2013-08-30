@@ -46,18 +46,18 @@ class SamlPepFilterConfigError(Exception):
 class SamlPepFilterBase(SessionMiddlewareBase):
     '''Policy Enforcement Point for ESG with SAML based Interface
     
-    @requires: ndg.security.server.wsgi.session.SessionHandlerMiddleware 
+    :requires: ndg.security.server.wsgi.session.SessionHandlerMiddleware 
     instance upstream in the WSGI stack.
     
-    @cvar AUTHZ_DECISION_QUERY_PARAMS_PREFIX: prefix for SAML authorisation
+    :cvar AUTHZ_DECISION_QUERY_PARAMS_PREFIX: prefix for SAML authorisation
     decision query options in config file
-    @type AUTHZ_DECISION_QUERY_PARAMS_PREFIX: string
+    :type AUTHZ_DECISION_QUERY_PARAMS_PREFIX: string
     
-    @cvar PARAM_NAMES: list of config option names
-    @type PARAM_NAMES: tuple
+    :cvar PARAM_NAMES: list of config option names
+    :type PARAM_NAMES: tuple
     
-    @ivar __client: SAML authorisation decision query client 
-    @type __client: ndg.saml.saml2.binding.soap.client.authzdecisionquery.AuthzDecisionQuerySslSOAPBinding
+    :ivar __client: SAML authorisation decision query client 
+    :type __client: ndg.saml.saml2.binding.soap.client.authzdecisionquery.AuthzDecisionQuerySslSOAPBinding
     '''
     AUTHZ_SERVICE_URI = 'authzServiceURI'
     AUTHZ_DECISION_QUERY_PARAMS_PREFIX = 'authzDecisionQuery.'
@@ -193,12 +193,12 @@ class SamlPepFilterBase(SessionMiddlewareBase):
     def initialise(self, prefix='', **kw):
         '''Initialise object from keyword settings
         
-        @type prefix: basestring
-        @param prefix: prefix for configuration items
-        @type kw: dict        
-        @param kw: configuration settings
+        :type prefix: basestring
+        :param prefix: prefix for configuration items
+        :type kw: dict        
+        :param kw: configuration settings
         dictionary
-        @raise SamlPepFilterConfigError: missing option setting(s)
+        :raise SamlPepFilterConfigError: missing option setting(s)
         '''
         # Parse other options
         for name in SamlPepFilter.PARAM_NAMES:
@@ -226,14 +226,14 @@ class SamlPepFilterBase(SessionMiddlewareBase):
     def filter_app_factory(cls, app, global_conf, prefix='', **app_conf):
         """Set-up using a Paste app factory pattern.  
         
-        @type app: callable following WSGI interface
-        @param app: next middleware application in the chain      
-        @type global_conf: dict        
-        @param global_conf: PasteDeploy global configuration dictionary
-        @type prefix: basestring
-        @param prefix: prefix for configuration items
-        @type app_conf: dict        
-        @param app_conf: PasteDeploy application specific configuration 
+        :type app: callable following WSGI interface
+        :param app: next middleware application in the chain      
+        :type global_conf: dict        
+        :param global_conf: PasteDeploy global configuration dictionary
+        :type prefix: basestring
+        :param prefix: prefix for configuration items
+        :type app_conf: dict        
+        :param app_conf: PasteDeploy application specific configuration 
         dictionary
         """
         app = cls(app)
@@ -245,12 +245,12 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         """Intercept request and call authorisation service to make an access
         control decision
         
-        @type environ: dict
-        @param environ: WSGI environment variables dictionary
-        @type start_response: function
-        @param start_response: standard WSGI start response function
-        @rtype: iterable
-        @return: response
+        :type environ: dict
+        :param environ: WSGI environment variables dictionary
+        :type start_response: function
+        :param start_response: standard WSGI start response function
+        :rtype: iterable
+        :return: response
         """
         # Get reference to session object - SessionHandler middleware must be in
         # place upstream of this middleware in the WSGI stack
@@ -264,12 +264,12 @@ class SamlPepFilterBase(SessionMiddlewareBase):
     def enforce(self, environ, start_response):
         """Get access control decision from PDP(s) and enforce the decision
         
-        @type environ: dict
-        @param environ: WSGI environment variables dictionary
-        @type start_response: function
-        @param start_response: standard WSGI start response function
-        @rtype: iterable
-        @return: response
+        :type environ: dict
+        :param environ: WSGI environment variables dictionary
+        :type start_response: function
+        :param start_response: standard WSGI start response function
+        :rtype: iterable
+        :return: response
         """
         raise NotImplementedError("SamlPepFilterBase must be subclassed to"
                                   " implement the enforce method.")
@@ -278,12 +278,12 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         """Return assertions containing authorisation decision for the given
         resource ID.
         
-        @param resourceId: search for decisions for this resource Id
-        @type resourceId: basestring
-        @return: assertion containing authorisation decision for the given
+        :param resourceId: search for decisions for this resource Id
+        :type resourceId: basestring
+        :return: assertion containing authorisation decision for the given
         resource ID or None if no wallet has been set or no assertion was 
         found matching the input resource Id
-        @rtype: ndg.saml.saml2.core.Assertion / None type
+        :rtype: ndg.saml.saml2.core.Assertion / None type
         """
         # Get reference to wallet
         walletKeyName = self.__class__.CREDENTIAL_WALLET_SESSION_KEYNAME
@@ -299,11 +299,11 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         authorisation service.  This is invoked only if cacheDecisions boolean
         is set to True
         
-        @param resourceId: search for decisions for this resource Id
-        @type resourceId: basestring
-        @param assertions: list of SAML assertions containing authorisation 
+        :param resourceId: search for decisions for this resource Id
+        :type resourceId: basestring
+        :param assertions: list of SAML assertions containing authorisation 
         decision statements
-        @type assertions: iterable
+        :type assertions: iterable
         """
         walletKeyName = self.__class__.CREDENTIAL_WALLET_SESSION_KEYNAME
         credWallet = self.session.get(walletKeyName)
@@ -324,14 +324,14 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         received.  It can be used by downstream middleware to provide contextual
         information about authorisation decisions
         
-        @param session: beaker session
-        @type session: beaker.session.SessionObject
-        @param request: authorisation decision query
-        @type request: ndg.saml.saml2.core.AuthzDecisionQuery
-        @param response: authorisation response
-        @type response: ndg.saml.saml2.core.Response
-        @param save: determines whether session is saved or not
-        @type save: bool
+        :param session: beaker session
+        :type session: beaker.session.SessionObject
+        :param request: authorisation decision query
+        :type request: ndg.saml.saml2.core.AuthzDecisionQuery
+        :param response: authorisation response
+        :type response: ndg.saml.saml2.core.Response
+        :param save: determines whether session is saved or not
+        :type save: bool
         """
         self.session[self.__class__.PEPCTX_SESSION_KEYNAME] = {
             self.__class__.PEPCTX_REQUEST_SESSION_KEYNAME: request, 
@@ -350,8 +350,8 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         """A local PDP can filter out some requests to avoid the need to call
         out to the authorisation service 
         
-        @param resourceURI: URI of requested resource
-        @type resourceURI: basestring
+        :param resourceURI: URI of requested resource
+        :type resourceURI: basestring
         """
         if self.__localPdp is None:
             log.debug("No Local PDP set: passing on request to main "
@@ -373,8 +373,8 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         """Wrapper to create a request context for a local PDP - see 
         isApplicableRequest
         
-        @param resourceURI: URI of requested resource
-        @type resourceURI: basestring
+        :param resourceURI: URI of requested resource
+        :type resourceURI: basestring
         """
         request = _xacmlCtx.request.Request()
         
@@ -401,12 +401,12 @@ class SamlPepFilter(SamlPepFilterBase):
     def enforce(self, environ, start_response):
         """Get access control decision from PDP(s) and enforce the decision
         
-        @type environ: dict
-        @param environ: WSGI environment variables dictionary
-        @type start_response: function
-        @param start_response: standard WSGI start response function
-        @rtype: iterable
-        @return: response
+        :type environ: dict
+        :param environ: WSGI environment variables dictionary
+        :type start_response: function
+        :param start_response: standard WSGI start response function
+        :rtype: iterable
+        :return: response
         """
         request = webob.Request(environ)
         requestURI = request.url

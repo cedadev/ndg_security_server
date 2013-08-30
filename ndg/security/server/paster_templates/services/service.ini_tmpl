@@ -495,6 +495,8 @@ saml.serialise = ndg.saml.xml.etree:ResponseElementTree.toXML
 saml.issuerName = %%{authorisationServiceIssuerName}
 saml.issuerFormat = %%{authorisationServiceIssuerFormat}
 
+saml.clockSkewTolerance = 2.0
+
 #______________________________________________________________________________
 # Authorisation Service WSGI settings
 #
@@ -553,9 +555,9 @@ authz.ctx_handler.pip.sessionCacheDataDir = %(here)s/pip-session-cache
 # previously cached.
 authz.ctx_handler.pip.sessionCacheTimeout = 3600
 
-# Allow for a clock skew of +/- 3 seconds when checking validity times of
+# Allow for a clock skew of +/- 2 seconds when checking validity times of
 # SAML assertions cached from attribute service queries
-authz.ctx_handler.pip.sessionCacheAssertionClockSkewTol = 3.0
+authz.ctx_handler.pip.sessionCacheAssertionClockSkewTol = 2.0
 
 # 
 # Attribute ID -> Attribute Authority mapping file.  The PIP, on receipt of a 

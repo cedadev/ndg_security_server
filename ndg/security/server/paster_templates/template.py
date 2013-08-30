@@ -16,13 +16,12 @@ import string
 from urlparse import urlunsplit, urlparse
 from paste.script.templates import Template, var
 
-_hostTuple = socket.gethostbyaddr(socket.gethostname())
 try:
     # Get first alias from list if present
-    _hostname = _hostTuple[1][0]
-except IndexError:
+    _hostname = socket.getfqdn()
+except Exception:
     # ... or default to hostname
-    _hostname = _hostTuple[0]
+    _hostname = 'localhost'
     
 from ndg.saml.saml2.core import Issuer    
 
@@ -276,7 +275,6 @@ class RelyingPartyAuthnServicesTemplate(TemplateBase):
                               None, None))
     DEFAULT_OPENID_PROVIDER_URI = 'https://ceda.ac.uk/openid/'
     
-    _template_dir = 'relyingparty_authn_services'
     summary = ('NDG Security Relying Party Authentication Services template '
                'includes, OpenID Relying Party and SSL client authentication '
                'services.  Use this template alongside the SecuredApp template')
@@ -306,7 +304,22 @@ class RelyingPartyAuthnServicesTemplate(TemplateBase):
             default=base64.b64encode(os.urandom(32))[:32]),
 
         ]
-    
+
+    def __init__(self, name):
+        '''Override base class to make a template dir instance var
+        '''
+        super(RelyingPartyAuthnServicesTemplate, self).__init__(name)
+        self.template_dir_ = 'relyingparty_authn_services'
+        
+    def template_dir(self):
+        '''Override base class so that instance variable rather than class
+        variable is used
+        
+        @rtype: basetring
+        @return: template directory path
+        '''
+        return self.template_dir_
+        
     def pre(self, command, output_dir, vars):
         '''Extend to enable substitutions for OpenID Provider Yadis templates,
         port number and fix log file path setting
@@ -346,14 +359,13 @@ class SecuredAppTemplate(TemplateBase):
     DEFAULT_ISSUER_FORMAT = Issuer.X509_SUBJECT
     DEFAULT_ACCESS_DENIED_HEADING = 'Access Denied'
     
-    _template_dir = 'securedapp'
     summary = (
         'NDG Security template for securing an application with '
         'authentication and authorisation filters.  Use in conjunction with '
         'the ndgsecurity_services template')
     
     vars = [
-        var('baseURI',
+        var('SecuredAppBaseURI',
             'Base URI for the service [sets default return to address '
             'following logout]',
             default=DEFAULT_URI),
@@ -372,10 +384,6 @@ class SecuredAppTemplate(TemplateBase):
             ('endpoint hosting OpenID Relying Party and/or SSL authentication '
              'interface'),
             default=DEFAULT_AUTHN_REDIRECT_URI),
-
-        var('accessDeniedPageHeading',
-            'Heading for access denied HTML page',
-            default=DEFAULT_ACCESS_DENIED_HEADING),
             
         var('authzServiceURI', 
             ('endpoint authorisation service which this app is secured with'),
@@ -392,6 +400,21 @@ class SecuredAppTemplate(TemplateBase):
             default=DEFAULT_ISSUER_FORMAT)
     ]
 
+    def __init__(self, name):
+        '''Override base class to make a template dir instance var
+        '''
+        super(SecuredAppTemplate, self).__init__(name)
+        self.template_dir_ = 'securedapp'
+        
+    def template_dir(self):
+        '''Override base class so that instance variable rather than class
+        variable is used
+        
+        @rtype: basetring
+        @return: template directory path
+        '''
+        return self.template_dir_
+    
     def pre(self, command, output_dir, vars):
         '''Extend to enable substitutions for port number and fix log file path 
         setting
@@ -404,7 +427,7 @@ class SecuredAppTemplate(TemplateBase):
         @type vars: dict
         '''  
         # Cut out port number from base URI
-        uriParts = urlparse(vars['baseURI'])
+        uriParts = urlparse(vars['securedAppBaseURI'])
         netlocLastElem = uriParts.netloc.split(':')[-1]
         if netlocLastElem.isdigit():
             vars['portNumber'] = netlocLastElem
@@ -412,8 +435,8 @@ class SecuredAppTemplate(TemplateBase):
             vars['portNumber'] = ''
         
         # Fix for baseURI in case trailing slash was omitted.
-        if not vars['baseURI'].endswith('/'):
-            vars['baseURI'] += '/'
+        if not vars['securedAppBaseURI'].endswith('/'):
+            vars['securedAppBaseURI'] += '/'
                         
         # This sets the log file path
         super(SecuredAppTemplate, self).pre(command, output_dir, vars)
@@ -599,4 +622,116 @@ class OpenIDProviderTemplate(TemplateBase):
          
         super(OpenIDProviderTemplate, self).pre(command, output_dir, vars)
 
+
+class ServiceProviderTemplate(TemplateBase):
+    '''Template for secured application including Relying Party functionality
+    '''
+    
+    summary = (
+        'NDG Security template for securing an application with '
+        'authentication and authorisation filters.')
+    
+    DEFAULT_URI = 'http://localhost:7080/'
+    DEFAULT_RELYING_PARTY_PORT_NUM = 6443
+    DEFAULT_RELYING_PARTY_URI = 'https://%s:%d/verify' % \
+                                                DEFAULT_RELYING_PARTY_PORT_NUM
+    DEFAULT_AUTHZ_SERVICE_URI = 'https://localhost:%d%s' % (
+                                AuthorisationServiceTemplate.DEFAULT_PORT,
+                                AuthorisationServiceTemplate.DEFAULT_MOUNT_PATH)
+
+    DEFAULT_ISSUER_NAME = 'O=NDG, OU=Security, CN=localhost'
+    DEFAULT_ISSUER_FORMAT = Issuer.X509_SUBJECT
+    DEFAULT_ACCESS_DENIED_HEADING = 'Access Denied'
+
+    DEFAULT_OPENID_PROVIDER_URI = 'https://ceda.ac.uk/openid/'
+    
+    summary = ('NDG Security Relying Party Authentication Services template '
+               'includes, OpenID Relying Party and SSL client authentication '
+               'services.  Use this template alongside the SecuredApp template')
+    vars = [
+
+        var('SecuredAppBaseURI',
+            'Base URI for the service [sets default return to address '
+            'following logout]',
+            default=DEFAULT_URI),
+
+        var('openIDProviderIDSelectURI',
+            ('Initial OpenID displayed in OpenID Relying Party interface '
+             'text box.  This can be a partial URL representing a default '
+             'OpenID Provider rather than an individual user\'s OpenID'),
+             default=DEFAULT_OPENID_PROVIDER_URI),
+             
+        var('authkitCookieSecret', 
+            ('Cookie secret for AuthKit authentication middleware.'),
+            default=base64.b64encode(os.urandom(32))[:32]),
+            
+        var('authzServiceURI', 
+            ('endpoint for authorisation service - this app calls this to make '
+             'access control decisions'),
+            default=DEFAULT_AUTHZ_SERVICE_URI),
+            
+        var('authzDecisionQueryIssuerName', 
+            ('ID of this service used in SAML authorisation queries'),
+            default=DEFAULT_ISSUER_NAME),
+
+        var('authzDecisionQueryIssuerFormat', 
+            ('Format of authzDecisionQueryIssuerName string; if using the '
+             'default, ensure that the issuerName value is a correctly '
+             'formatted X.509 Subject Name'),
+            default=DEFAULT_ISSUER_FORMAT)
+    ]
+
+    def __init__(self, name):
+        '''Override base class to make a template dir instance var
+        '''
+        super(SecuredAppTemplate, self).__init__(name)
+        self.template_dir_ = 'securedapp'
+        
+    def template_dir(self):
+        '''Override base class so that instance variable rather than class
+        variable is used
+        
+        @rtype: basetring
+        @return: template directory path
+        '''
+        return self.template_dir_
+    
+    def pre(self, command, output_dir, vars):
+        '''Extend to enable substitutions for port number and fix log file path 
+        setting
+        
+        @param command: command to create template
+        @type command: 
+        @param output_dir: output directory for template file(s)
+        @type output_dir: string
+        @param vars: variables to be substituted into template
+        @type vars: dict
+        '''  
+        # Cut out port number from base URI
+        uriParts = urlparse(vars['securedAppBaseURI'])
+        hostname, netlocLastElem = uriParts.netloc.split(':')
+        if netlocLastElem.isdigit():
+            vars['securedAppPortNumber'] = netlocLastElem
+        else:
+            vars['securedAppPortNumber'] = ''
+        
+        # Fix for baseURI in case trailing slash was omitted.
+        if not vars['securedAppBaseURI'].endswith('/'):
+            vars['securedAppBaseURI'] += '/'
+            
+        # Base URI for Relying Party
+        var['relyingPartyBaseURI'
+            ] = self.__class__.DEFAULT_RELYING_PARTY_URI % hostname
+            
+        var['relyingPartyPortNumber'
+            ] = self.__class__.DEFAULT_RELYING_PARTY_PORT_NUM
+        
+        vars['beakerSessionCookieSecret'
+             ] = base64.b64encode(os.urandom(32))[:32]
+           
+        vars['openidRelyingPartyCookieSecret'
+                ] = base64.b64encode(os.urandom(32))[:32]
+                         
+        # This sets the log file path
+        super(SecuredAppTemplate, self).pre(command, output_dir, vars)
 
