@@ -11,6 +11,7 @@ import logging
 log = logging.getLogger(__name__)
 
 import httplib
+from urllib2 import URLError
 from time import time
 
 import webob
@@ -438,16 +439,24 @@ class SamlPepFilter(SamlPepFilterBase):
             try:
                 samlAuthzResponse = self.client.send(query,
                                                      uri=self.authzServiceURI)
-            except UrlLib2SOAPClientError, e:
+                
+            except (UrlLib2SOAPClientError, URLError) as e:
                 import traceback
                 
-                log.error("Error, HTTP %s response from authorisation service "
-                          "%r requesting access to %r: %s", 
-                          e.urllib2Response.code,
-                          self.authzServiceURI, 
-                          requestURI,
-                          traceback.format_exc())
-                
+                if isinstance(e, UrlLib2SOAPClientError):
+                    log.error("Error, HTTP %s response from authorisation "
+                              "service %r requesting access to %r: %s", 
+                              e.urllib2Response.code,
+                              self.authzServiceURI, 
+                              requestURI,
+                              traceback.format_exc())
+                else:
+                    log.error("Error, calling authorisation service %r "
+                              "requesting access to %r: %s", 
+                              self.authzServiceURI, 
+                              requestURI,
+                              traceback.format_exc()) 
+                    
                 response = webob.Response()
                 response.status = httplib.FORBIDDEN
                 response.body = ('An error occurred retrieving an access '

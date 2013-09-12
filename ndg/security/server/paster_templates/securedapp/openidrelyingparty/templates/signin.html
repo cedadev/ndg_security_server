@@ -1,0 +1,78 @@
+<html 
+ xmlns:xi="http://www.w3.org/2001/XInclude" 
+ xmlns="http://www.w3.org/1999/xhtml" 
+ xmlns:py="http://genshi.edgewall.org/">
+	<div py:def="openIDSignin()" id="openIDSignin">
+		<form action="$c.baseURL/verify" method="post">
+			<table cellspacing="0" border="0" cellpadding="5" style="align: left">
+			    <tr align="left">
+			        <td>OpenID:</td> 
+			        <td align="left">
+			        	<input type="text" 
+			        		name="openid" 
+			        		value="$c.initialOpenID" 
+			        		class='openid-identifier' 
+			        		size="48"				        		
+			        	/>
+			        </td>
+			        <td align="right">
+			        	<input type="submit" name="authform" value="Go"/>                               
+			        	<span>
+			        		<a href="javascript:;" title="Toggle help" onclick="toggleDiv(1,'aboutOpenID','shown','hidden','div'); return false;">
+			        			<img src="/layout/icons/help.png" alt="Toggle help" class="helpicon"/></a>
+			        	</span>			        	
+			        </td>
+			    </tr>
+			    <tr>
+			        <td colspan="3">
+                        <div id="message">
+                            $$message
+                        </div>
+                    </td>
+                </tr>
+		  </table>
+			<div id="aboutOpenID" class="hidden">
+				<div class="helptxt">
+					<p><a href="http://openid.net/get-an-openid/what-is-openid/">OpenID</a> is a 
+						technology which enables you to sign in at different websites using the same 
+						identity.  Rather than having to remember usernames/passwords for all the 
+						different sites you register with, you can use a single identity URL called an 
+						<em>OpenID</em> which is recognised by them all.  The OpenID identifies you and 
+						your home site where you have an account and can login.  At a site like this one, 
+						you can type in your OpenID, in the text box provided.  When you select "Go", 
+						your browser will redirect you to your home site (your <em>OpenID Provider</em>) so that 
+						you can login.  Once you've logged in, your home site will redirect you back to
+						this site.  This site will recognise you as signed in so that you access secured resources.
+					</p>
+					<p>The default setting in the text box is the OpenID corresponding to this site. If
+						you have an account registered here you can simply select "Go" and you will be 
+						redirected to the login page.  You can also log in using an OpenID from another site but
+						please note that this site may restrict sign in to a list of trusted 
+						OpenID Providers.  If you have trouble using an OpenID with this site please contact the
+						site administrator.  If you don't know what you OpenID is please get in touch with your
+						home site and find out if they can provide you with an OpenID.
+					</p>
+				</div>
+			</div>                              
+		</form>
+	</div>
+	
+    <head>
+  		<style>
+			input.openid-identifier {
+			   background: url($c.baseURL/layout/openid-inputicon.gif) no-repeat;
+			   background-position: 0 50%;
+			   padding-left: 18px;
+			}
+  		</style>
+  		<xi:include href="base.html" />
+    	<replace py:replace="pagehead()"/>
+    </head>
+    <body>
+        <div id="main">
+            <div py:replace="header()"/>
+        	<replace py:replace="openIDSignin()"/>
+            <div py:replace="footer(showLoginStatus=False)"/>
+        </div>
+    </body>
+</html>

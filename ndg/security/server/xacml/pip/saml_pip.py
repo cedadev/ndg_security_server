@@ -152,6 +152,8 @@ class PIP(PIPInterface):
 
     XACML_ATTR_VAL_CLASS_FACTORY = XacmlAttributeValueClassFactory()
     
+    MAPPING_FILE_FIELD_SEP = ','
+    
     __slots__ = (
         '__subjectAttributeId',
         '__mappingFilePath', 
@@ -403,10 +405,13 @@ class PIP(PIPInterface):
         mappingFile = open(self.mappingFilePath)
         for line in mappingFile.readlines():
             _line = path.expandvars(line).strip()
+            
             if _line and not _line.startswith('#'):
-                attributeId, attributeAuthorityURI = _line.split()
-                self.__attributeId2AttributeAuthorityMap[attributeId
-                                                       ] = attributeAuthorityURI
+                attributeId, attributeAuthorityURI = _line.split(
+                                        self.__class__.MAPPING_FILE_FIELD_SEP)
+                 
+                self.__attributeId2AttributeAuthorityMap[attributeId.strip()
+                                            ] = attributeAuthorityURI.strip()
         
     def attributeQuery(self, context, attributeDesignator):
         """Query this PIP for the given request context attribute specified by

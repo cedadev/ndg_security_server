@@ -20,7 +20,7 @@
                     <ResourceAttributeDesignator
                         AttributeId="urn:oasis:names:tc:xacml:1.0:resource:resource-id"
                         DataType="http://www.w3.org/2001/XMLSchema#anyURI"/>
-                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">^%%{baseURI}(?!layout).*$</AttributeValue>
+                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">^%%{securedAppBaseURI}(?!layout).*$</AttributeValue>
                 </ResourceMatch>
             </Resource>
         </Resources>

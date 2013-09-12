@@ -21,7 +21,7 @@
             <Resource>
                 <!-- Pattern match all request URIs beginning with / -->
                 <ResourceMatch MatchId="urn:oasis:names:tc:xacml:2.0:function:anyURI-regexp-match">
-                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">^http://localhost/.*$</AttributeValue>
+                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">^%%{resourceBaseURI}.*$</AttributeValue>
                     <ResourceAttributeDesignator
                         AttributeId="urn:oasis:names:tc:xacml:1.0:resource:resource-id"
                         DataType="http://www.w3.org/2001/XMLSchema#anyURI"/>
@@ -37,6 +37,25 @@
         because the rule combining algorithm is set to permit overrides - see 
         Policy element above
     -->
+   <Rule RuleId="urn:ndg:security:top-level-uri" Effect="Permit">
+        <!-- 
+            Top-level URI is unsecured
+        -->
+        <Target>
+            <Resources>
+                <Resource>
+                    <!-- Match the request URI -->
+                    <ResourceMatch MatchId="urn:oasis:names:tc:xacml:1.0:function:anyURI-equal">
+                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">%%{resourceBaseURI}</AttributeValue>
+                        <ResourceAttributeDesignator
+                            AttributeId="urn:oasis:names:tc:xacml:1.0:resource:resource-id"
+                            DataType="http://www.w3.org/2001/XMLSchema#anyURI"/>
+                    </ResourceMatch>
+                </Resource>
+            </Resources>
+        </Target>
+    </Rule>
+
     <Rule RuleId="urn:ndg:security:public-uri" Effect="Permit">
         <!-- 
             Define a URI with public access
@@ -48,7 +67,7 @@
                 <Resource>
                     <!-- Match the request URI -->
                     <ResourceMatch MatchId="urn:oasis:names:tc:xacml:1.0:function:anyURI-equal">
-                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">http://localhost/test_200</AttributeValue>
+                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">%%{resourceBaseURI}test_200</AttributeValue>
                         <ResourceAttributeDesignator
                             AttributeId="urn:oasis:names:tc:xacml:1.0:resource:resource-id"
                             DataType="http://www.w3.org/2001/XMLSchema#anyURI"/>
@@ -68,7 +87,7 @@
                 <Resource>
                     <!-- Match the request URI -->
                     <ResourceMatch MatchId="urn:oasis:names:tc:xacml:2.0:function:anyURI-regexp-match">
-                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">http://localhost/test_40[13]</AttributeValue>
+                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">%%{resourceBaseURI}test_40[13]</AttributeValue>
                         <ResourceAttributeDesignator
                             AttributeId="urn:oasis:names:tc:xacml:1.0:resource:resource-id"
                             DataType="http://www.w3.org/2001/XMLSchema#anyURI"/>
@@ -88,7 +107,69 @@
                 <Resource>
                     <!-- Pattern match the request URI -->
                     <ResourceMatch MatchId="urn:oasis:names:tc:xacml:2.0:function:anyURI-regexp-match">
-                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">^http://localhost/test_securedURI.*$</AttributeValue>
+                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">^%%{resourceBaseURI}test_securedURI.*$</AttributeValue>
+                        <ResourceAttributeDesignator
+                            AttributeId="urn:oasis:names:tc:xacml:1.0:resource:resource-id"
+                            DataType="http://www.w3.org/2001/XMLSchema#anyURI"/>
+                    </ResourceMatch>
+                </Resource>
+            </Resources>
+        </Target>
+        
+        <!-- 
+            The condition narrows down the constraints laid down in the target 
+            to something more specific
+            
+            The user must have at least one of the roles of type, 
+            'urn:siteA:security:authz:1.0:attr' - in this
+            case 'staff', 'admin' or 'postdoc'
+        -->
+        <Condition>
+            <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-at-least-one-member-of">
+                <SubjectAttributeDesignator 
+                    AttributeId="urn:siteA:security:authz:1.0:attr" 
+                    DataType="http://www.w3.org/2001/XMLSchema#string"/>
+                <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-bag">
+                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">staff</AttributeValue>
+                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">admin</AttributeValue>
+                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">postdoc</AttributeValue>
+                </Apply>
+            </Apply>
+        </Condition>
+    </Rule>
+    
+    <Rule RuleId="Test Access Granted to secured URI Rule" Effect="Permit">
+        <Target>
+            <Resources>
+                <Resource>
+                    <ResourceMatch MatchId="urn:oasis:names:tc:xacml:1.0:function:anyURI-equal">
+                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">%%{resourceBaseURI}test_accessGrantedToSecuredURI</AttributeValue>
+                        <ResourceAttributeDesignator
+                            AttributeId="urn:oasis:names:tc:xacml:1.0:resource:resource-id"
+                            DataType="http://www.w3.org/2001/XMLSchema#anyURI"/>
+                    </ResourceMatch>
+                </Resource>
+            </Resources>
+        </Target>
+        <Condition>
+            <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-at-least-one-member-of">
+                <SubjectAttributeDesignator 
+                    AttributeId="urn:siteA:security:authz:1.0:attr" 
+                    DataType="http://www.w3.org/2001/XMLSchema#string"/>
+                <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-bag">
+                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">staff</AttributeValue>
+                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">postdoc</AttributeValue>
+                </Apply>
+            </Apply>
+        </Condition>
+    </Rule>
+    
+    <Rule RuleId="Test Access Granted for 'read' action only" Effect="Permit">
+        <Target>
+            <Resources>
+                <Resource>
+                    <ResourceMatch MatchId="urn:oasis:names:tc:xacml:1.0:function:anyURI-equal">
+                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">%%{resourceBaseURI}test_accessGrantedForReadAction</AttributeValue>
                         <ResourceAttributeDesignator
                             AttributeId="urn:oasis:names:tc:xacml:1.0:resource:resource-id"
                             DataType="http://www.w3.org/2001/XMLSchema#anyURI"/>
@@ -106,52 +187,8 @@
                 </Action>
             </Actions>
         </Target>
-        
-        <!-- 
-            The condition narrows down the constraints layed down in the target to
-            something more specific
-            
-            The user must have at least one of the roles set - in this
-            case 'staff'
-        -->
-        <Condition>
-            <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-at-least-one-member-of">
-                <SubjectAttributeDesignator 
-                    AttributeId="urn:siteA:security:authz:1.0:attr" 
-                    DataType="http://www.w3.org/2001/XMLSchema#string"/>
-                <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-bag">
-                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">staff</AttributeValue>
-                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">admin</AttributeValue>
-                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">postdoc</AttributeValue>
-                </Apply>
-            </Apply>
-        </Condition>
     </Rule>
-    <Rule RuleId="Test Access Granted to secured URI Rule" Effect="Permit">
-        <Target>
-            <Resources>
-                <Resource>
-                    <ResourceMatch MatchId="urn:oasis:names:tc:xacml:1.0:function:anyURI-equal">
-                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">http://localhost/test_accessGrantedToSecuredURI</AttributeValue>
-                        <ResourceAttributeDesignator
-                            AttributeId="urn:oasis:names:tc:xacml:1.0:resource:resource-id"
-                            DataType="http://www.w3.org/2001/XMLSchema#anyURI"/>
-                    </ResourceMatch>
-                </Resource>
-            </Resources>
-        </Target>
-        <Condition>
-            <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-at-least-one-member-of">
-                <SubjectAttributeDesignator 
-                    AttributeId="urn:siteA:security:authz:1.0:attr" 
-                    DataType="http://www.w3.org/2001/XMLSchema#string"/>
-                <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-bag">
-                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">staff</AttributeValue>
-                    <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">postdoc</AttributeValue>
-                </Apply>
-            </Apply>
-        </Condition>
-    </Rule>
+    
     <Rule RuleId="Access Granted to secured URI Rule modified for special admin query argument" Effect="Permit">
         <!-- 
             This rule is a modified version of the above to allow for a real use
@@ -172,7 +209,7 @@
             <Resources>
                 <Resource>
                     <ResourceMatch MatchId="urn:oasis:names:tc:xacml:1.0:function:anyURI-equal">
-                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">http://localhost/test_accessGrantedToSecuredURI?admin=1</AttributeValue>
+                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">%%{resourceBaseURI}test_accessGrantedToSecuredURI?admin=1</AttributeValue>
                         <ResourceAttributeDesignator
                             AttributeId="urn:oasis:names:tc:xacml:1.0:resource:resource-id"
                             DataType="http://www.w3.org/2001/XMLSchema#anyURI"/>
@@ -181,6 +218,7 @@
             </Resources>
         </Target>
     </Rule>
+    
     <Rule RuleId="Rule using ESGF Group/Role Attribute Values" Effect="Permit">
         <!-- 
             Subject must have at least one of a group of ESGF group/role
@@ -193,7 +231,7 @@
                 <Resource>
                     <!-- Pattern match the request URI -->
                     <ResourceMatch MatchId="urn:oasis:names:tc:xacml:2.0:function:anyURI-regexp-match">
-                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">^http://localhost/esgf-attribute-value-restricted.*$</AttributeValue>
+                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">^%%{resourceBaseURI}esgf-attribute-value-restricted.*$</AttributeValue>
                         <ResourceAttributeDesignator
                             AttributeId="urn:oasis:names:tc:xacml:1.0:resource:resource-id"
                             DataType="http://www.w3.org/2001/XMLSchema#anyURI"/>

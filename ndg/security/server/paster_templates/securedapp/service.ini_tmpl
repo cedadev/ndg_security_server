@@ -21,7 +21,7 @@
 [DEFAULT]
 beakerSessionKeyName = beaker.session.ndg.security
 
-portNum = %%{portNumber}
+portNum = %%{securedAppPortNumber}
 baseURI = %%{securedAppBaseURI}
 
 # AuthKit Cookie secret used to secure it.  This secret must be the same as the
@@ -73,7 +73,7 @@ paste.filter_app_factory = ndg.security.server.wsgi.authn:AuthenticationMiddlewa
 prefix = authN.
 
 # Set redirect for OpenID Relying Party in the Security Services app instance
-authN.redirectURI = %%{authnRedirectURI}
+authN.redirectURI = %%{relyingPartyURI}
 
 # Default URI to return to if middleware wasn't able to set via HTTP_REFERER or
 # passed return to query argument
@@ -108,7 +108,7 @@ paste.filter_app_factory=ndg.security.server.wsgi.authz:AuthorisationFilter.filt
 # application or the PEP.
 resultHandler = ndg.security.server.wsgi.authz.result_handler.genshi.GenshiPEPResultHandlerMiddleware
 resultHandler.staticContentDir = %(here)s/pep_result_handler
-resultHandler.heading = %%{accessDeniedPageHeading}
+resultHandler.heading = Access Denied
 
 # Settings for the PEP (Policy Enforcement Point)
 pep.sessionKey = beaker.session.ndg.security

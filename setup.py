@@ -28,9 +28,8 @@ _entryPoints = """
     [paste.app_install]
     main=pylons.util:PylonsInstaller
     [paste.paster_create_template]
-    ndgsecurity_securedapp=ndg.security.server.paster_templates.template:SecuredAppTemplate
+    ndgsecurity_securedapp=ndg.security.server.paster_templates.template:ServiceProviderTemplate
     ndgsecurity_services=ndg.security.server.paster_templates.template:ServicesTemplate
-    ndgsecurity_relyingparty_authn_services=ndg.security.server.paster_templates.template:RelyingPartyAuthnServicesTemplate
     ndgsecurity_attribute_service=ndg.security.server.paster_templates.template:AttributeServiceTemplate
     ndgsecurity_authorisation_service=ndg.security.server.paster_templates.template:AuthorisationServiceTemplate
     ndgsecurity_openidprovider=ndg.security.server.paster_templates.template:OpenIDProviderTemplate

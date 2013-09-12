@@ -47,6 +47,7 @@ beakerSessionCookieSecret = %%{beakerSessionCookieSecret}
 use = egg:Paste#http
 host = 0.0.0.0
 port = %(portNum)s
+ssl_pem = %(here)s/pki/localhost.pem 
 
 # Ordering of filters and final app is critical
 [pipeline:main]
@@ -66,8 +67,8 @@ beaker.session.secret = %(beakerSessionCookieSecret)s
 # If you'd like to fine-tune the individual locations of the cache data dirs
 # for the Cache data, or the Session saves, un-comment the desired settings
 # here:
-beaker.cache.data_dir = %(here)s/openidrelyingparty/beaker/cache
-beaker.session.data_dir = %(here)s/openidrelyingparty/beaker/sessions
+beaker.cache.data_dir = %(here)s/beaker/cache
+beaker.session.data_dir = %(here)s/beaker/sessions
 beaker.session.cookie_expires = True
 
 # Key name for keying into environ dictionary
@@ -99,15 +100,6 @@ cookie.includeip = False
 paste.filter_app_factory = ndg.security.server.wsgi.ssl:AuthKitSSLAuthnMiddleware
 prefix = ssl.
 
-# Apply verification against a list of trusted CAs.  To skip this step, comment
-# out or remove this item.  e.g. set CA verification in the Apache config file.
-ssl.caCertFilePathList = %(here)s/pki/ca/d573507a.0
-
-# Apply whitelisting of client certificate DNs.  This should never be needed in
-# this context.  The only reason to use it might be as a means to set a crude 
-# access control list of DNs
-ssl.clientCertDNMatchList = /O=NDG/OU=BADC/CN=mytest /O=gabriel/OU=BADC/CN=test /O=NDG/OU=BADC/CN=test
-
 # The 'HTTP_' prefix is set when passed through a proxy with Apache, for example
 # if it's possible to run this ini file with paster and expose it through port
 # 443 via ProxyPass and ProxyPassReverse Apache directives.
@@ -136,13 +128,13 @@ paste.app_factory =
 openid.relyingparty.baseURL = %(authkit.openid.baseurl)s
 
 # Uncomment to restrict sign in to a whitelist of trusted OpenID Providers.
-#openid.relyingparty.idpWhitelistConfigFilePath = %(here)s/openidrelyingparty/ssl-idp-validator.xml
+#openid.relyingparty.idpWhitelistConfigFilePath = %(here)s/ssl-idp-validator.xml
 
 openid.relyingparty.signinInterfaceMiddlewareClass = ndg.security.server.wsgi.openid.relyingparty.signin_interface.genshi.GenshiSigninTemplate
 
 # Nb. in this configuration, this directory is provider static content for both 
 # this filter and the OpenID Provider app downstream in the WSGI stack.
-openid.relyingparty.signinInterface.staticContentRootDir = %(here)s/openidrelyingparty/public
+openid.relyingparty.signinInterface.staticContentRootDir = %(here)s/public
 
 openid.relyingparty.signinInterface.baseURL = %(openid.relyingparty.baseURL)s
 openid.relyingparty.signinInterface.initialOpenID = %(openIDProviderIDSelectURI)s
@@ -174,7 +166,7 @@ authkit.cookie.includeip = False
 
 authkit.openid.path.signedin=/
 authkit.openid.store.type=file
-authkit.openid.store.config=%(here)s/openidrelyingparty/store
+authkit.openid.store.config=%(here)s/store
 authkit.openid.session.key = authkit_openid
 authkit.openid.session.secret = %%{openidRelyingPartyCookieSecret}
 
@@ -270,5 +262,5 @@ datefmt = %Y-%m-%d %H:%M:%S
 class = handlers.RotatingFileHandler
 level=NOTSET
 formatter=generic
-args=(os.path.join('%%{outputDir}', 'log', 'authenticationservice.log'), 'a', 50000, 2)
+args=(os.path.join('%%{outputDir}', 'log', 'relying_party.log'), 'a', 50000, 2)
 
