@@ -53,7 +53,10 @@ class NDGSecurityMiddlewareBase(object):
         self._pathInfo = None
         self._path = None
         self._mountPath = '/'
-        
+                
+        # Convenient utility for tracing start_response call
+        self.debug_start_response = False
+             
         opt = self.__class__.propertyDefaults.copy()
         
         # If no prefix is set, there is no way to distinguish options set for 
@@ -70,6 +73,7 @@ class NDGSecurityMiddlewareBase(object):
             if not name.startswith('_'):
                 setattr(self, name, val)
 
+
     def _initCall(self, environ, start_response):
         """Call from derived class' __call__() to set environ and path
         attributes
@@ -80,7 +84,23 @@ class NDGSecurityMiddlewareBase(object):
         @param start_response: standard WSGI start response function
         """
         self.environ = environ
-        self.start_response = start_response
+        
+        if self.debug_start_response:
+            def start_response_(status, response_headers, exc_info=None):
+                log.debug('Calling start response with '
+                          'environ["PATH_INFO"]=%r, '
+                          'status=%r, headers=%r, exc_info=%r', 
+                          environ['PATH_INFO'], status, response_headers, 
+                          exc_info)
+
+                return start_response(status, response_headers, 
+                                      exc_info=exc_info)
+            
+            self.start_response = start_response_
+            
+        else:
+            self.start_response = start_response
+            
         self.setPathInfo()
         self.setPath()
 

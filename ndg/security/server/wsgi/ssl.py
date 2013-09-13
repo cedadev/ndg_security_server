@@ -15,7 +15,7 @@ __revision__ = "$Id$"
 __license__ = "BSD - see top-level directory for LICENSE file"
 import logging
 log = logging.getLogger(__name__)
-import os
+
 # Pattern matching to determine which URI paths to apply SSL AuthN to and to
 # parse SSL certificate environment variable
 import re     
@@ -277,8 +277,8 @@ class AuthKitSSLAuthnMiddleware(ApacheSSLAuthnMiddleware):
         @param start_response: standard WSGI start response function
         '''
         if not self._pathMatch():
-            log.debug("AuthKitSSLAuthnMiddleware: ignoring path [%s]", 
-                      self.pathInfo)
+            # ignoring path which are not applicable to this middleware
+            pass
 
         elif not self.isSSLRequest:
             log.debug("AuthKitSSLAuthnMiddleware: 'HTTPS' environment "

@@ -42,7 +42,6 @@ authkitCookieName = ndg.security.auth
 beakerSessionCookieSecret = %%{beakerSessionCookieSecret}
 
 
-
 [server:main]
 use = egg:Paste#http
 host = 0.0.0.0
@@ -131,6 +130,9 @@ openid.relyingparty.baseURL = %(authkit.openid.baseurl)s
 #openid.relyingparty.idpWhitelistConfigFilePath = %(here)s/ssl-idp-validator.xml
 
 openid.relyingparty.signinInterfaceMiddlewareClass = ndg.security.server.wsgi.openid.relyingparty.signin_interface.genshi.GenshiSigninTemplate
+
+# Directory to retrieve template file from
+openid.relyingparty.signinInterface.templateRootDir = %(here)s/templates
 
 # Nb. in this configuration, this directory is provider static content for both 
 # this filter and the OpenID Provider app downstream in the WSGI stack.
