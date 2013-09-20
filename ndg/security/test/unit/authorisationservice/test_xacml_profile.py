@@ -29,7 +29,7 @@ from StringIO import StringIO
 import unittest
 from uuid import uuid4
 
-import paste.fixture
+import paste.fixture #IGNORE:F0401
 from paste.deploy import loadapp
 
 from ndg.saml.saml2.core import SAMLVersion, Issuer
@@ -80,11 +80,11 @@ class AuthServiceWithXacmlProfileTestCase(unittest.TestCase):
         """
         resourceContentsStr = \
 '''<wps:GetCapabilities xmlns:ows="http://www.opengis.net/ows/1.1"
-                     xmlns:wps="http://www.opengis.net/wps/1.0.0"
-                     xmlns:xlink="http://www.w3.org/1999/xlink"
-                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                     xsi:schemaLocation="http://www.opengis.net/wps/1.0.0/wpsGetCapabilities_request.xsd"
-                     language="en-CA" service="WPS">
+     xmlns:wps="http://www.opengis.net/wps/1.0.0"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.opengis.net/wps/1.0.0/wpsGetCapabilities_request.xsd"
+     language="en-CA" service="WPS">
     <wps:AcceptVersions>
         <ows:Version>1.0.0</ows:Version>
     </wps:AcceptVersions>
@@ -100,11 +100,11 @@ class AuthServiceWithXacmlProfileTestCase(unittest.TestCase):
         """
         resourceContentsStr = \
 '''<wps:GetCapabilities xmlns:ows="http://www.opengis.net/ows/1.1"
-                     xmlns:wps="http://www.opengis.net/wps/1.0.0"
-                     xmlns:xlink="http://www.w3.org/1999/xlink"
-                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                     xsi:schemaLocation="http://www.opengis.net/wps/1.0.0/wpsGetCapabilities_request.xsd"
-                     language="en-CA" service="WPS">
+     xmlns:wps="http://www.opengis.net/wps/1.0.0"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.opengis.net/wps/1.0.0/wpsGetCapabilities_request.xsd"
+     language="en-CA" service="WPS">
     <wps:AcceptVersions>
         <ows:Version>2.0.0</ows:Version>
     </wps:AcceptVersions>
