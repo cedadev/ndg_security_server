@@ -28,7 +28,6 @@ import os.path
 from StringIO import StringIO
 import unittest
 from uuid import uuid4
-import pickle
 
 import paste.fixture
 from paste.deploy import loadapp
