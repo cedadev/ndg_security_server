@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    Configuration for an OpenID Relying Party SSL based Validation of OpenID 
+    Providers (IdPs)
+    
+    P J Kershaw 20/07/2009
+    
+    See: http://www.ci.uchicago.edu/wiki/bin/view/ESGProject/OpenIDExtensions
+-->
+<IdPValidators xmlns="urn:esg:security:authz:1.0:IdPValidator">
+    <validator name="ndg.security.server.wsgi.openid.relyingparty.validation.SSLClientAuthNValidator">  
+        <!-- 
+        <parameter name="configFilePath" value="$NDGSEC_INTEGRATION_TEST_DIR/full_system/openidrelyingparty/ssl-valid-server-names.cfg"/>
+         -->       
+        <!-- <parameter name="caCertDirPath" value="$NDGSEC_TEST_CONFIG_DIR/pki/ca"/>  -->
+        <!--  
+        <parameter name="certFilePath" value="$NDGSEC_TEST_CONFIG_DIR/pki/localhost.crt"/>
+        <parameter name="priKeyFilePath" value="$NDGSEC_TEST_CONFIG_DIR/pki/localhost.key"/>
+        <parameter name="priKeyPwd" value=""/>
+        -->
+    </validator>
+</IdPValidators>

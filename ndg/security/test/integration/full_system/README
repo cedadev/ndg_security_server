@@ -1,0 +1,54 @@
+Integration Tests to test NDG Security Authentication and Authorisation
+=======================================================================
+Test an example HTTP WSGI application with the full security system including 
+OpenID Relying Party, Provider, SAML Attribute and Authorisation services and
+SSL client based authentication.
+
+To run,
+
+$ python securedapp.py
+
+...and in another terminal:
+
+$ python securityservicesapp.py
+
+Launch a browser and go to http://localhost:7080.  This displays a page with a
+list of links.  Each link tests out a different aspect of the authorisation
+system.  The OpenID login will be triggered if a link requires authentication,
+select go with the default URL set of, "http://localhost:7443/openid".  When
+prompted for a username and password, enter pjk/testpassword 
+respectively.
+
+The links are secured with the policy file, policy.xml.  User attributes are
+determined by the Attribute Authority configuration set in the user.db example
+database
+
+P J Kershaw 14/12/10
+
+
+Tests for XACML profile and AttributeSelector
+=============================================
+To test using the XACML profile, run securityservicesapp and securedapp using
+alternative configuration files as follows:
+
+$ python securedapp.py -c <absolute path of full_system directory>/securedapp_xacml_profile.ini
+
+$ python securityservicesapp.py -f <absolute path of full_system directory>/securityservices_xacml_profile.ini
+
+If a request is posted to securedapp, the post data is included as resource
+content in the XACML request. The post data should be valid XML - if it is not,
+an error will result. There are two test policies and examples of post data:
+o policy-attr-sel.xml /  post.xml
+  This is a simple example using an AttributeSelector to match a value.
+o policy-attr-sel-cond-xpath.xml / post-for-cond-xpath.xml
+  This is a more complex example using a condition in the XPath expression.
+  xml.etree cannot handle the XPath expression and lxml is required. If
+  xml.etree is used, the decision should be indeterminate as a result of an
+  error parsing the XPath expression.
+  To use this policy, modify securityservices_xacml_profile.ini to set
+  policy-attr-sel-cond-xpath.xml as the policy.
+
+A post request can be made using curl:
+curl --data @post.xml http://localhost:7080/test_401
+
+R B Wilkinson 16/01/12

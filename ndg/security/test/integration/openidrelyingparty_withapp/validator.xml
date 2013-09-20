@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    Configuration for an OpenID Relying Party Validation of OpenID Providers
+    (IdPs)
+    
+    P J Kershaw 09/06/2009
+    
+    See: http://www.ci.uchicago.edu/wiki/bin/view/ESGProject/OpenIDExtensions
+-->
+<IdPValidators xmlns="urn:esg:security:authz:1.0:IdPValidator">
+    <validator name="org.openid4java.util.ProviderWhitelistValidator">
+        <parameter name="config-file" value="/PATH/TO/wl-config"/>
+    </validator>
+    <validator name="org.openid4java.util.ProviderIdentifierTestValidator">
+        <parameter name="config-file" value="/PATH/TO/wl-config2"/>
+    </validator>
+</IdPValidators>

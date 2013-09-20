@@ -1,0 +1,8 @@
+Unit tests for NDG Security X509 Module
+=======================================
+To run,
+
+$ python ./X509Test.py
+
+Settings can be altered with the configuration file x509Test.cfg in this
+directory.
