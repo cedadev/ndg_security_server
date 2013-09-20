@@ -14,7 +14,7 @@ from os import path
 from OpenSSL import SSL
 
 from ndg.security.server.utils.paste_utils import PasteDeployAppServer
-from ndg.security.test.unit import BaseTestCase
+from ndg.security.test.unit.base import BaseTestCase
 
 INI_FILENAME = 'openidprovider.ini'
 INI_FILEPATH = path.join(path.dirname(path.abspath(__file__)), INI_FILENAME)

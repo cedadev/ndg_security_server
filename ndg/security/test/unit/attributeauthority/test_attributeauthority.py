@@ -21,7 +21,7 @@ from datetime import datetime
 from os import path
 import pickle
 
-from ndg.security.test.unit import BaseTestCase
+from ndg.security.test.unit.base import BaseTestCase
 
 from ndg.security.common.utils.configfileparsers import (
     CaseSensitiveConfigParser)

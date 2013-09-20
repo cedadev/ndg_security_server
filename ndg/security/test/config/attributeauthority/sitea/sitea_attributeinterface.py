@@ -26,7 +26,7 @@ from ndg.security.server.attributeauthority import (AttributeInterface,
                                                     AttributeNotKnownError, 
                                                     AttributeReleaseDenied, 
                                                     UserIdNotKnown)
-from ndg.security.test.unit import BaseTestCase
+from ndg.security.test.unit.base import BaseTestCase
 
 
 class TestUserRoles(AttributeInterface):

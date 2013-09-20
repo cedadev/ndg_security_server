@@ -7,7 +7,7 @@ __date__ = "13/08/10"
 __copyright__ = "(C) 2010 Science and Technology Facilities Council"
 __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
-__revision__ = '$Id:$'
+__revision__ = '$Id$'
 import logging
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ from os import path
 import unittest
 
 from ConfigParser import SafeConfigParser
-from ndg.security.test.unit import BaseTestCase
+from ndg.security.test.unit.base import BaseTestCase
 from ndg.security.server.xacml.ctx_handler.saml_ctx_handler import SamlCtxHandler
 
 

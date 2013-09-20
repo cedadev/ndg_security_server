@@ -19,7 +19,7 @@ from paste.deploy import loadapp
 from paste.script.util.logging_config import fileConfig
 
 from ndg.security.server.utils.paste_utils import PasteDeployAppServer
-from ndg.security.test.unit import BaseTestCase
+from ndg.security.test.unit.base import BaseTestCase
 
 this_dir = path.dirname(__file__)
 if not os.environ.get('NDGSEC_INTEGRATION_TEST_DIR'):

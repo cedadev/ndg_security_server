@@ -12,7 +12,7 @@ import os
 import paste.fixture
 from paste.deploy import loadapp
 
-from ndg.security.test.unit import BaseTestCase
+from ndg.security.test.unit.base import BaseTestCase
 
 
 class TestApp(object):

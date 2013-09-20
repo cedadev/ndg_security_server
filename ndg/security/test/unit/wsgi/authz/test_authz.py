@@ -32,7 +32,7 @@ from ndg.saml.saml2.core import (SAMLVersion, Subject, NameID, Issuer,
 from ndg.saml.xml.etree import (AuthzDecisionQueryElementTree, 
                                 ResponseElementTree)
 
-from ndg.security.test.unit import BaseTestCase
+from ndg.security.test.unit.base import BaseTestCase
 from ndg.security.server.wsgi import NDGSecurityMiddlewareBase
 from ndg.security.server.wsgi.authz.result_handler.basic import \
     PEPResultHandlerMiddleware

@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 import os
 import unittest
-from ndg.security.test.unit import BaseTestCase, mkDataDirPath
+from ndg.security.test.unit.base import BaseTestCase, mkDataDirPath
 from ndg.security.server.wsgi.openid.relyingparty.validation import (
     IdPValidator, IdPValidationDriver, IdPInvalidException, 
     SSLIdPValidationDriver, SSLClientAuthNValidator)

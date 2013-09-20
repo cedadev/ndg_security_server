@@ -7,7 +7,7 @@ __date__ = "11/08/10"
 __copyright__ = "(C) 2010 Science and Technology Facilities Council"
 __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
-__revision__ = '$Id:$'
+__revision__ = '$Id$'
 import logging
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ from ndg.xacml.core.context.subject import Subject
 
 from ndg.saml.saml2.core import Issuer as SamlIssuer
 
-from ndg.security.test.unit import BaseTestCase
+from ndg.security.test.unit.base import BaseTestCase
 from ndg.security.server.xacml.pip.saml_pip import PIP
 
 

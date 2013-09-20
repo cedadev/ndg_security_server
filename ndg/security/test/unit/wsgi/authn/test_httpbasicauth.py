@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.DEBUG)
 import urllib2
 import base64
 import paste.fixture
-from ndg.security.test.unit import BaseTestCase
+from ndg.security.test.unit.base import BaseTestCase
 from ndg.security.server.wsgi.authn import HTTPBasicAuthMiddleware, \
     HTTPBasicAuthUnauthorized
 

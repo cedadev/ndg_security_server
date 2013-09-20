@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 from beaker.middleware import SessionMiddleware
 import paste.fixture
-from ndg.security.test.unit import BaseTestCase
+from ndg.security.test.unit.base import BaseTestCase
 from ndg.security.server.wsgi.client_proxy.middleware import (NDGSecurityProxy,
                                         MyProxyProvisionedSessionMiddleware)
 
