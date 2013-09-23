@@ -474,7 +474,8 @@ class SamlPepFilter(SamlPepFilterBase):
         
         # Set HTTP 403 Forbidden response if any of the decisions returned are
         # deny or indeterminate status
-        failDecisions = (DecisionType.DENY, DecisionType.INDETERMINATE)
+        failDecisions = (DecisionType.DENY, #@UndefinedVariable
+                         DecisionType.INDETERMINATE) #@UndefinedVariable
         
         # Review decision statement(s) in assertions and enforce the decision
         assertion = None
