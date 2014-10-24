@@ -1,0 +1,5 @@
+
+      # -*- Entry points: -*-
+      [authkit.method]
+      openidprovider=openidprovider:make_handler
+      

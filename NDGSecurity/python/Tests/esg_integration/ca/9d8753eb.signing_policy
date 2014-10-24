@@ -1,0 +1,48 @@
+# $Id: 9d8753eb.signing_policy,v 1.2 2003/05/27 16:27:54 helm Exp $
+# ca-signing-policy.conf, see ca-signing-policy.doc for more information
+#
+# This is the configuration file describing the policy for what CAs are
+# allowed to sign whoses certificates.
+#
+# This file is parsed from start to finish with a given CA and subject
+# name.
+# subject names may include the following wildcard characters:
+#    *    Matches any number of characters.
+#    ?    Matches any single character.
+#
+# CA names must be specified (no wildcards). Names containing whitespaces
+# must be included in single quotes, e.g. 'Certification Authority'. 
+# Names must not contain new line symbols. 
+# The value of condition attribute is represented as a set of regular 
+# expressions. Each regular expression must be included in double quotes.  
+#
+# This policy file dictates the following policy:
+#
+#  The ESnet DOE Science Grid CA can sign doesciencegrid.org certificates
+#
+# Format:
+#------------------------------------------------------------------------
+#  token type  | def.authority |                value              
+#--------------|---------------|-----------------------------------------
+# EACL entry #1|
+
+ access_id_CA      X509         '/DC=net/DC=es/OU=Certificate Authorities/OU=DOE Science Grid/CN=pki1'
+ 
+ pos_rights        globus        CA:sign
+ 
+ cond_subjects     globus     	'"/O=doesciencegrid.org/*" "/DC=org/DC=doesciencegrid/*"'
+
+
+#
+# End DOE SG CA Policy
+# 
+# $Log: 9d8753eb.signing_policy,v $
+# Revision 1.2  2003/05/27 16:27:54  helm
+# Add ESnet to statement of policy
+#
+# Revision 1.1  2003/05/22 22:43:08  helm
+# sync
+#
+# Revision 1.1  2003/05/03 00:56:03  dhiva
+# Globus Support Files for DOEsciencegrid.org
+#

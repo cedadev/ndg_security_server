@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Dataset xmlns="http://ndg.nerc.ac.uk/csml" xmlns:gml="http://www.opengis.net/gml"
+xmlns:om="http://www.opengis.net/om" xmlns:xlink="http://www.w3.org/1999/xlink"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://ndg.nerc.ac.uk/csml
+XMLSchemas/CSMLAppSchema.xsd" gml:id="Test001">
+
+<!--
+======================================================================================
+======================================================================================
+auteur MILHE Aurelien
+fichier test afin de tester la possibilite et la validite du passage
+en format Marine XML
+Marine XML derive du CSML qui derive de XML et GML
+date creation 27/04/06
+======================================================================================
+======================================================================================
+
+
+======================================================================================
+pour l instant represente une observation de 78h, toute les heures dans deux stations
+a adapter en fonction des data donnees
+======================================================================================
+-->
+
+
+
+<!--header-->
+
+<gml:metaDataProperty>
+    <text>Data (c) 2006 Oslo Meteorologisk &amp; _ / ° ' Institutt Norwegian: æøå. French: êèé // www.met.no</text>
+</gml:metaDataProperty>
+
+<gml:metaDataProperty>
+<text>Test for Oslo Meteorolgisk Institutt</text>
+</gml:metaDataProperty>
+<gml:metaDataProperty>
+<text>tester MILHE Aurelien contact at aurelien.mihle@met.no</text>
+<text>data are from /opdata/sea/vannstand.dat</text>
+</gml:metaDataProperty>
+
+<gml:description>This is a test Water level for åøOslo Metorolgikk Institute.Period 26/04/06 06h -> 29/04/06 12h</gml:description>
+
+
+<!--Reference System definition-->
+
+<ReferenceSystemDefinitions gml:id="refsysdefs01">
+<gml:name codeSpace="http://donar.rws.minvenw.nl/">PredictionPeriodTCS01</gml:name>
+
+<gml:definitionMember>
+<TimeCoordinateSystem gml:id="pred20060427001">
+<gml:description>Temporal Reference for prediction period 001</gml:description>
+<gml:name>pred20060427001</gml:name>
+<gml:originPosition>2006-04-27T00:00:00+01:00:00</gml:originPosition>
+<gml:interval unit="hour">1</gml:interval>
+</TimeCoordinateSystem>
+</gml:definitionMember>
+
+<!--
+<gml:definitionMember>
+<TimeCoordinateSystem gml:id="pred20040101002">
+<gml:description>Temporal Reference for prediction period 001</gml:description>
+<gml:name>pred20040101001</gml:name>
+<gml:originPosition>2004-01-01T15:30:00+01:00:00</gml:originPosition>
+<gml:interval unit="minute">60</gml:interval>
+</TimeCoordinateSystem>
+</gml:definitionMember>
+-->
+
+</ReferenceSystemDefinitions>
+
+
+<!--Donnees temporelles, spatiales et observations-->
+
+<!--===================================================================-->
+<!--===== Feature instances =====-->
+<!--===================================================================-->
+
+<gml:FeatureCollection>
+
+<gml:boundedBy>
+<gml:EnvelopeWithTimePeriod srsName="urn:EPSG:geographicCRS:4326">
+<gml:lowerCorner uomLabels="lat lon" axisLabels="deg deg">42 12</gml:lowerCorner> <!--valeurs tests non reelles-->
+<gml:upperCorner uomLabels="lat lon" axisLabels="deg deg">42 26</gml:upperCorner> <!--valeurs tests non reelles-->
+<gml:timePosition>2006-04-26T06:00:00+01</gml:timePosition>
+<gml:timePosition>2006-04-29T012:00:00+01</gml:timePosition>
+</gml:EnvelopeWithTimePeriod>
+</gml:boundedBy>
+
+<!--
+==========================================================================
+1ere station ESBJERG
+==========================================================================
+-->
+
+<gml:featureMember>
+
+<PointSeriesFeature gml:id="testbed270401">
+
+<gml:metaDataProperty>
+<dgSimulation/>
+</gml:metaDataProperty>
+
+<gml:description>Station ESBJERG</gml:description>
+
+<PointSeriesDomain>
+
+<domainReference>
+<Trajectory srsName="urn:EPSG:geographicCRS:4326">
+<locations axisLabels="lat lon" uomLabels="deg deg">51.999422 3.277742</locations> <!--valeurs tests non reelles-->
+<times frame="#pred20060427001">-18
+-17
+-16
+-15
+-14
+-13
+-12
+-11
+-10
+-9
+-8
+-7
+-6
+-5
+-4
+-3
+-2
+-1
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+</times>
+</Trajectory>
+</domainReference>
+</PointSeriesDomain>
+
+<gml:rangeSet>
+<gml:QuantityList uom="MLUnits.xml#m">0.27
+0.25
+0.25
+0.23
+0.22
+0.22
+0.21
+0.17
+0.17
+0.14
+0.14
+0.12
+0.10
+0.08
+0.08
+0.08
+0.11
+0.13
+0.11
+0.11
+0.13
+0.10
+0.06
+0.06
+0.06
+0.01
+-0.03
+-0.06
+-0.09
+-0.11
+-0.11
+-0.13
+-0.16
+-0.18
+-0.17
+-0.16
+-0.18
+-0.16
+-0.12
+-0.09
+-0.08
+-0.07
+-0.06
+-0.05
+-0.04
+-0.03
+-0.03
+-0.04
+-0.02
+-0.01
+-0.02
+-0.02
+-0.02
+-0.03
+-0.03
+-0.02
+-0.01
+-0.01
+-0.02
+-0.02
+-0.03
+-0.04
+-0.04
+-0.05
+-0.04
+-0.05
+-0.08
+-0.09
+-0.11
+-0.12
+-0.12
+-0.12
+-0.12
+-0.12
+-0.13
+-0.14
+-0.15
+</gml:QuantityList>
+</gml:rangeSet>
+<parameter xlink:href="MLStandardNames.xml#sea_surface_height_above_sea_level"/>
+
+</PointSeriesFeature>
+
+</gml:featureMember>
+
+
+<!--
+==========================================================================
+2ere station HIRTSHALS
+==========================================================================
+-->
+
+<gml:featureMember>
+
+<PointSeriesFeature gml:id="testbed270402">
+
+<gml:metaDataProperty>
+<dgSimulation/>
+</gml:metaDataProperty>
+
+<gml:description>Station HIRTSHALS</gml:description>
+
+<PointSeriesDomain>
+
+<domainReference>
+<Trajectory srsName="urn:EPSG:geographicCRS:4326">
+<locations axisLabels="lat lon" uomLabels="deg deg">12.9254422 23.277742</locations> <!--valeurs tests non reelles-->
+<times frame="#pred20060427002">-18
+-17
+-16
+-15
+-14
+-13
+-12
+-11
+-10
+-9
+-8
+-7
+-6
+-5
+-4
+-3
+-2
+-1
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+</times>
+</Trajectory>
+</domainReference>
+</PointSeriesDomain>
+
+<gml:rangeSet>
+<gml:QuantityList uom="MLUnits.xml#m">0.27
+0.25
+0.10
+0.10
+0.11
+0.12
+0.12
+0.11
+0.11
+0.11
+0.11
+0.11
+0.12
+0.12
+0.11
+0.10
+0.10
+0.10
+0.10
+0.10
+0.10
+0.09
+0.09
+0.09
+0.09
+0.08
+0.08
+0.07
+0.06
+0.04
+0.02
+0.01
+-0.02
+-0.03
+-0.03
+-0.03
+-0.03
+-0.03
+-0.02
+-0.02
+-0.02
+-0.01
+-0.01
+0.00
+0.01
+0.01
+0.02
+0.02
+0.01
+0.00
+-0.01
+-0.03
+-0.03
+-0.04
+-0.05
+-0.05
+-0.05
+-0.05
+-0.05
+-0.03
+-0.03
+-0.02
+-0.01
+-0.01
+0.00
+0.00
+0.00
+0.01
+0.01
+0.02
+0.01
+0.01
+0.00
+-0.01
+-0.02
+-0.03
+-0.03
+-0.04
+</gml:QuantityList>
+</gml:rangeSet>
+<parameter xlink:href="MLStandardNames.xml#sea_surface_height_above_sea_level"/>
+
+</PointSeriesFeature>
+
+</gml:featureMember>
+
+
+</gml:FeatureCollection>
+</Dataset>

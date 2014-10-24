@@ -1,0 +1,80 @@
+MyProxyClient Unit Tests
+========================
+The unit test module is divided into two unit test classes: 
+
+MyProxyClientLiveTestCase
+MyProxyClientInterfaceTestCase
+
+The first, MyProxyClientLiveTestCase depends on connection to a myproxy-server.
+The test certificates and files in this directory are for illustration only.
+They must be replaced with certificates issued by a CA that the myproxy-server
+is configured to trust. See http://grid.ncsa.uiuc.edu/myproxy/ for guidance on 
+installing and configuring MyProxy.
+
+The second test class MyProxyClientInterfaceTestCase, performs sanity checks on
+the getting and setting of attributes.  These tests can be run without access
+to a myproxy-server service.
+
+1) To run MyProxyClientLiveTestCase:
+
+1.1) Start myproxy-server on it's host machine e.g. as root run,
+
+$ myproxy-server
+
+1.2) Edit myProxyClient.cfg and set the hostname element to the fully
+qualified domain name of the MyProxy host OR alternatively set the environment
+variable MYPROXY_SERVER to the host name e.g.:
+
+$ export MYPROXY_SERVER=mytest.myproxy-server.somewhere
+
+The environment variable setting will override any setting in the config file.  
+You may also need to set the MYPROXY_SERVER_DN environment variable and/or 
+experiment with the serverDN and serverCNPrefix config file settings to allow 
+for any mismatch between the MyProxy server certificate Distinguished Name and 
+the hostname of the host server.
+
+The tests involve uploading new credentials, changing password settings and
+finally removing these credentials from the MyP.  Make sure the MyProxy server you are using
+for tests is configured to allow you to carry out these operations and that
+you have test certificates issued by a CA that the MyProxy server is 
+configured to trust.  If necessary download and install a copy of MyProxy for 
+test purposes.  Tests may be run individually e.g. to test myProxy logon only. 
+See 1.4)
+
+1.3) Run the tests with the command:
+
+$ python ./test_myproxyclient.py MyProxyClientLiveTestCase
+
+1.4) To run individual tests give the test method name:
+
+$ python ./test_myproxyclient.py MyProxyClientLiveTestCase.test1Store
+
+ * Note that some tests are dependent on the output of previous tests.  
+ * test1Store adds a new credential to the repository.  Running all the tests
+   together as in 3) will ensure the credential is removed afterwards.  To
+   check the existence of the credential after the test run test3Info:
+   
+   $ python ./test_myproxyclient.py MyProxyClientTestCase.test3Info
+   
+   or use MyProxy client commands on the MyProxy host: myproxy-info,
+   myproxy-destroy.  If these fail, the content of /var/myproxy on the 
+   target host can be checked to see if testuser credentials still exist.
+ * See myProxyClientTest.cfg configuration file to change test parameters.
+ * See the installation guide for MyProxy trouble shooting information.
+
+2) To run MyProxyClientInterfaceTestCase only:
+
+You may wish to run these tests alone if you don't have a configuration set-up
+to connect to a myproxy-server.
+
+Nb. Example certificates and private keys provided are from a test CA and are 
+not for production use.
+
+$ python ./test_myproxyclient.py MyProxyClientInterfaceTestCase
+
+3) To run MyProxyClientLiveTestCase and MyProxyClientInterfaceTestCase:
+
+$ python ./test_myproxyclient.py MyProxyClientLiveTestCase
+
+
+P J Kershaw 27/02/09

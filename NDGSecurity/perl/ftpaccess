@@ -1,0 +1,11 @@
+<Limit READ>
+        DenyAll
+        AllowGroup surface
+</Limit>
+<Limit WRITE>
+        DenyAll
+</Limit>
+<Limit DIRS>
+        AllowAll
+        DenyAll
+</Limit>

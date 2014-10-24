@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java-wsdl-mapping xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.1" xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://www.ibm.com/webservices/xsd/j2ee_jaxrpc_mapping_1_1.xsd">
+    <package-mapping>
+        <package-type>ndg.security.attAuthority</package-type>
+        <namespaceURI>urn:ndg:security:attAuthority</namespaceURI>
+    </package-mapping>
+    <java-xml-type-mapping>
+        <java-type>ndg.security.attAuthority.HostInfo[]</java-type>
+        <anonymous-type-qname>urn:ndg:security:attAuthority:HostInfo[0,unbounded]</anonymous-type-qname>
+        <qname-scope>complexType</qname-scope>
+    </java-xml-type-mapping>
+    <java-xml-type-mapping>
+        <java-type>ndg.security.attAuthority.HostInfo</java-type>
+        <root-type-qname xmlns:rtq="urn:ndg:security:attAuthority">rtq:HostInfo</root-type-qname>
+        <qname-scope>complexType</qname-scope>
+        <variable-mapping>
+            <java-variable-name>hostname</java-variable-name>
+            <xml-element-name>hostname</xml-element-name>
+        </variable-mapping>
+        <variable-mapping>
+            <java-variable-name>aaURI</java-variable-name>
+            <xml-element-name>aaURI</xml-element-name>
+        </variable-mapping>
+        <variable-mapping>
+            <java-variable-name>loginURI</java-variable-name>
+            <xml-element-name>loginURI</xml-element-name>
+        </variable-mapping>
+        <variable-mapping>
+            <java-variable-name>roleList</java-variable-name>
+            <xml-element-name>roleList</xml-element-name>
+        </variable-mapping>
+    </java-xml-type-mapping>
+    <java-xml-type-mapping>
+        <java-type>java.lang.String</java-type>
+        <root-type-qname xmlns:rtq="http://www.w3.org/2001/XMLSchema">rtq:string</root-type-qname>
+        <qname-scope>simpleType</qname-scope>
+    </java-xml-type-mapping>
+    <java-xml-type-mapping>
+        <java-type>java.lang.String[]</java-type>
+        <anonymous-type-qname>http://www.w3.org/2001/XMLSchema:string[0,unbounded]</anonymous-type-qname>
+        <qname-scope>complexType</qname-scope>
+    </java-xml-type-mapping>
+    <java-xml-type-mapping>
+        <java-type>ndg.security.attAuthority.HostInfo[]</java-type>
+        <anonymous-type-qname>urn:ndg:security:attAuthority:&gt;getTrustedHostInfoResponse&gt;trustedHosts[0,unbounded]</anonymous-type-qname>
+        <qname-scope>complexType</qname-scope>
+    </java-xml-type-mapping>
+    <java-xml-type-mapping>
+        <java-type>java.lang.String[]</java-type>
+        <anonymous-type-qname>urn:ndg:security:attAuthority:HostInfo&gt;roleList[0,unbounded]</anonymous-type-qname>
+        <qname-scope>complexType</qname-scope>
+    </java-xml-type-mapping>
+    <service-interface-mapping>
+        <service-interface>ndg.security.attAuthority.AttAuthorityService</service-interface>
+        <wsdl-service-name xmlns:sim="urn:ndg:security:attAuthority">sim:AttAuthorityService</wsdl-service-name>
+        <port-mapping>
+            <port-name>AttAuthority</port-name>
+            <java-port-name>AttAuthority</java-port-name>
+        </port-mapping>
+    </service-interface-mapping>
+    <service-endpoint-interface-mapping>
+        <service-endpoint-interface>ndg.security.attAuthority.AttAuthority</service-endpoint-interface>
+        <wsdl-port-type xmlns:seimwpt="urn:ndg:security:attAuthority">seimwpt:AttAuthority</wsdl-port-type>
+        <wsdl-binding xmlns:seimwb="urn:ndg:security:attAuthority">seimwb:AttAuthorityBinding</wsdl-binding>
+        <service-endpoint-method-mapping>
+            <java-method-name>getAttCert</java-method-name>
+            <wsdl-operation>getAttCert</wsdl-operation>
+            <wrapped-element/>
+            <method-param-parts-mapping>
+                <param-position>0</param-position>
+                <param-type>java.lang.String</param-type>
+                <wsdl-message-mapping>
+                    <wsdl-message xmlns:mppm="urn:ndg:security:attAuthority">mppm:getAttCertInputMsg</wsdl-message>
+                    <wsdl-message-part-name>userId</wsdl-message-part-name>
+                    <parameter-mode>IN</parameter-mode>
+                </wsdl-message-mapping>
+            </method-param-parts-mapping>
+            <method-param-parts-mapping>
+                <param-position>1</param-position>
+                <param-type>java.lang.String</param-type>
+                <wsdl-message-mapping>
+                    <wsdl-message xmlns:mppm="urn:ndg:security:attAuthority">mppm:getAttCertInputMsg</wsdl-message>
+                    <wsdl-message-part-name>userCert</wsdl-message-part-name>
+                    <parameter-mode>IN</parameter-mode>
+                </wsdl-message-mapping>
+            </method-param-parts-mapping>
+            <method-param-parts-mapping>
+                <param-position>2</param-position>
+                <param-type>java.lang.String</param-type>
+                <wsdl-message-mapping>
+                    <wsdl-message xmlns:mppm="urn:ndg:security:attAuthority">mppm:getAttCertInputMsg</wsdl-message>
+                    <wsdl-message-part-name>userAttCert</wsdl-message-part-name>
+                    <parameter-mode>IN</parameter-mode>
+                </wsdl-message-mapping>
+            </method-param-parts-mapping>
+            <method-param-parts-mapping>
+                <param-position>3</param-position>
+                <param-type>java.lang.String</param-type>
+                <wsdl-message-mapping>
+                    <wsdl-message xmlns:mppm="urn:ndg:security:attAuthority">mppm:getAttCertOutputMsg</wsdl-message>
+                    <wsdl-message-part-name>attCert</wsdl-message-part-name>
+                    <parameter-mode>OUT</parameter-mode>
+                </wsdl-message-mapping>
+            </method-param-parts-mapping>
+            <method-param-parts-mapping>
+                <param-position>4</param-position>
+                <param-type>java.lang.String</param-type>
+                <wsdl-message-mapping>
+                    <wsdl-message xmlns:mppm="urn:ndg:security:attAuthority">mppm:getAttCertOutputMsg</wsdl-message>
+                    <wsdl-message-part-name>msg</wsdl-message-part-name>
+                    <parameter-mode>OUT</parameter-mode>
+                </wsdl-message-mapping>
+            </method-param-parts-mapping>
+            <wsdl-return-value-mapping>
+                <method-return-value>void</method-return-value>
+                <wsdl-message xmlns:wrvm="urn:ndg:security:attAuthority">wrvm:getAttCertOutputMsg</wsdl-message>
+            </wsdl-return-value-mapping>
+        </service-endpoint-method-mapping>
+        <service-endpoint-method-mapping>
+            <java-method-name>getHostInfo</java-method-name>
+            <wsdl-operation>getHostInfo</wsdl-operation>
+            <wrapped-element/>
+            <method-param-parts-mapping>
+                <param-position>0</param-position>
+                <param-type>java.lang.String</param-type>
+                <wsdl-message-mapping>
+                    <wsdl-message xmlns:mppm="urn:ndg:security:attAuthority">mppm:getHostInfoOutputMsg</wsdl-message>
+                    <wsdl-message-part-name>hostname</wsdl-message-part-name>
+                    <parameter-mode>OUT</parameter-mode>
+                </wsdl-message-mapping>
+            </method-param-parts-mapping>
+            <method-param-parts-mapping>
+                <param-position>1</param-position>
+                <param-type>java.lang.String</param-type>
+                <wsdl-message-mapping>
+                    <wsdl-message xmlns:mppm="urn:ndg:security:attAuthority">mppm:getHostInfoOutputMsg</wsdl-message>
+                    <wsdl-message-part-name>aaURI</wsdl-message-part-name>
+                    <parameter-mode>OUT</parameter-mode>
+                </wsdl-message-mapping>
+            </method-param-parts-mapping>
+            <method-param-parts-mapping>
+                <param-position>2</param-position>
+                <param-type>java.lang.String</param-type>
+                <wsdl-message-mapping>
+                    <wsdl-message xmlns:mppm="urn:ndg:security:attAuthority">mppm:getHostInfoOutputMsg</wsdl-message>
+                    <wsdl-message-part-name>loginURI</wsdl-message-part-name>
+                    <parameter-mode>OUT</parameter-mode>
+                </wsdl-message-mapping>
+            </method-param-parts-mapping>
+            <wsdl-return-value-mapping>
+                <method-return-value>void</method-return-value>
+                <wsdl-message xmlns:wrvm="urn:ndg:security:attAuthority">wrvm:getHostInfoOutputMsg</wsdl-message>
+            </wsdl-return-value-mapping>
+        </service-endpoint-method-mapping>
+        <service-endpoint-method-mapping>
+            <java-method-name>getTrustedHostInfo</java-method-name>
+            <wsdl-operation>getTrustedHostInfo</wsdl-operation>
+            <wrapped-element/>
+            <method-param-parts-mapping>
+                <param-position>0</param-position>
+                <param-type>java.lang.String</param-type>
+                <wsdl-message-mapping>
+                    <wsdl-message xmlns:mppm="urn:ndg:security:attAuthority">mppm:getTrustedHostInfoInputMsg</wsdl-message>
+                    <wsdl-message-part-name>role</wsdl-message-part-name>
+                    <parameter-mode>IN</parameter-mode>
+                </wsdl-message-mapping>
+            </method-param-parts-mapping>
+            <wsdl-return-value-mapping>
+                <method-return-value>ndg.security.attAuthority.HostInfo[]</method-return-value>
+                <wsdl-message xmlns:wrvm="urn:ndg:security:attAuthority">wrvm:getTrustedHostInfoOutputMsg</wsdl-message>
+                <wsdl-message-part-name>trustedHosts</wsdl-message-part-name>
+            </wsdl-return-value-mapping>
+        </service-endpoint-method-mapping>
+        <service-endpoint-method-mapping>
+            <java-method-name>getX509Cert</java-method-name>
+            <wsdl-operation>getX509Cert</wsdl-operation>
+            <wrapped-element/>
+            <wsdl-return-value-mapping>
+                <method-return-value>java.lang.String</method-return-value>
+                <wsdl-message xmlns:wrvm="urn:ndg:security:attAuthority">wrvm:getX509CertOutputMsg</wsdl-message>
+                <wsdl-message-part-name>x509Cert</wsdl-message-part-name>
+            </wsdl-return-value-mapping>
+        </service-endpoint-method-mapping>
+    </service-endpoint-interface-mapping>
+</java-wsdl-mapping>

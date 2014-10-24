@@ -1,0 +1,56 @@
+<SOAP-ENV:Envelope xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ZSI="http://www.zolera.com/schemas/ZSI/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><SOAP-ENV:Header xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"><wsse:Security SOAP-ENV:mustUnderstand="1"><wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" wsu:Id="binaryToken" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3">MIICBDCCAW2gAwIBAgIBNjANBgkqhkiG9w0BAQQFADAvMQwwCgYDVQQKEwNOREcxDTALBgNVBAsT
+BEJBREMxEDAOBgNVBAMTB1Rlc3QgQ0EwHhcNMDcxMjEyMTM1MjE2WhcNMDgxMjExMTM1MjE2WjBK
+MRowGAYDVQQKExFOREcgU2VjdXJpdHkgVGVzdDEPMA0GA1UECxMGU2l0ZSBBMRswGQYDVQQDExJB
+dHRyaWJ1dGVBdXRob3JpdHkwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAKe1/6FTEUpfH8pj
+ctfL9Fhz/KqF8gszyH3lzXif9Z1KqHysrdXGRS7mC6OUSAIdp8jYCM1klmol8obtm5xiZFyddsJf
+Wo8gYpr5OWVshZ2xrnL8gX8OjYCg8wmdM0nZTUgF89Bds7lJ3j0699OLgKV2Tz3zvZEi7M+YsgNw
+XJ2BAgMBAAGjFTATMBEGCWCGSAGG+EIBAQQEAwIE8DANBgkqhkiG9w0BAQQFAAOBgQCePSXVXBO4
+6o/1inn8PatfUTtIeOulPjQ/SO6MrUpOth33wQsh3kbq1HYOA5XaR+xK9BC4dF0sfUsZqMCoxKyB
+XjqkZOPJK9YDd8y7apmFkP742i8pN6usp7NfmSpSVD2nzRunLyjj4JFRpDdR2TKsPcwXc+a+80zZ
+d47xJYXtfA==
+</wsse:BinarySecurityToken><ds:Signature><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"><ec:InclusiveNamespaces PrefixList="xsi xsd SOAP-ENV ds wsse ec"></ec:InclusiveNamespaces></ds:CanonicalizationMethod><ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"></ds:SignatureMethod><ds:Reference URI="#binaryToken"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"><ec:InclusiveNamespaces PrefixList="xmlns xsi xsd SOAP-ENV wsu wsse ns1"></ec:InclusiveNamespaces></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></ds:DigestMethod><ds:DigestValue>HEzGrQ371OueXGowMbX7Cy6AAJs=</ds:DigestValue></ds:Reference><ds:Reference URI="#body"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"><ec:InclusiveNamespaces PrefixList="xmlns xsi xsd SOAP-ENV wsu wsse ns1"></ec:InclusiveNamespaces></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></ds:DigestMethod><ds:DigestValue>YlJNC7Du0i/Ixzj8V4RkLDVbhnQ=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>bbpJP+tT5zrBrgAMDxIENpmEX8ROidJmiVnQegD8uhVktksRc/6+cm5H6AumJu7bs73cTnMYxjIk
+72NwHq4PHuOGh+6hAMFe1UGwQ+vdT1dElLMiYQ4y2EnC0jWuiqIN5aQfXvOnorOtUq01ezNOitG+
+Zv9fUv5EwUa7Hx8ONsA=</ds:SignatureValue><ds:KeyInfo><wsse:SecurityTokenReference><wsse:Reference URI="#binaryToken"></wsse:Reference></wsse:SecurityTokenReference></ds:KeyInfo></ds:Signature></wsse:Security></SOAP-ENV:Header><SOAP-ENV:Body xmlns:ns1="urn:ndg:security:attAuthority" wsu:Id="body" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"><ns1:getAttCertResponse><attCert>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;attributeCertificate xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#" targetNamespace="urn:ndg:security:attributeCertificate"&gt;
+    &lt;acInfo&gt;
+        &lt;version&gt;1.0&lt;/version&gt;
+        &lt;holder&gt;/CN=test/O=NDG/OU=BADC&lt;/holder&gt;
+        &lt;issuer&gt;/CN=AttributeAuthority/O=NDG Security Test/OU=Site A&lt;/issuer&gt;
+        &lt;issuerName&gt;Site A&lt;/issuerName&gt;
+        &lt;issuerSerialNumber&gt;54&lt;/issuerSerialNumber&gt;
+        &lt;userId&gt;/CN=test/O=NDG/OU=BADC&lt;/userId&gt;
+        &lt;validity&gt;
+            &lt;notBefore&gt;2008 02 15 11 39 52&lt;/notBefore&gt;
+            &lt;notAfter&gt;2008 02 15 19 39 52&lt;/notAfter&gt;
+        &lt;/validity&gt;
+        &lt;attributes&gt;
+            &lt;roleSet&gt;
+                &lt;role&gt;
+                    &lt;name&gt;staff&lt;/name&gt;
+                &lt;/role&gt;
+                &lt;role&gt;
+                    &lt;name&gt;postdoc&lt;/name&gt;
+                &lt;/role&gt;
+                &lt;role&gt;
+                    &lt;name&gt;undergrad&lt;/name&gt;
+                &lt;/role&gt;
+                &lt;role&gt;
+                    &lt;name&gt;coapec&lt;/name&gt;
+                &lt;/role&gt;
+            &lt;/roleSet&gt;
+        &lt;/attributes&gt;
+        &lt;provenance&gt;original&lt;/provenance&gt;
+    &lt;/acInfo&gt;
+&lt;ds:Signature&gt;&lt;ds:SignedInfo&gt;&lt;ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"&gt;&lt;ec:InclusiveNamespaces PrefixList="ds"&gt;&lt;/ec:InclusiveNamespaces&gt;&lt;/ds:CanonicalizationMethod&gt;&lt;ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"&gt;&lt;/ds:SignatureMethod&gt;&lt;ds:Reference URI=""&gt;&lt;ds:Transforms&gt;&lt;ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"&gt;&lt;/ds:Transform&gt;&lt;ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"&gt;&lt;ec:InclusiveNamespaces PrefixList="xmlns"&gt;&lt;/ec:InclusiveNamespaces&gt;&lt;/ds:Transform&gt;&lt;/ds:Transforms&gt;&lt;ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"&gt;&lt;/ds:DigestMethod&gt;&lt;ds:DigestValue&gt;kR1xK0gUhlCe0IDzi+yxN4Na5g8=&lt;/ds:DigestValue&gt;&lt;/ds:Reference&gt;&lt;/ds:SignedInfo&gt;&lt;ds:SignatureValue&gt;bIHxQFQLC7LbaZwJFBGtSbYvxnVCtZ0Ln04gOk6VZpqPOJzoKI7uLCbwDt9ROhJc+IbiNNrL+/xd
+COiBXEjKrL3MP6rhCNvAH5LjPrBXkflekIKruXO3wsEGXBnWw7Tb6fykzexCljZaM1hNm92YQjeK
+Z+uycVG5wtVaMeoEsNg=&lt;/ds:SignatureValue&gt;&lt;ds:KeyInfo&gt;&lt;ds:X509Data&gt;&lt;ds:X509Certificate&gt;MIICBDCCAW2gAwIBAgIBNjANBgkqhkiG9w0BAQQFADAvMQwwCgYDVQQKEwNOREcx
+DTALBgNVBAsTBEJBREMxEDAOBgNVBAMTB1Rlc3QgQ0EwHhcNMDcxMjEyMTM1MjE2
+WhcNMDgxMjExMTM1MjE2WjBKMRowGAYDVQQKExFOREcgU2VjdXJpdHkgVGVzdDEP
+MA0GA1UECxMGU2l0ZSBBMRswGQYDVQQDExJBdHRyaWJ1dGVBdXRob3JpdHkwgZ8w
+DQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAKe1/6FTEUpfH8pjctfL9Fhz/KqF8gsz
+yH3lzXif9Z1KqHysrdXGRS7mC6OUSAIdp8jYCM1klmol8obtm5xiZFyddsJfWo8g
+Ypr5OWVshZ2xrnL8gX8OjYCg8wmdM0nZTUgF89Bds7lJ3j0699OLgKV2Tz3zvZEi
+7M+YsgNwXJ2BAgMBAAGjFTATMBEGCWCGSAGG+EIBAQQEAwIE8DANBgkqhkiG9w0B
+AQQFAAOBgQCePSXVXBO46o/1inn8PatfUTtIeOulPjQ/SO6MrUpOth33wQsh3kbq
+1HYOA5XaR+xK9BC4dF0sfUsZqMCoxKyBXjqkZOPJK9YDd8y7apmFkP742i8pN6us
+p7NfmSpSVD2nzRunLyjj4JFRpDdR2TKsPcwXc+a+80zZd47xJYXtfA==&lt;/ds:X509Certificate&gt;&lt;/ds:X509Data&gt;&lt;/ds:KeyInfo&gt;&lt;/ds:Signature&gt;&lt;/attributeCertificate&gt;</attCert></ns1:getAttCertResponse></SOAP-ENV:Body></SOAP-ENV:Envelope>

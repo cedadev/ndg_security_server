@@ -1,0 +1,7 @@
+- Get and install the libsqlora8 library from http://www.poitschke.de/libsqlora8/
+- cp your libsqlora8-config.h and sqlora.h to this directory or setup the 'include'-statements 
+  regarding libsqlora8
+- compile via make
+- copy pam_oci8.so to /lib/security and make the proper changes to /etc/pam.d/ and /etc/pam.conf
+- export all required Oracle enviroment varibles
+

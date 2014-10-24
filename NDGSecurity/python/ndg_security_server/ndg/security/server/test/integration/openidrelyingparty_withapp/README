@@ -1,0 +1,33 @@
+Authorisation Integration Tests with the OpenID Relying Party running in the
+============================================================================
+Application Stack
+=================
+In this test, the OpenID Relying Party Middleware is configured to run in the
+same WSGI stack as the application being protected.  This ensures that the
+two are in the same cookie domain but if the application is running over HTTP
+then the RP will likewise.  The alternative is to run the OpenID RP in the 
+security services middleware stack together with the OpenID Provider and 
+Attribute Authority.  This enables the RP to run over HTTPS but it also 
+involves a redirect from the app to the RP on signin which may itself be a 
+security weakness.
+
+To run,
+
+$ python securedapp.py
+
+...and in another terminal:
+
+$ python securityservicesapp.py
+
+Launch a browser and go to http://localhost:7080.  This displays a page with a
+list of links.  Each link tests out a different aspect of the authorisation
+system.  The OpenID login will be triggered if a link requires authentication,
+select go with the default URL set of, "http://localhost:7443/openid".  When
+prompted for a username and password, enter pjk/testpassword 
+respectively.
+
+The links are secured with the policy file, policy.xml.  User attributes are
+determined by the Attribute Authority configuration set in 
+ndg.security.test.config.attributeauthority.sitea.siteAUserRoles
+
+P J Kershaw 19/05/09

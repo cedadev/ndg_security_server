@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<com.ibm.etools.webservice.wscbnd:ClientBinding xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:com.ibm.etools.webservice.wscbnd="http://www.ibm.com/websphere/appserver/schemas/5.0.2/wscbnd.xmi" xmi:id="ClientBinding_1173715066329">
+  <serviceRefs xmi:id="ServiceRef_1173715154487" serviceRefLink="service/AttAuthorityService">
+    <portQnameBindings xmi:id="PortQnameBinding_1173715154487" portQnameLocalNameLink="AttAuthority">
+      <securityRequestGeneratorBindingConfig xmi:id="SecurityRequestGeneratorBindingConfig_1173715154487">
+        <signingInfo xmi:id="SigningInfo_1173715154487" name="gen_signinfo">
+          <signatureMethod xmi:id="SignatureMethod_1173715154487" algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+          <canonicalizationMethod xmi:id="CanonicalizationMethod_1173715154487" algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+          <partReference xmi:id="PartReference_1173715154487" part="int_body">
+            <transform xmi:id="Transform_1173715154487" algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" name="int_body_transform1"/>
+            <digestMethod xmi:id="DigestMethod_1173715154487" algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+          </partReference>
+          <signingKeyInfo xmi:id="SigningKeyInfo_1173715154488" keyinfoRef="gen_signkeyinfo" name="gen_skeyinfo"/>
+        </signingInfo>
+        <keyInfo xmi:id="KeyInfo_1173715154488" type="STRREF" name="gen_signkeyinfo" classname="com.ibm.ws.webservices.wssecurity.keyinfo.STRReferenceContentGenerator">
+          <keyLocatorMapping xmi:id="KeyLocatorMapping_1173715154488" locatorRef="gen_klocator" keynameRef="CN=webSphereTest, OU=BADC, O=NDG"/>
+          <tokenReference xmi:id="TokenReference_1173715154488" tokenRef="gen_signtgen" name="signtref"/>
+        </keyInfo>
+        <keyLocator xmi:id="KeyLocator_1173715154488" name="gen_klocator" classname="com.ibm.wsspi.wssecurity.keyinfo.KeyStoreKeyLocator">
+          <keyStore xmi:id="KeyStore_1173715154488" storepass="{xor}KzosKy8+LCwoMC07" path="/home/pjkersha/KeyStore/DEWS/Test/keystore.p12" type="PKCS12"/>
+          <keys xmi:id="Key_1173715154488" alias="dti certificate" keypass="{xor}KzosKy8+LCwoMC07" name="CN=webSphereTest, OU=BADC, O=NDG"/>
+        </keyLocator>
+        <tokenGenerator xmi:id="TokenGenerator_1173715154488" name="gen_signtgen" classname="com.ibm.wsspi.wssecurity.token.X509TokenGenerator">
+          <valueType xmi:id="ValueType_1173715154488" localName="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509" uri="" name="gen_signtgen_vtype"/>
+          <callbackHandler xmi:id="CallbackHandler_1173715154488" classname="com.ibm.wsspi.wssecurity.auth.callback.X509CallbackHandler">
+            <key xmi:id="Key_1173715154489" alias="dti certificate" keypass="{xor}KzosKy8+LCwoMC07" name="CN=webSphereTest, OU=BADC, O=NDG"/>
+            <keyStore xmi:id="KeyStore_1173715154489" storepass="{xor}KzosKy8+LCwoMC07" path="/home/pjkersha/KeyStore/DEWS/Test/keystore.p12" type="PKCS12"/>
+            <basicAuth xmi:id="BasicAuth_1173715154488"/>
+          </callbackHandler>
+          <partReference xmi:id="PartReference_1173715154488"/>
+        </tokenGenerator>
+      </securityRequestGeneratorBindingConfig>
+      <securityResponseConsumerBindingConfig xmi:id="SecurityResponseConsumerBindingConfig_1173715154489">
+        <signingInfo xmi:id="SigningInfo_1173715154489" name="con_signinfo">
+          <signatureMethod xmi:id="SignatureMethod_1173715154489" algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+          <canonicalizationMethod xmi:id="CanonicalizationMethod_1173715154489" algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+          <partReference xmi:id="PartReference_1173715154489" part="reqint_body">
+            <transform xmi:id="Transform_1173715154489" algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" name="reqint_body_transform1"/>
+            <digestMethod xmi:id="DigestMethod_1173715154489" algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+          </partReference>
+          <signingKeyInfo xmi:id="SigningKeyInfo_1173715154489" keyinfoRef="sig_keyinfo" name="con_skeyinfo"/>
+        </signingInfo>
+        <keyInfo xmi:id="KeyInfo_1173715154489" type="STRREF" name="sig_keyinfo" classname="com.ibm.ws.webservices.wssecurity.keyinfo.STRReferenceContentConsumer">
+          <keyLocatorMapping xmi:id="KeyLocatorMapping_1173715154489" locatorRef="sig_klocator"/>
+          <tokenReference xmi:id="TokenReference_1173715154489" tokenRef="con_tcon" name="con_tref"/>
+        </keyInfo>
+        <keyLocator xmi:id="KeyLocator_1173715154489" name="sig_klocator" classname="com.ibm.wsspi.wssecurity.keyinfo.X509TokenKeyLocator"/>
+        <tokenConsumer xmi:id="TokenConsumer_1173715154490" classname="com.ibm.wsspi.wssecurity.token.X509TokenConsumer" name="con_tcon">
+          <valueType xmi:id="ValueType_1173715154490" localName="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509" uri="" name="X509 certificate token"/>
+          <jAASConfig xmi:id="JAASConfig_1173715154490" configName="system.wssecurity.X509BST"/>
+          <partReference xmi:id="PartReference_1173715154490"/>
+          <certPathSettings xmi:id="CertPathSettings_1173715154490">
+            <trustAnyCertificate xmi:id="TrustAnyCertificate_1173715154490"/>
+          </certPathSettings>
+        </tokenConsumer>
+      </securityResponseConsumerBindingConfig>
+    </portQnameBindings>
+  </serviceRefs>
+</com.ibm.etools.webservice.wscbnd:ClientBinding>

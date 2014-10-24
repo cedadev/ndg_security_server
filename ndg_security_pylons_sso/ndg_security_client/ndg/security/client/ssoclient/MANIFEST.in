@@ -1,0 +1,2 @@
+recursive-include ssoclient/public *
+recursive-include ssoclient/templates *

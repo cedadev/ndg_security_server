@@ -1,0 +1,10 @@
+This folder contains data and services used for the unit and integration 
+tests.
+ - attributeauthority/ - two attribute authority test services:
+     sitea/
+     siteb/
+ - pki/ - X.509 certificates and private keys used to secure services
+     ca/ - CA certificates
+ - sessionmanager/ - Session Manager test service
+     
+P J Kershaw 19/12/08

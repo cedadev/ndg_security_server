@@ -1,0 +1,5 @@
+Old Java development code moved into here and kept for references purposes.
+This is to cleanup the axis2/ top-level directory to hold the axix2 based 
+clients to Python NDG Security Attribute Authority and Session Manager.
+
+P J Kershaw 04/03/09 

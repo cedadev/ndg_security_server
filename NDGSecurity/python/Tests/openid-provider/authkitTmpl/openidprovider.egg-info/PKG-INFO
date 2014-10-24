@@ -1,0 +1,11 @@
+Metadata-Version: 1.0
+Name: openidprovider
+Version: 0.1.0dev
+Summary: OpenID Provider
+Home-page: http://proj.badc.rl.ac.uk/ndg/wiki/T12_Security
+Author: P J Kershaw
+Author-email: P.J.Kershaw@rl.ac.uk
+License: Q License
+Description: OpenID Provider
+Keywords: OpenID
+Platform: UNKNOWN

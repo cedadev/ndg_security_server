@@ -1,0 +1,3 @@
+[console_scripts]
+buildout = zc.buildout.buildout:main
+

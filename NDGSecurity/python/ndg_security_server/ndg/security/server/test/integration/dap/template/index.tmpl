@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+    <title>$title</title>
+    <link media="all, screen" href="ndg2.css" type="text/css" rel="stylesheet">
+</head>
+
+<body>
+    <div>
+        <div id="header"></div>
+        <div id="logo"><img src="NERC_Logo.gif" alt="Natural Environment Research Council"></div>
+    </div>
+    <h1>DODS directory for $location</h1>
+
+    <table>
+    #if $parent
+        <tr><td colspan="3"><a href="$parent">Parent directory</a></td></tr>
+    #end if
+
+    #for $dir in $dirs:
+        #set $dirname = '%s/' % $dir.split('/')[-1]
+        <tr><td colspan="3"><a href="$dir">$dirname</a></td></tr>
+    #end for
+    
+    #for $file in $files:
+        #set $filename = $file.split('/')[-1]
+        <tr>
+            <td>$filename</td>
+            <td><a href="${file}.dds">[<acronym title="Dataset Descriptor Structure">DDS</acronym>]</a></td>
+            <td><a href="${file}.das">[<acronym title="Dataset Attribute Structure">DAS</acronym>]</a></td>
+        </tr>
+    #end for
+    </table>
+
+        
+        <div id="Footer">
+
+        <center><table><tbody>
+            <tr>
+                <td width="60%" align="left">
+                    <table><tbody>
+                    <tr>
+                        <td><span>
+        <a href="http://ndg.nerc.ac.uk/"><image src="ndg_logo_circle.gif" alt="NDG" title="NDG"></image></a>
+    </span></td>
+                        <td>pyDAP OPeNDAP site for <a href="http://ndg.nerc.ac.uk">NERC DataGrid</a>
+
+                    This site is for test purposes only and is under active development.</td>
+                    </tr>
+                    </tbody></table>
+                </td>
+                <td width="40%" align="center">
+                    <div id="loginStatus">
+                        <a href="/logout">logout</a>
+                    </div>
+                </td>
+
+                <td align="right"><span>
+        <a href="http://www.stfc.ac.uk/"><image src="/stfc-circle-sm.gif" alt="Hosted by the STFC CEDA" title="Hosted by the STFC CEDA"></image></a>
+    </span></td>
+            </tr>
+        </tbody></table></center>
+    </div>
+</body>
+
+</html>

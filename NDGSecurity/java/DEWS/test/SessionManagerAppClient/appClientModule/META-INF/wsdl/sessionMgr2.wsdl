@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="urn:ndg:security" xmlns:wsu="http://schemas.xmlsoap.org/ws/2002/07/utility" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="SessionMgr" targetNamespace="urn:ndg:security">
+
+  <wsdl:types>
+    <xsd:schema>
+      <xsd:element name="addUser">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element maxOccurs="1" minOccurs="1" name="username" type="xsd:string"/>
+            <xsd:element maxOccurs="1" minOccurs="1" name="passPhrase" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      
+      <xsd:element name="addUserResponse">
+        <xsd:complexType/>
+      </xsd:element>
+
+      <xsd:element name="connect">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element maxOccurs="1" minOccurs="1" name="username" type="xsd:string"/>
+            <xsd:element maxOccurs="1" minOccurs="1" name="passPhrase" type="xsd:string"/>
+		    <xsd:element maxOccurs="1" minOccurs="1" name="createServerSess" type="xsd:boolean"/>
+		    <xsd:element maxOccurs="1" minOccurs="1" name="getCookie" type="xsd:boolean"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      
+      <xsd:element name="connectResponse">
+        <xsd:complexType>
+		  <xsd:sequence>
+		    <xsd:element maxOccurs="1" minOccurs="0" name="cookie" type="xsd:string"/>
+		    <xsd:element maxOccurs="1" minOccurs="0" name="proxyCert" type="xsd:string"/>
+		  </xsd:sequence>
+		</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="disconnect">
+        <xsd:complexType>
+		  <xsd:sequence>
+		    <xsd:element maxOccurs="1" minOccurs="0" name="proxyCert" type="xsd:string"/>
+		    <xsd:element maxOccurs="1" minOccurs="0" name="sessID" type="xsd:string"/>
+		    <xsd:element maxOccurs="1" minOccurs="0" name="encrSessionMgrURI" type="xsd:string"/>
+		  </xsd:sequence>
+		</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="disconnectResponse">
+        <xsd:complexType/>
+      </xsd:element>
+           
+      <xsd:element name="reqAuthorisation">
+        <xsd:complexType>
+		  <xsd:sequence>
+		    <xsd:element maxOccurs="1" minOccurs="0" name="proxyCert" type="xsd:string"/>
+		    <xsd:element maxOccurs="1" minOccurs="0" name="sessID" type="xsd:string"/>
+		    <xsd:element maxOccurs="1" minOccurs="0" name="encrSessionMgrURI" type="xsd:string"/>
+		    <xsd:element maxOccurs="1" minOccurs="1" name="attAuthorityURI" type="xsd:string"/>
+		    <xsd:element maxOccurs="1" minOccurs="0" name="attAuthorityCert" type="xsd:string"/>
+		    <xsd:element maxOccurs="1" minOccurs="0" name="reqRole" type="xsd:string"/>
+		    <xsd:element maxOccurs="1" minOccurs="1" name="mapFromTrustedHosts" type="xsd:boolean"/>
+		    <xsd:element maxOccurs="1" minOccurs="1" name="rtnExtAttCertList" type="xsd:boolean"/>
+			<xsd:element maxOccurs="unbounded" minOccurs="0" name="extAttCert" type="xsd:string"/>
+			<xsd:element maxOccurs="unbounded" minOccurs="0" name="extTrustedHost" type="xsd:string"/>
+   		  </xsd:sequence>
+		</xsd:complexType>
+      </xsd:element>
+      
+      <xsd:element name="reqAuthorisationResponse">
+        <xsd:complexType>
+	      <xsd:sequence>
+	        <xsd:element maxOccurs="1" minOccurs="0" name="attCert" type="xsd:string"/>
+	        <xsd:element maxOccurs="1" minOccurs="1" name="statusCode" type="xsd:string"/>
+			<xsd:element maxOccurs="unbounded" minOccurs="0" name="extAttCert" type="xsd:string"/>
+	      </xsd:sequence>
+	    </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="getX509Cert">
+        <xsd:complexType/>
+      </xsd:element>
+      
+      <xsd:element name="getX509CertResponse">
+        <xsd:complexType>
+		  <xsd:sequence>
+		    <xsd:element maxOccurs="1" minOccurs="1" name="x509Cert" type="xsd:string"/>
+		  </xsd:sequence>
+		</xsd:complexType>
+      </xsd:element>
+
+    </xsd:schema>
+  </wsdl:types>
+ 
+  <message name="addUserInputMsg">
+    <part element="tns:addUser" name="parameters"/>
+  </message>
+
+  <message name="addUserOutputMsg">
+    <part element="tns:addUserResponse" name="parameters"/>
+  </message>
+ 
+  <message name="connectInputMsg">
+    <part element="tns:connect" name="parameters"/>
+  </message>
+
+  <message name="connectOutputMsg">
+    <part element="tns:connectResponse" name="parameters"/>
+  </message>
+  
+  <message name="disconnectInputMsg">
+    <part element="tns:disconnect" name="parameters"/>
+  </message>
+
+  <message name="disconnectOutputMsg">
+    <part element="tns:disconnectResponse" name="parameters"/>
+  </message>
+
+  <message name="reqAuthorisationInputMsg">
+    <part element="tns:reqAuthorisation" name="parameters"/>
+  </message>
+
+  <message name="reqAuthorisationOutputMsg">
+    <part element="tns:reqAuthorisationResponse" name="parameters"/>
+  </message>
+
+  <message name="getX509CertInputMsg">
+    <part element="tns:getX509Cert" name="parameters"/>
+  </message>
+
+  <message name="getX509CertOutputMsg">
+    <part element="tns:getX509CertResponse" name="parameters"/>
+  </message>
+
+  <wsdl:portType name="SessionMgr">
+    <wsdl:operation name="addUser">
+      <wsdl:input message="tns:addUserInputMsg"/>
+      <wsdl:output message="tns:addUserOutputMsg"/>
+    </wsdl:operation>
+
+    <operation name="connect">
+      <wsdl:input message="tns:connectInputMsg"/>
+      <wsdl:output message="tns:connectOutputMsg"/>
+    </operation>
+
+    <operation name="disconnect">
+      <wsdl:input message="tns:disconnectInputMsg"/>
+      <wsdl:output message="tns:disconnectOutputMsg"/>
+    </operation>
+
+    <operation name="reqAuthorisation">
+      <wsdl:input message="tns:reqAuthorisationInputMsg"/>
+      <wsdl:output message="tns:reqAuthorisationOutputMsg"/>
+    </operation>
+
+    <operation name="getX509Cert">
+      <wsdl:input message="tns:getX509CertInputMsg"/>
+      <wsdl:output message="tns:getX509CertOutputMsg"/>
+    </operation>
+  </wsdl:portType>  
+  
+  <wsdl:binding name="SessionMgrBinding" type="tns:SessionMgr">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <operation name="addUser">
+      <soap:operation soapAction="addUser"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output> 
+    </operation>
+    
+    <operation name="connect">
+      <soap:operation soapAction="connect"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output> 
+    </operation>
+    
+    <operation name="disconnect">
+      <soap:operation soapAction="disconnect"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output> 
+    </operation>
+    
+    <operation name="reqAuthorisation">
+      <soap:operation soapAction="reqAuthorisation"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output> 
+    </operation>
+
+    <operation name="getX509Cert">
+      <soap:operation soapAction="getX509Cert"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output> 
+    </operation>    
+  
+  </wsdl:binding>
+
+  <wsdl:service name="SessionMgrService">
+    <wsdl:documentation>NERC Data Grid Session Manager web service</wsdl:documentation>
+    <wsdl:port binding="tns:SessionMgrBinding" name="SessionMgr">
+      <soap:address location="http://glue.badc.rl.ac.uk/SessionManager"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

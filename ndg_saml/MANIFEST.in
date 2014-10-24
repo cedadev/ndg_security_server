@@ -1,0 +1,11 @@
+#
+# MANIFEST.in file to enable inclusion of unit test data files and config
+# 
+# NDG SAML Package
+# 
+# P J Kershaw 15/12/11
+# 
+# Copyright (C) 2011 STFC
+# 
+# Licence: Apache version 2.0 - See LICENCE file for details
+recursive-include ndg/saml/test/ *.xml *.txt *.ini *.cfg *.crt *.key *.pem README

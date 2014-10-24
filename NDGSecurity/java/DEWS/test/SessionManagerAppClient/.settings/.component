@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-modules id="moduleCoreId">
+    <wb-module deploy-name="SessionManagerAppClient">
+        <wb-resource deploy-path="/" source-path="/appClientModule"/>
+        <property name="java-output-path" value="/build/classes/"/>
+    </wb-module>
+</project-modules>

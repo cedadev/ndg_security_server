@@ -1,0 +1,114 @@
+<!-- !This file uses the Genshi template language: http://genshi.edgewall.org/wiki/Documentation/xml-templates.html -->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/">
+    <head>
+        <title>$title</title>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+        <link type="text/css" href="${root}/.static/css/blitzer/jquery-ui-1.8.6.custom.css" rel="stylesheet" /> 
+        <link rel="stylesheet" type="text/css" media="screen" href="${root}/.static/css/default.css" />
+        <link rel="alternate" type="application/thredds+xml" title="THREDDS Catalog" href="${root}/catalog.xml" />
+        <script type="text/javascript" src="${root}/.static/js/jquery-1.4.2.min.js"></script>
+        <script type="text/javascript" src="${root}/.static/js/jquery-ui-1.8.2.custom.min.js"></script>
+        <script type="text/javascript" src="${root}/.static/js/jquery.hotkeys-0.7.9.min.js"></script>
+        <script type="text/javascript">
+            var root = "${root}";
+        </script>
+        <script py:if="environ.get('pydap.search')"
+            type="text/javascript" src="${root}/.static/js/search.js"></script>
+
+        <!-- icons from http://www.famfamfam.com/lab/icons/silk/preview.php -->
+    </head>
+
+    <body class="ui-helper-reset ui-widget">
+        <div id="main" class="ui-corner-all ui-widget-content">
+            <h1 id="title">$title</h1>
+
+            <hr class="ui-widget-header" />
+            <p>
+<!--
+                <span class="ui-icon ui-icon-folder-collapsed" style="display: inline-block"></span>
+-->
+                <table><tr><td style="width:1%"><span class="ui-icon ui-icon-folder-collapsed" style="display:block"></span></td><td>
+                <a href="../">Parent directory</a></td></tr></table>
+            </p>
+            <table>
+                <tr class="ui-widget-header">
+                    <th>Filename</th>
+                    <th>Download</th>
+                    <th>Last modified</th>
+                </tr>
+
+                <!-- directories -->
+                <tr py:for="dir in dirs" class="ui-widget-content">
+                    <td>
+<!--
+                        <span class="ui-icon ui-icon-folder-collapsed" style="display: inline-block"></span>
+-->
+                        <table>
+                            <tr>
+                                <td style="width:1%"><span class="ui-icon ui-icon-folder-collapsed" style="display:block"></span></td>
+                                <td><a href="${dir}/" class="ui-widget">${dir}/</a></td>
+                            </tr>
+                        </table></td><td colspan="2">
+                    </td>
+                </tr>
+
+                <!-- files -->
+                <tr py:for="file in files" class="ui-widget-content">
+                    <td py:choose="">
+                        <py:when test="file.supported">
+<!--
+                            <span class="ui-icon ui-icon-gear" style="display: inline-block"></span>
+-->
+                            <table>
+                               <tr>
+                                   <td style="width:1%"><span class="ui-icon ui-icon-gear" style="display: block"></span></td>
+                                   <td><a href="${file.name}.html" title="Download data from ${file.name}" class="ui-widget">${file.name}</a></td>
+                               </tr>
+                            </table>
+                        </py:when>
+                        <py:otherwise>
+<!--
+                            <span class="ui-icon ui-icon-document" style="display: inline-block"></span>
+-->
+                            <table>
+                               <tr>
+                                   <td style="width:1%"><span class="ui-icon ui-icon-document" style="display: block"></span></td>
+                                   <td class="ui-widget">${file.name}</td>
+                               </tr>
+                            </table>
+                        </py:otherwise>
+                    </td>
+                    <td><a href="${file.name}" title="Download file ${file.name}">${file.size}</a></td> 
+                    <?python
+                        import time
+                    ?>
+                    <td>${time.strftime("%m/%d/%Y %I:%M:%S %p", file.modified)}</td> 
+                </tr>
+            </table>
+
+            <hr />
+        </div>
+        <div id="footer">
+            <table width="100%"><tbody>
+                <tr>
+                    <td align="left" width="80%" valign="top">
+                        <table><tbody>
+                            <tr>
+                                <td valign="top"><small>CEDA PyDAP Service Beta.<p><a href="http://pampero.badc.rl.ac.uk/dap/logout" class="FooterLink">logout</a></p></small></td>
+                            </tr>
+                        </tbody></table>
+                     </td>
+                     <td align="right" valign="top"><span>
+                          <a href="http://ceda.ac.uk/"><image src="https://ceda.ac.uk/layout/CEDA_RightButton60.png" alt="Centre for Environmental Data Archival" title="Centre for Environmental Data Archival" border="0"></image></a>
+                     </span></td>
+                </tr>
+            </tbody></table>
+        </div>
+    </body>
+</html>
+
+<!--! vim:ft=genshi
+-->

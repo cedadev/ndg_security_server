@@ -1,0 +1,169 @@
+<!-- !This file uses the Genshi template language: http://genshi.edgewall.org/wiki/Documentation/xml-templates.html -->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/">
+    <head>
+        <title>Sign in</title>
+        
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        
+        <link rel="stylesheet" media="all" href="/static/css/openid.css" type="text/css"/>
+        <link type="text/css" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" rel="stylesheet" />
+        
+        <link rel="stylesheet" type="text/css" media="screen" href="/static/mf54/css/mf54_reset.css" />
+        <link rel="stylesheet" type="text/css" media="screen" href="/static/mf54/css/mf54_grid_nosidebar.css" />
+        <link rel="stylesheet" type="text/css" media="screen" href="/static/mf54/css/mf54_content_nosidebar.css" />
+        
+        <!-- custom styles -->    
+        <style>
+            /* Correct font sizes messed up by jquery-ui.css */
+            .ui-widget {
+                font-size: 0.625em;
+            }
+            /* Make fieldset use whole width */
+            .content .loginform fieldset, .content .loginform label.top {
+                width: 100%;
+            }
+        </style>
+
+        <script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.js"></script>
+        <script type="text/javascript" src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+        <script type="text/javascript" src="/static/js/jquery-1.10.1.min.js"></script>
+        <script type="text/javascript" src="/static/js/openid-jquery.js"></script>
+        <script type="text/javascript" src="/static/js/openid-en.js"></script>
+        <script>
+            jQuery(document).ready(function() {
+                openid.init('openid_url', '/static/img/');
+                // openid.setDemoMode(true); //Stops form submission for client javascript-only test purposes
+            });
+        </script>
+
+    </head>
+
+    <body class="ui-helper-reset ui-widget">
+        <!-- CONTAINER FOR ENTIRE PAGE -->
+        <div class="container" id="">
+            <!-- A. HEADER -->         
+            <div class="corner-page-top"></div>
+            <div class="header">
+            <div class="header-top">
+        
+            <!-- A.1 SITENAME -->      
+            <a class="sitelogo" href="http://www.ceda.ac.uk" title="Home"></a>
+            <div class="sitename">
+            </div>
+    
+            <!-- A.2 BUTTON NAVIGATION -->
+            <div class="navbutton">
+               <ul>
+                <li><a href="http://www.ceda.ac.uk/blog/feeds/rss/" title="RSS"><img src="/static/mf54/img/rss.png" alt="RSS-Button" /></a></li>
+                <li><a href="http://www.ceda.ac.uk/blog/feeds/atom/" title="Atom"><img src="/static/mf54/img/atom.png" alt="Atom-Button" /></a></li>
+                <li><a href="http://twitter.com/cedanews" title="Twitter"><img src="/static/mf54/img/twitter.png" alt="Twitter-Button" /></a></li>
+              </ul>
+            </div>
+    
+            <!-- A.X USERSTATUS -->
+            <div class="userstatus">
+               <ul>
+                 <li><a href="" title="">Register</a></li>
+                 <!-- <li>Welcome, [username]</li>
+                 <li>Account</li> -->
+               </ul>
+            </div>
+    
+            <!-- A.3 GLOBAL NAVIGATION -->
+            <div class="navglobal">
+              <ul>
+                <li><a href="http://www.ceda.ac.uk/contact" title="Contact CEDA">Contact Us</a></li>
+                <li><a href="http://www.ceda.ac.uk/blog" title="CEDA News">CEDA News</a></li>
+              </ul>
+            </div>        
+          </div>
+        
+          <!-- A.4 BREADCRUMB and SEARCHFORM -->
+          <div class="header-bottom">
+    
+            <!-- Breadcrumb -->
+            <div id="breadcrumb-menu">
+                <ul>
+    <!--
+                    <li>item</li>
+    -->
+                </ul>
+            </div>   
+    
+            <!-- Search form -->                  
+            <div class="searchform">
+            </div>
+    
+          </div>
+    </div>
+    <div class="corner-page-bottom"></div>
+    
+    <!-- B. NAVIGATION BAR -->
+    <div class="corner-page-top"></div>        
+    <div class="navbar">
+        <ul class="nav pull-right">
+            <li id="dropdown-menu-about" class="dropdown">
+                <a href="#">
+                    About CEDA
+                    <span class="caret"></span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+<!-- C. MAIN SECTION -->      
+    <div class="main">
+      <!-- <h1 class="pagetitle">block title could go here but causes problems lower down</h1> -->
+
+      <!-- C.1 CONTENT -->
+      <div class="content">             
+        <!-- CONTENT CELL -->                               
+        <a id="anchor-heading-1"></a>
+        <div class="corner-content-1col-top"></div>  
+        <div class="content-1col-nobox">
+            <h1>Sign in</h1>
+
+            <p>Please select your account provider:</p>
+            
+            <!-- begin openidrelyingparty main content -->
+            <div class="loginform">
+                <form method="post" id="openid_form" name="openid_form" action="">
+                    <fieldset>
+                        <input type="hidden" name="action" value="verify" />
+                        <input type="hidden" name="r" value="" />
+
+                        <p><label for="openid_choice" class="top"></label></p><br />
+                        <div id="openid_choice">
+                            <div id="openid_btns"></div>
+                        </div>
+                        <div id="openid_input_area">
+                        </div>                        
+                    </fieldset>
+                </form> 
+            </div>
+            <!-- end of openidrelyingparty main content -->
+            
+        </div> 
+        <div class="corner-content-1col-bottom"></div> 
+      </div>
+   
+    </div>
+    
+    <!-- D. FOOTER -->      
+    <div class="footer">
+      <a href="http://www.ncas.ac.uk"><img src="/static/mf54/img/ncas_logo_fullcolour.jpg" alt="NCAS logo" title="NCAS" align="left"/></a>
+      <a href="http://www.nceo.ac.uk"><img src="/static/mf54/img/nceo_logo.jpg" alt="NCEO logo" title="NCEO" align="right"/></a>
+
+      <p>Copyright (c) 2011 STFC  |  All Rights Reserved</p>
+      
+    </div>
+    <div class="corner-page-bottom"></div> 
+    
+    </div>
+    
+    </body>
+</html>
+
+<!--! vim:ft=genshi
+-->

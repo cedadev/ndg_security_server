@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="/home/pjkersha/workspace/MyProxyInterface/lib/cog-jglobus-1.8.0.jar"/>
+	<classpathentry kind="lib" path="/home/pjkersha/workspace/MyProxyInterface/lib/cog-jobmanager-1.8.0.jar"/>
+	<classpathentry kind="lib" path="/home/pjkersha/workspace/MyProxyInterface/lib/cog-url-1.8.0.jar"/>
+	<classpathentry kind="lib" path="/home/pjkersha/workspace/MyProxyInterface/lib/commons-logging-1.1.jar"/>
+	<classpathentry kind="lib" path="/home/pjkersha/workspace/MyProxyInterface/lib/cryptix.jar"/>
+	<classpathentry kind="lib" path="/home/pjkersha/workspace/MyProxyInterface/lib/cryptix32.jar"/>
+	<classpathentry kind="lib" path="/home/pjkersha/workspace/MyProxyInterface/lib/cryptix-asn1.jar"/>
+	<classpathentry kind="lib" path="/home/pjkersha/workspace/MyProxyInterface/lib/jce-jdk13-131.jar"/>
+	<classpathentry kind="lib" path="/home/pjkersha/workspace/MyProxyInterface/lib/jgss.jar"/>
+	<classpathentry kind="lib" path="/home/pjkersha/workspace/MyProxyInterface/lib/junit.jar"/>
+	<classpathentry kind="lib" path="/home/pjkersha/workspace/MyProxyInterface/lib/log4j-1.2.15.jar"/>
+	<classpathentry kind="lib" path="/home/pjkersha/workspace/MyProxyInterface/lib/puretls.jar"/>
+	<classpathentry kind="lib" path="lib"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

@@ -1,0 +1,36 @@
+Integration Tests for OpenID Relying Party and SSL based Authentication
+=======================================================================
+A simple example application securedapp.py is secured with an Authentication
+handler which redirects HTTP 401 Responses to this application which consists
+of an OpenID Relying Party application and SSL Client based Authentication 
+filter running in securityservicesapp.py.  With this arrangement, clients may
+authenticate with the application either using OpenID or over SSL by providing
+a user certificate.  
+
+This particular configuration is important for use when deploying data access
+services which need to support both OpenID and SSL client based authentication
+as with ESGF.
+
+An OpenID account with an external OpenID Provider is required in order to run
+this test.  See openidprovider/ integration test for details of how to run the
+OpenID Provider application.
+
+To run:
+
+$ ./authenticationservicesapp.py
+
+and in a separate window:
+
+$ ./securedapp.py
+
+[also openidproviderapp.py in openidprovider/ if needed]
+
+Start a browser and enter the address:
+
+http://localhost:6080
+
+You will be redirected to a page to enter your OpenID.  Enter your preferred
+OpenID and proceed to sign in.  On return to the test site it will display a 
+message with an option to logout.  Click on the link to logout.
+
+P J Kershaw 27/04/11
