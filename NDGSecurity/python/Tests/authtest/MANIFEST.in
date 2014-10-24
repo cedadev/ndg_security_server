@@ -1,2 +1,0 @@
-recursive-include authtest/public *
-recursive-include authtest/templates *

@@ -1,4 +1,0 @@
-<doc xmlns="http://example.com/default" xmlns:z="urn:z.a.b.c">
-  <a a1="1" a2="2">123</a>
-  <b xmlns:Z="urn:Z.a.b.c" xmlns:y="http://example.com/y" a3="&quot;3&quot;" y:a1="1" y:a2="2"></b>
-</doc>

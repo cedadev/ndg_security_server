@@ -1,2 +1,0 @@
-recursive-include sso/public *
-recursive-include sso/templates *

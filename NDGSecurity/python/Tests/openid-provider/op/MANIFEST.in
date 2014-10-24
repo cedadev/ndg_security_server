@@ -1,2 +1,0 @@
-recursive-include op/public *
-recursive-include op/templates *

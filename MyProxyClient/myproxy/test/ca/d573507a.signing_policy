@@ -1,4 +1,0 @@
-# UK e-Science Root signing policy file, amended with SLCS toplevel CA
- access_id_CA   X509    '/O=NDG/OU=Security/CN=Test CA'
- pos_rights     globus  CA:sign
- cond_subjects  globus  '"/O=NDG/OU=Security/CN=Test CA" "/O=NDG/OU=Security/CN=host/sstdmpjk.space.rl.ac.uk" "/O=NDG/OU=Security/*"'
