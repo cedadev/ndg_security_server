@@ -36,8 +36,6 @@ from ndg.security.test.unit.base import BaseTestCase
 from ndg.security.server.wsgi import NDGSecurityMiddlewareBase
 from ndg.security.server.wsgi.authz.result_handler.basic import \
     PEPResultHandlerMiddleware
-from ndg.security.server.wsgi.authz.result_handler.redirect import \
-    HTTPRedirectPEPResultHandlerMiddleware
 from ndg.security.server.wsgi.authz.pep import SamlPepFilterConfigError
 
 

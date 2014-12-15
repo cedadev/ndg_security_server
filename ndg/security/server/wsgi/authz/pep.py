@@ -10,6 +10,7 @@ __revision__ = '$Id$'
 import logging
 log = logging.getLogger(__name__)
 
+import re
 import httplib
 from urllib2 import URLError
 from time import time
@@ -59,6 +60,12 @@ class SamlPepFilterBase(SessionMiddlewareBase):
     
     :ivar __client: SAML authorisation decision query client 
     :type __client: ndg.saml.saml2.binding.soap.client.authzdecisionquery.AuthzDecisionQuerySslSOAPBinding
+
+    :ivar ignore_file_list_pat: a list of regular expressions for resource paths
+    ignored by the authorisation policy. Resources matching these patterns 
+    circumvent the authorisation policy.  This setting needs to be made 
+    carefully!
+    :type ignore_file_list_pat: list
     '''
     AUTHZ_SERVICE_URI = 'authzServiceURI'
     AUTHZ_DECISION_QUERY_PARAMS_PREFIX = 'authzDecisionQuery.'
@@ -97,6 +104,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         self.__cacheDecisions = False
         self.__localPdp = None
         self.__localPolicyFilePath = None
+        self.ignore_file_list_pat = None
 
     def _getLocalPolicyFilePath(self):
         return self.__localPolicyFilePath
@@ -354,21 +362,28 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         :param resourceURI: URI of requested resource
         :type resourceURI: basestring
         """
-        if self.__localPdp is None:
+        # Apply a list of regular expressions to filter out files which can be 
+        # ignored
+        if self.ignore_file_list_pat is not None:
+            for pat in self.ignore_file_list_pat:
+                if re.match(pat, resourceURI):
+                    return False
+
+        elif self.__localPdp is None:
             log.debug("No Local PDP set: passing on request to main "
                       "authorisation service...")
             return True
-        
-        xacmlRequest = self._createXacmlRequestCtx(resourceURI)
-        xacmlResponse = self.__localPdp.evaluate(xacmlRequest)
-        for result in xacmlResponse.results:
-            if result.decision.value != XacmlDecision.NOT_APPLICABLE_STR:
-                log.debug("Local PDP returned %s decision, passing request on "
-                          "to main authorisation service ...", 
-                          result.decision.value)
-                return True
-            
-        return False
+        else:
+            xacmlRequest = self._createXacmlRequestCtx(resourceURI)
+            xacmlResponse = self.__localPdp.evaluate(xacmlRequest)
+            for result in xacmlResponse.results:
+                if result.decision.value != XacmlDecision.NOT_APPLICABLE_STR:
+                    log.debug("Local PDP returned %s decision, passing request "
+                              "on to main authorisation service ...", 
+                              result.decision.value)
+                    return True
+                
+            return False
 
     def _createXacmlRequestCtx(self, resourceURI):
         """Wrapper to create a request context for a local PDP - see 
