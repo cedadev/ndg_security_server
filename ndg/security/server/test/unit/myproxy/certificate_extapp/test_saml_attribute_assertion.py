@@ -35,7 +35,7 @@ class CertExtAppTestCase(BaseTestCase):
         super(CertExtAppTestCase, self).__init__(*arg, **kw)            
         self.startSiteAAttributeAuthority(withSSL=True, 
                 port=CertExtAppTestCase.SITEA_SSL_ATTRIBUTEAUTHORITY_PORTNUM)
-        self.initDb()
+        self.init_db()
         
     def test01DbQuery(self):
         myProxyCertExtApp = CertExtApp()

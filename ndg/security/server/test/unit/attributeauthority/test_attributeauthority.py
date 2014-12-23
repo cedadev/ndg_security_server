@@ -125,7 +125,7 @@ class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
             os.environ['NDGSEC_AA_UNITTEST_DIR'
                        ] = os.path.abspath(os.path.dirname(__file__))
             
-        self.initDb()
+        self.init_db()
         
     def test01TrySamlAttribute2SqlQuery__setattr__(self):
         if self.skipTests:

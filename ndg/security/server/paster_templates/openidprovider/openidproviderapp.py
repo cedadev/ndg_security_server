@@ -70,7 +70,7 @@ if __name__ == '__main__':
                       help="Configuration file path")
     
     # Initialise test user database
-    BaseTestCase.initDb()
+    BaseTestCase.init_db()
     
     opt = parser.parse_args()[0]
     

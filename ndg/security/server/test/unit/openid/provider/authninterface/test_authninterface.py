@@ -29,7 +29,7 @@ class SQLAlchemyAuthnInterfaceTestCase(BaseTestCase):
         super(SQLAlchemyAuthnInterfaceTestCase, self).__init__(*arg, **kw)
         self.__interface = None
         
-        self.initDb()
+        self.init_db()
          
     def setUp(self):
         self.__interface = SQLAlchemyAuthnInterface(

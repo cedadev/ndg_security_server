@@ -14,7 +14,7 @@ from os import path
 from OpenSSL import SSL
 
 from ndg.security.server.utils.paste_utils import PasteDeployAppServer
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase
 
 INI_FILENAME = 'openidprovider.ini'
 INI_FILEPATH = path.join(path.dirname(path.abspath(__file__)), INI_FILENAME)
@@ -70,13 +70,12 @@ if __name__ == '__main__':
                       help="Configuration file path")
     
     # Initialise test user database
-    BaseTestCase.initDb()
+    BaseTestCase.init_db()
     
     opt = parser.parse_args()[0]
     
     if opt.withSSL.lower() == 'true':        
-        ssl_context = SSL.Context(SSL.SSLv23_METHOD)
-        ssl_context.set_options(SSL.OP_NO_SSLv2)
+        ssl_context = SSL.Context(SSL.TLSv1_METHOD)
     
         ssl_context.use_privatekey_file(opt.priKeyFilePath)
         ssl_context.use_certificate_file(opt.certFilePath)

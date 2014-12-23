@@ -34,7 +34,7 @@ except ImportError, e:
     
 from openid.yadis.manager import Discovery
 
-from ndg.security.common.X509 import X509Cert
+from ndg.security.common.openssl import m2_get_dn_field, m2_get_cert_ext_values
 from ndg.security.common.utils.etree import QName
 from ndg.security.common.utils.classfactory import instantiateClass
 
@@ -386,17 +386,34 @@ class SSLClientAuthNValidator(SSLIdPValidator):
         x509CertChain = x509StoreCtx.get1_chain()
         dnList = []
         for cert in x509CertChain:
-            x509Cert = X509Cert.fromM2Crypto(cert)
-            dn = x509Cert.dn
-            commonName = dn['CN']
+            x509_subj = cert.get_subject()
+            dn = x509_subj.as_text()
+            
             log.debug("iterating over cert. chain dn = %s", dn)
-    
-            if commonName in self.validIdPNames:
-                # Match found - return
-                log.debug("Found peer certificate with CN matching list of "
-                          "valid OpenID Provider peer certificates %r" %
-                          self.validIdPNames)
-                return
+            
+            # Check for subject alternative names - this takes precedence over subject 
+            # common name check
+            cert_hostnames = m2_get_cert_ext_values(cert, 'subjectAltName', 
+                                                    field_prefix="DNS:", field_sep=",")
+            if cert_hostnames is not None:
+                log.debug("Found subject alt name hosts = %r for dn %r", cert_hostnames, dn)
+            else:       
+                # Check for subject common name if no subject alt name was found
+                cert_hostnames = m2_get_dn_field(dn, 'CN')
+                log.debug("No subject alt name found, using subject common name = %r"
+                          " for dn %r", cert_hostnames, dn)
+            
+            if cert_hostnames is None:
+                log.warning("No hostname found in certificate subject alt name field or "
+                            "DN common name for subject %r", dn)
+            else:
+                for hostname in cert_hostnames:
+                    if hostname in self.validIdPNames:
+                        # Match found - return
+                        log.debug("Found peer certificate with CN matching list of "
+                                  "valid OpenID Provider peer certificates %r" %
+                                  self.validIdPNames)
+                        return
             
             dnList.append(dn)
             

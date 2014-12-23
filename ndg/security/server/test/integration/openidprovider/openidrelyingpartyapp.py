@@ -18,11 +18,11 @@ from ndg.security.server.utils.paste_utils import PasteDeployAppServer
    
 def app_factory(globalConfig, **localConfig):
     '''OpenIdTestHarnessApp factory for Paste app pattern'''
-    return OpenIdTestHarnessApp(None, globalConfig, **localConfig)
+    return OpenIdRelyingPartyTestHarnessApp(None, globalConfig, **localConfig)
 
 def filter_app_factory(app, globalConfig, **localConfig):
     '''OpenIdTestHarnessApp factory for Paste filter app pattern'''
-    return OpenIdTestHarnessApp(app, globalConfig, **localConfig)
+    return OpenIdRelyingPartyTestHarnessApp(app, globalConfig, **localConfig)
 
 class OpenIdRelyingPartyTestHarnessApp(object):
     """This class simulates the application to be secured by the NDG Security
@@ -192,4 +192,3 @@ if __name__ == '__main__':
     server = PasteDeployAppServer(cfgFilePath=path.abspath(opt.configFilePath), 
                                   port=opt.port) 
     server.start()
-   

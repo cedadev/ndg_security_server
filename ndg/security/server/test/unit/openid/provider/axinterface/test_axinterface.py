@@ -23,7 +23,7 @@ from ndg.security.server.wsgi.openid.provider.axinterface.sqlalchemy_ax import (
 class SQLAlchemyAXInterfaceTestCase(BaseTestCase):    
     def __init__(self, *arg, **kw):
         super(SQLAlchemyAXInterfaceTestCase, self).__init__(*arg, **kw)
-        self.initDb()
+        self.init_db()
             
     def test01InvalidQueryUsernameKey(self):
         interface = SQLAlchemyAXInterface()
