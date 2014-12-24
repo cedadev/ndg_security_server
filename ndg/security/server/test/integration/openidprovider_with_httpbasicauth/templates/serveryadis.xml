@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xrds:XRDS xmlns:xrds="xri://$xrds" xmlns="xri://$xrd*($v*2.0)">
+    <XRD>
+        <Service priority="1">
+            <Type>urn:esg:security:myproxy-service</Type>
+            <URI>socket://myproxy-server.somewhere.ac.uk:7512</URI>
+        </Service>
+        <Service priority="20">
+            <Type>urn:esg:security:attribute-service</Type>
+            <URI>https://localhost:7443/AttributeAuthority</URI>
+        </Service>
+        <Service priority="0">
+            <Type>$openid20type</Type>
+            <URI>$endpoint_url</URI>
+        </Service>
+    </XRD>
+</xrds:XRDS>

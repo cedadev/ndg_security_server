@@ -16,8 +16,7 @@ import logging
 log = logging.getLogger(__name__)
 
 import re
-import base64
-import httplib
+import webob
 import urllib
 from paste.request import construct_url, parse_querystring
 import authkit.authenticate
@@ -33,169 +32,7 @@ from ndg.security.server.wsgi.ssl import AuthKitSSLAuthnMiddleware
 
 class AuthnException(NDGSecurityMiddlewareError):
     """Base exception for this module"""
-    
-    
-class HTTPBasicAuthMiddlewareError(AuthnException):
-    """Base exception type for HTTPBasicAuthMiddleware"""
-    
-    
-class HTTPBasicAuthMiddlewareConfigError(NDGSecurityMiddlewareConfigError):
-    """Configuration error with HTTP Basic Auth middleware"""
 
-
-class HTTPBasicAuthUnauthorized(HTTPBasicAuthMiddlewareError):  
-    """Raise from custom authentication interface in order to set HTTP 
-    401 Unuathorized response"""
-    
-    
-class HTTPBasicAuthMiddleware(NDGSecurityMiddlewareBase):
-    '''HTTP Basic Authentication Middleware 
-    '''
-    AUTHN_FUNC_ENV_KEYNAME = ('ndg.security.server.wsgi.authn.'
-                              'HTTPBasicAuthMiddleware.authenticate')
-    AUTHN_FUNC_ENV_KEYNAME_OPTNAME = 'authnFuncEnvKeyName'       
-    PARAM_PREFIX = 'http.auth.basic.'
-    HTTP_HDR_FIELDNAME = 'basic'
-    FIELD_SEP = ':'
-    AUTHZ_ENV_KEYNAME = 'HTTP_AUTHORIZATION'
-    
-    RE_PATH_MATCH_LIST_OPTNAME = 'rePathMatchList'
-    
-    def __init__(self, app, app_conf, prefix=PARAM_PREFIX, **local_conf):
-        self.__rePathMatchList = None
-        self.__authnFuncEnvironKeyName = None
-        
-        super(HTTPBasicAuthMiddleware, self).__init__(app, app_conf, 
-                                                      **local_conf)
-
-        rePathMatchListOptName = prefix + \
-                            HTTPBasicAuthMiddleware.RE_PATH_MATCH_LIST_OPTNAME
-        rePathMatchListVal = app_conf.pop(rePathMatchListOptName, '')
-        
-        self.rePathMatchList = [re.compile(i) 
-                                for i in rePathMatchListVal.split()]
-
-        paramName = prefix + \
-                    HTTPBasicAuthMiddleware.AUTHN_FUNC_ENV_KEYNAME_OPTNAME
-                    
-        self.authnFuncEnvironKeyName = local_conf.get(paramName,
-                                HTTPBasicAuthMiddleware.AUTHN_FUNC_ENV_KEYNAME)
-
-    def _getAuthnFuncEnvironKeyName(self):
-        return self.__authnFuncEnvironKeyName
-
-    def _setAuthnFuncEnvironKeyName(self, value):
-        if not isinstance(value, basestring):
-            raise TypeError('Expecting string type for '
-                            '"authnFuncEnvironKeyName"; got %r type' % 
-                            type(value))
-        self.__authnFuncEnvironKeyName = value
-
-    authnFuncEnvironKeyName = property(fget=_getAuthnFuncEnvironKeyName, 
-                                       fset=_setAuthnFuncEnvironKeyName, 
-                                       doc="key name in environ for the "
-                                           "custom authentication function "
-                                           "used by this class")
-
-    def _getRePathMatchList(self):
-        return self.__rePathMatchList
-
-    def _setRePathMatchList(self, value):
-        if not isinstance(value, (list, tuple)):
-            raise TypeError('Expecting list or tuple type for '
-                            '"rePathMatchList"; got %r' % type(value))
-        
-        self.__rePathMatchList = value
-
-    rePathMatchList = property(fget=_getRePathMatchList, 
-                               fset=_setRePathMatchList, 
-                               doc="List of regular expressions determine the "
-                                   "URI paths intercepted by this middleware")
-
-    def _pathMatch(self):
-        """Apply a list of regular expression matching patterns to the contents
-        of environ['PATH_INFO'], if any match, return True.  This method is
-        used to determine whether to apply SSL client authentication
-        """
-        path = self.pathInfo
-        for regEx in self.rePathMatchList:
-            if regEx.match(path):
-                return True
-            
-        return False   
-
-    def _parseCredentials(self):
-        """Extract username and password from HTTP_AUTHORIZATION environ key
-        
-        @rtype: tuple
-        @return: username and password.  If the key is not set or the auth
-        method is not basic return a two element tuple with elements both set
-        to None
-        """
-        basicAuthHdr = self.environ.get(
-                                    HTTPBasicAuthMiddleware.AUTHZ_ENV_KEYNAME)
-        if basicAuthHdr is None:
-            log.debug("No %r setting in environ: skipping HTTP Basic Auth",
-                      HTTPBasicAuthMiddleware.AUTHZ_ENV_KEYNAME)
-            return None, None
-                       
-        method, encodedCreds = basicAuthHdr.split(None, 1)
-        if method.lower() != HTTPBasicAuthMiddleware.HTTP_HDR_FIELDNAME:
-            log.debug("Auth method is %r not %r: skipping request",
-                      method, HTTPBasicAuthMiddleware.HTTP_HDR_FIELDNAME)
-            return None, None
-            
-        creds = base64.decodestring(encodedCreds)
-        username, password = creds.split(HTTPBasicAuthMiddleware.FIELD_SEP, 1)
-        return username, password
-
-    @NDGSecurityMiddlewareBase.initCall
-    def __call__(self, environ, start_response):
-        """Authenticate based HTTP header elements as specified by the HTTP
-        Basic Authentication spec."""
-        log.debug("HTTPBasicAuthNMiddleware.__call__ ...")
-        
-        if not self._pathMatch():
-            return self._app(environ, start_response)
-        
-        authenticate = environ.get(self.authnFuncEnvironKeyName)
-        if authenticate is None:
-            # HTTP 500 default is right for this error
-            raise HTTPBasicAuthMiddlewareConfigError("No authentication "
-                                                     "function set in environ")
-            
-        username, password = self._parseCredentials()
-        if username is None:
-            return self._setErrorResponse(code=httplib.UNAUTHORIZED)
-        
-        # Call authentication application
-        try:
-            return authenticate(environ, start_response, username, password)
-        
-        except HTTPBasicAuthUnauthorized, e:
-            log.error(e)
-            return self._setErrorResponse(code=httplib.UNAUTHORIZED)
-        else:
-            return self._app(environ, start_response)
-
-
-# AuthKit based HTTP basic authentication plugin not currently needed but may 
-# need resurrecting
-from authkit.permissions import UserIn
-            
-class HTTPBasicAuthentication(object):
-    '''Authkit based HTTP Basic Authentication.   __call__ defines a 
-    validation function to fit with the pattern for the AuthKit interface
-    '''
-    
-    def __init__(self):
-        self._userIn = UserIn([])
-        
-    def __call__(self, environ, username, password):
-        """AuthKit HTTP Basic Auth validation function - return True/False"""
-        raise NotImplementedError()
-
-import webob
 
 class AuthenticationEnforcementFilter(object):
     """Simple filter raises HTTP 401 response code if the requested URI matches
@@ -235,11 +72,11 @@ class AuthenticationEnforcementFilter(object):
     
     @classmethod
     def filter_app_factory(cls, app, global_conf, **app_conf):
-        filter = cls(app)
+        filter_ = cls(app)
         if cls.INTERCEPT_URI_PAT_OPTNAME in app_conf:
-            filter.interceptUriPat = app_conf[cls.INTERCEPT_URI_PAT_OPTNAME]
+            filter_.interceptUriPat = app_conf[cls.INTERCEPT_URI_PAT_OPTNAME]
             
-        return filter
+        return filter_
     
     def __call__(self, environ, start_response):
         request = webob.Request(environ)

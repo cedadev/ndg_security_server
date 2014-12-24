@@ -23,6 +23,7 @@ from string import Template
 
 import paste.request
 from paste.util.import_string import eval_import
+from paste.httpexceptions import HTTPUnauthorized
 import beaker.session
 from openid.extensions import sreg, ax
 from openid.server import server
@@ -30,6 +31,7 @@ from openid.store.filestore import FileOpenIDStore
 from openid.consumer import discover
 
 from ndg.security.common.utils.classfactory import instantiateClass
+from ndg.security.server.wsgi.httpbasicauth import HttpBasicAuthMiddleware
 from ndg.security.server.wsgi import NDGSecurityMiddlewareBase  
 
 
@@ -1655,7 +1657,80 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                           "Attribute Exchange response object")
 
 
+class OpenIDProviderWithHttpBasicAuthMiddleware(OpenIDProviderMiddleware):
+    '''OpenID Provider with support for HTTP Basic Auth'''
     
+    @classmethod
+    def app_factory(cls, app_conf, **local_conf):
+        openidprovider_class = super(OpenIDProviderWithHttpBasicAuthMiddleware, 
+                                     cls)
+        openidprovider_app = openidprovider_class.app_factory(app_conf, 
+                                                              **local_conf)
+
+        # Wrap OpenID Provider to provide HTTP basic auth functionality
+        basic_auth_filter = HttpBasicAuthMiddleware.filter_app_factory(
+                                                    openidprovider_app, 
+                                                    app_conf, **local_conf)
+        
+        # Set authentication callback for Basic Auth middleware so that it uses
+        # the same authentication settings as the OpenID Provider
+        basic_auth_filter.authentication_callback = \
+                                    openidprovider_app.authentication_callback
+                                    
+        # Set intercept path for HTTP Basic Auth filter - it should correspond 
+        # to the OpenID provider endpoint
+        basic_auth_filter.re_path_match_list = (
+                            openidprovider_app.paths['path_openidserver'], )
+        
+        return basic_auth_filter
+
+    @property
+    def authentication_callback(self):
+        '''Return authentication callback function for use by HTTP Basic Auth
+        middleware
+        '''
+        def authenticate(environ, start_response, username, password):
+            '''Authentication callback for use with HTTP Basic Auth middleware.
+            It applies the same authentication procedure as used with the 
+            browser-based interface but tailored for scripted clients
+            '''
+            session = environ.get(self.sessionMiddlewareEnvironKeyName, {})
+            if (OpenIDProviderMiddleware.USERNAME_SESSION_KEYNAME in session):
+                # user is already logged in
+                return
+            
+            identity_uri = None
+            
+            if None in (username, password):
+                raise HTTPUnauthorized()
+            
+            # Invoke custom authentication interface plugin
+            try:
+                self._authN.logon(environ, identity_uri, username, password)
+                
+            except AuthNInterfaceError, e:
+                log.error("Authentication error: %s", traceback.format_exc())
+
+                raise HTTPUnauthorized()
+                               
+            except Exception, e:
+                log.error("Unexpected %s type exception raised during "
+                          "authentication: %s", type(e),
+                          traceback.format_exc())
+                raise
+            
+            # Set user in environ
+            environ['REMOTE_USER'] = username
+            
+            # Update session information
+            session[OpenIDProviderMiddleware.USERNAME_SESSION_KEYNAME
+                    ] = username
+            session.save()
+            
+                  
+        return authenticate
+
+ 
 class RenderingInterfaceError(Exception):
     """Base class for RenderingInterface exceptions
     
