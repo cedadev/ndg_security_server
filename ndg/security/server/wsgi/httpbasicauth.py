@@ -326,21 +326,17 @@ class HttpBasicAuthMiddleware(object):
         
         username, password = self.parse_credentials(environ)
         
-        # Call authentication middleware/application.  If no response is set,
-        # the next middleware is called in the chain
+        # Call authentication middleware/application.  
         try:
-            authenticate_func(environ, 
-                              start_response_wrapper, 
-                              username, 
-                              password)
-            return self.__app(environ, start_response_wrapper)
-        
+            response = authenticate_func(environ, start_response_wrapper, 
+                                         username, password)
         except HTTPUnauthorized:
             if username is None:
                 # If no username is set, set the HTTP Basic Auth challenge 
                 # returning an auth realm
                 log.error('No username set in HTTP Authorization header')
                 http_unauthorized = HTTPUnauthorized("No username set")
+                
                 return http_unauthorized(environ, start_response_wrapper)
             else:
                 # Credentials were set it's just they were invalid
@@ -348,3 +344,10 @@ class HttpBasicAuthMiddleware(object):
 
         except HTTPException, e:
             return e(environ, start_response)
+        
+        # If no response is set, the next middleware is called in the chain
+        if response is not None:
+            return response
+        else:
+            return self.__app(environ, start_response_wrapper)
+

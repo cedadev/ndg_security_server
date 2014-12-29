@@ -189,7 +189,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
     IDENTITY_URI_SESSION_KEYNAME = 'identityURI'
     APPROVED_FLAG_SESSION_KEYNAME = 'approved'
     LAST_CHECKID_REQUEST_SESSION_KEYNAME = 'lastCheckIDRequest'
-    OID_RESPONSE_SESSION_KEYNAME = 'oidResponse'
+    OID_RESPONSE_SESSION_KEYNAME = 'oid_response'
     
     PARAM_PREFIX = 'openid.provider.'
     
@@ -221,7 +221,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         self.__base_url = None
         self.__urls = None
         self.__method = None
-        self.__sessionMiddlewareEnvironKeyName = None
+        self.__session_mware_environ_keyname = None
         self.__session = None  
         self.__oidserver = None
         self.__query = {}
@@ -305,7 +305,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         self.method = dict([(v, k.replace('path_', 'do_'))
                             for k, v in self.paths.items()])
 
-        self.sessionMiddlewareEnvironKeyName = opt['session_middleware']
+        self.session_mware_environ_keyname = opt['session_middleware']
 
         log.debug("opt=%r", opt)        
        
@@ -512,14 +512,14 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         @rtype: basestring
         @return: WSGI response
         """
-        if not environ.has_key(self.sessionMiddlewareEnvironKeyName):
+        if not environ.has_key(self.session_mware_environ_keyname):
             raise OpenIDProviderConfigError('The session middleware %r is not '
                                             'present. Have you set up the '
                                             'session middleware?' %
-                                        self.sessionMiddlewareEnvironKeyName)
+                                        self.session_mware_environ_keyname)
 
         # Beware path is a property and invokes the _setPath method
-        self.session = environ[self.sessionMiddlewareEnvironKeyName]
+        self.session = environ[self.session_mware_environ_keyname]
         self._render.session = self.session
         
         pathMatch = self._matchIdentityURI()
@@ -601,22 +601,22 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         @return: WSGI response
         """
         try:
-            oidRequest = self.oidserver.decodeRequest(self.query)
+            oid_request = self.oidserver.decodeRequest(self.query)
             
         except server.ProtocolError, why:
             response = self._displayResponse(why)
             
         else:
-            if oidRequest is None:
+            if oid_request is None:
                 # Display text indicating that this is an endpoint.
                 response = self.do_mainpage(environ, start_response)
             
             # Check mode is one of "checkid_immediate", "checkid_setup"
-            elif oidRequest.mode in server.BROWSER_REQUEST_MODES:
-                response = self._handleCheckIDRequest(oidRequest)
+            elif oid_request.mode in server.BROWSER_REQUEST_MODES:
+                response = self._handleCheckIDRequest(oid_request)
             else:
-                oidResponse = self.oidserver.handleRequest(oidRequest)
-                response = self._displayResponse(oidResponse)
+                oid_response = self.oidserver.handleRequest(oid_request)
+                response = self._displayResponse(oid_response)
             
         return response
 
@@ -634,7 +634,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         /'No'.
         This may be set to 'Yes' or 'No'
         'identity': set to the user's identity URL.  This usually is not 
-        required since it can be obtained from oidRequest.identity attribute
+        required since it can be obtained from oid_request.identity attribute
         but in ID Select mode, the identity URL will have been selected or set
         in the decide page interface.
         
@@ -645,9 +645,9 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         @rtype: basestring
         @return: WSGI response
         """ 
-        oidRequest = self.session.get(
+        oid_request = self.session.get(
                 OpenIDProviderMiddleware.LAST_CHECKID_REQUEST_SESSION_KEYNAME)
-        if oidRequest is None:
+        if oid_request is None:
             log.error("Suspected do_allow called from stale request")
             return self._render.errorPage(environ, start_response,
                                           "Invalid request.  Please report "
@@ -656,7 +656,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                           code=400)
         
         if OpenIDProviderMiddleware.APPROVE_RP_SUBMIT in self.query:
-            if oidRequest.idSelect():
+            if oid_request.idSelect():
                 identity = self.query.get('identity')
                 if identity is None:
                     log.error("No identity field set from decide page for "
@@ -669,21 +669,21 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                                   "to your site "
                                                   "administrator.")
             else:
-                identity = oidRequest.identity
+                identity = oid_request.identity
 
             # Check for user selected to trust this RP for future logins.
-            self._applyTrustRoot(oidRequest)
+            self._applyTrustRoot(oid_request)
 
             # Check for POST'ed user explicit setting of AX parameters
             self._applyUserAXSelections()
                     
-            return self._displayResponse(self.oidResponse)
+            return self._displayResponse(self.oid_response)
         
         elif OpenIDProviderMiddleware.REJECT_RP_SUBMIT in self.query:
             # TODO: Check 'No' response is OK - No causes AuthKit's Relying 
             # Party implementation to crash with 'openid.return_to' KeyError
             # in Authkit.authenticate.open_id.process
-            self.oidResponse = oidRequest.answer(False)
+            self.oid_response = oid_request.answer(False)
             return self._render.mainPage(environ, start_response)            
         else:
             log.error('Setting response following ID Approval: expecting '
@@ -696,14 +696,14 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                           'administrator.',
                                           code=400)
             
-    def _applyTrustRoot(self, oidRequest):
+    def _applyTrustRoot(self, oid_request):
         """Check to see if user wants to trust the current Relying Party and if
         so set record this decision in the session
         """
         if self.query.get('remember', 'no').lower() == 'yes':
             self.session[
                 OpenIDProviderMiddleware.APPROVED_FLAG_SESSION_KEYNAME] = {
-                    oidRequest.trust_root: 'always'
+                    oid_request.trust_root: 'always'
                 }
             self.session.save()
                         
@@ -725,13 +725,13 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         # Apply user selections to the response
         if userAXSettings:
             # Get all the content namespaced as AX type
-            axArgs = self.oidResponse.fields.getArgs(ax.AXMessage.ns_uri)
+            axArgs = self.oid_response.fields.getArgs(ax.AXMessage.ns_uri)
             for i in axArgs.keys():
                 # Parse alias name but note not all keys are alias and so will
                 # not use the '.' delimiter
                 keyParts = i.split('.')
                 if len(keyParts) > 1 and not keyParts[1] in userAXSettings:
-                    self.oidResponse.fields.delArg(ax.AXMessage.ns_uri, i)
+                    self.oid_response.fields.delArg(ax.AXMessage.ns_uri, i)
                     
     def do_login(self, environ, start_response, **kw):
         """Display Login form
@@ -805,10 +805,10 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
             return self._redirect(start_response,
                                   self.query['fail_to'])
         
-        oidRequest = self.session.get(
+        oid_request = self.session.get(
                 OpenIDProviderMiddleware.LAST_CHECKID_REQUEST_SESSION_KEYNAME)
         
-        if oidRequest is None:
+        if oid_request is None:
             log.error("Getting OpenID request for login - No request "
                       "found in session")
             return self._render.errorPage(environ, start_response,
@@ -818,7 +818,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                 "report it to your site administrator.")
             
         # Get user identifier to check against credentials provided
-        if oidRequest.idSelect():
+        if oid_request.idSelect():
             # ID select mode enables the user to request specifying
             # their OpenID Provider without giving a personal user URL 
             try:
@@ -871,7 +871,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                                  userIdentifiers[0])
         else:
             # Get the unique user identifier from the user's OpenID URL
-            identityURI = oidRequest.identity
+            identityURI = oid_request.identity
             
             # Check the username used to login with matches the identity URI 
             # given.  This check is essential otherwise a user could impersonate
@@ -1035,9 +1035,9 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         @rtype: basestring
         @return: WSGI response
         """
-        oidRequest = self.session.get(
+        oid_request = self.session.get(
                 OpenIDProviderMiddleware.LAST_CHECKID_REQUEST_SESSION_KEYNAME)
-        if oidRequest is None:
+        if oid_request is None:
             log.error("No OpenID request set in session")
             return self._render.errorPage(environ, start_response,
                                           "Invalid request.  Please report "
@@ -1055,7 +1055,8 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         # interface in the decide page so that the user can review the content
         # of the response to be returned to the RP.
         try:
-            self._createResponse(oidRequest, identifier=identityURI)
+            self.oid_response = self._create_response(oid_request, 
+                                                      identifier=identityURI)
                     
         except (OpenIDProviderMissingRequiredAXAttrs,
                 OpenIDProviderMissingAXResponseHandler), e:
@@ -1094,8 +1095,8 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         try:
             return self._render.decidePage(environ, 
                                            start_response, 
-                                           oidRequest,
-                                           self.oidResponse)
+                                           oid_request,
+                                           self.oid_response)
         except AuthNInterfaceError, e:
             log.error("%s type exception raised calling decide page "
                       "rendering - an OpenID identifier look-up error? "
@@ -1108,12 +1109,12 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                     'your site administrator.')
             return response
 
-    def _identityIsAuthenticated(self, oidRequest):
+    def _identityIsAuthenticated(self, oid_request):
         '''Check that a user is authenticated i.e. does a session exist for their
         username 
         
-        @type oidRequest: openid.server.server.CheckIDRequest
-        @param oidRequest: OpenID Request object
+        @type oid_request: openid.server.server.CheckIDRequest
+        @param oid_request: OpenID Request object
         @rtype: bool
         @return: True/False is user authenticated
         '''
@@ -1132,16 +1133,16 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         return True
     
         
-    def _requestedIdMatchesAuthenticatedId(self, oidRequest):
+    def _requestedIdMatchesAuthenticatedId(self, oid_request):
         """Check requested Identity matches identity of already logged in user.
         Note also returns positive response if identity select mode used
         
-        @type oidRequest: openid.server.server.CheckIDRequest
-        @param oidRequest: OpenID Request object
+        @type oid_request: openid.server.server.CheckIDRequest
+        @param oid_request: OpenID Request object
         @rtype: bool
         @return: True/False authenticated user satisfy request ID
         """
-        if oidRequest.idSelect():
+        if oid_request.idSelect():
             log.debug(
                 "OpenIDProviderMiddleware._requestedIdMatchesAuthenticatedId - "
                 "ID Select mode set but user is already logged in")
@@ -1152,11 +1153,11 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         if identityURI is None:
             return False
         
-        if oidRequest.identity != identityURI:
+        if oid_request.identity != identityURI:
             log.debug(
                 "OpenIDProviderMiddleware._requestedIdMatchesAuthenticatedId - "
                 "requested identity is %r but user is already logged in with "
-                "ID %r" % (oidRequest.identity, identityURI))
+                "ID %r" % (oid_request.identity, identityURI))
             return False
         
         log.debug(
@@ -1165,7 +1166,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
 
         return True
     
-    def _trustRootIsAuthorized(self, trust_root):
+    def _trust_root_is_authorized(self, trust_root):
         '''Return True/False for the given trust root (Relying Party) 
         previously been approved by the user
         
@@ -1180,7 +1181,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                         {})
         return approvedRoots.get(trust_root) is not None
 
-    def _isConfiguredTrustedRoot(self, trust_root):
+    def _is_configured_trusted_root(self, trust_root):
         """the Relying Party is one of a
         list of RPs set in the start up configuration as not needing
         approval.  This could be for example sites within the same
@@ -1195,34 +1196,34 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         """
         return trust_root in self.trustedRelyingParties
     
-    def _addSRegResponse(self, oidRequest):
+    def _addSRegResponse(self, oid_request, oid_response):
         '''Add Simple Registration attributes to response to Relying Party
         
-        @type oidRequest: openid.server.server.CheckIDRequest
-        @param oidRequest: OpenID Check ID Request object'''
+        @type oid_request: openid.server.server.CheckIDRequest
+        @param oid_request: OpenID Check ID Request object'''
         
         if self.sregResponse is None:
             # No Simple Registration response object was set
             return
         
-        sreg_req = sreg.SRegRequest.fromOpenIDRequest(oidRequest)
+        sreg_req = sreg.SRegRequest.fromOpenIDRequest(oid_request)
 
         # Callout to external callable sets additional user attributes to be
         # returned in response to Relying Party        
         sreg_data = self.sregResponse(self.session.get(
                             OpenIDProviderMiddleware.USERNAME_SESSION_KEYNAME))
         sreg_resp = sreg.SRegResponse.extractResponse(sreg_req, sreg_data)
-        self.oidResponse.addExtension(sreg_resp)
+        oid_response.addExtension(sreg_resp)
 
-    def _addAXResponse(self, oidRequest):
+    def _addAXResponse(self, oid_request, oid_response):
         '''Add attributes to response based on the OpenID Attribute Exchange 
         interface
         
-        @type oidRequest: openid.server.server.CheckIDRequest
-        @param oidRequest: OpenID Check ID Request object
+        @type oid_request: openid.server.server.CheckIDRequest
+        @param oid_request: OpenID Check ID Request object
         '''
 
-        ax_req = ax.FetchRequest.fromOpenIDRequest(oidRequest)
+        ax_req = ax.FetchRequest.fromOpenIDRequest(oid_request)
         if ax_req is None:
             log.debug("No Attribute Exchange extension set in request")
             return
@@ -1266,30 +1267,32 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
             raise
         
         log.debug("Adding AX parameters to response: %s ...", ax_resp)
-        self.oidResponse.addExtension(ax_resp)
+        oid_response.addExtension(ax_resp)
         log.debug("Added AX parameters to response")
         
-    def _createResponse(self, oidRequest, identifier=None):
+    def _create_response(self, oid_request, identifier=None):
         '''Create a response object from the input request and add
         Simple Registration and/or Attribute Exchange parameters if handlers
         were specified - See _addSRegResponse and _addAXResponse methods - and
         only if the Relying Party has requested them
         
-        @type oidRequest: openid.server.server.CheckIDRequest
-        @param oidRequest: OpenID Check ID Request object
+        @type oid_request: openid.server.server.CheckIDRequest
+        @param oid_request: OpenID Check ID Request object
         @type identifier: basestring
         @param identifier: OpenID selected by user - for ID Select mode only
         '''
-        self.oidResponse = oidRequest.answer(True, identity=identifier)
-        self._addSRegResponse(oidRequest)
-        self._addAXResponse(oidRequest)
+        oid_response = oid_request.answer(True, identity=identifier)
+        self._addSRegResponse(oid_request, oid_response)
+        self._addAXResponse(oid_request, oid_response)
+        
+        return oid_response
 
-    def _handleCheckIDRequest(self, oidRequest):
+    def _handleCheckIDRequest(self, oid_request):
         """Handle "checkid_immediate" and "checkid_setup" type requests from
         Relying Party
         
-        @type oidRequest: openid.server.server.CheckIDRequest
-        @param oidRequest: OpenID Check ID request
+        @type oid_request: openid.server.server.CheckIDRequest
+        @param oid_request: OpenID Check ID request
         @rtype: basestring
         @return: WSGI response
         """
@@ -1298,37 +1301,37 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         # Save request
         self.session[
             OpenIDProviderMiddleware.LAST_CHECKID_REQUEST_SESSION_KEYNAME
-        ] = oidRequest
+        ] = oid_request
         
         self.session.save()
         
         # Check for authenticated session already present
-        if self._identityIsAuthenticated(oidRequest):
+        if self._identityIsAuthenticated(oid_request):
             
             # Check requested ID matches ID for an existing authenticated user
             # if one has already been set
-            if not self._requestedIdMatchesAuthenticatedId(oidRequest):
+            if not self._requestedIdMatchesAuthenticatedId(oid_request):
                 response = self._render.errorPage(self.environ, 
                                                   self.start_response,
                     'An existing user is already logged in with a different '
                     'identity to the one you provided (%s). Log out from this '
                     'site using the link below and then navigate back to the '
                     'site which first requested your OpenID.' % 
-                    oidRequest.identity)
+                    oid_request.identity)
                 return response
                 
             # User is logged in - check for ID Select type request i.e. the
             # user entered their IdP address at the Relying Party and not their
             # full OpenID URL.  In this case, the identity they wish to use must
             # be confirmed.
-            isConfiguredTrustedRoot = self._isConfiguredTrustedRoot(
-                                                        oidRequest.trust_root)
-            if oidRequest.idSelect() and not isConfiguredTrustedRoot:
+            is_configured_trusted_root = self._is_configured_trusted_root(
+                                                        oid_request.trust_root)
+            if oid_request.idSelect() and not is_configured_trusted_root:
                 # OpenID identifier must be confirmed
                 return self.do_decide(self.environ, self.start_response)
             
-            elif (self._trustRootIsAuthorized(oidRequest.trust_root) or
-                  isConfiguredTrustedRoot):
+            elif (self._trust_root_is_authorized(oid_request.trust_root) or
+                  is_configured_trusted_root):
                 
                 # User entered their full OpenID URL and they have previously 
                 # approved this Relying Party OR the Relying Party is one of a
@@ -1339,7 +1342,8 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                     identityURI = self.session[
                         OpenIDProviderMiddleware.IDENTITY_URI_SESSION_KEYNAME
                     ]
-                    self._createResponse(oidRequest, identifier=identityURI)
+                    self.oid_response = self._create_response(oid_request,
+                                                        identifier=identityURI)
                     
                 except (OpenIDProviderMissingRequiredAXAttrs,
                         OpenIDProviderMissingAXResponseHandler):
@@ -1371,16 +1375,16 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                         'report this fault to your site administrator.')
                     return response
                 
-                return self._displayResponse(self.oidResponse)
+                return self._displayResponse(oid_response)
             else:
                 # This OpenID is being used for a login for the first time.  
                 # Check with the user whether they want to approval the Relying
                 # Party's request
                 return self.do_decide(self.environ, self.start_response)
                 
-        elif oidRequest.immediate:
-            oidResponse = oidRequest.answer(False)
-            return self._displayResponse(oidResponse)  
+        elif oid_request.immediate:
+            oid_response = oid_request.answer(False)
+            return self._displayResponse(oid_response)  
         
         else:
             # User is not logged in
@@ -1392,22 +1396,22 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                      success_to=self.urls['url_decide'])
             return response
 
-    def _displayResponse(self, oidResponse):
+    def _displayResponse(self, oid_response):
         """Serialize an OpenID Response object, set headers and return WSGI
         response.
         
         If the URL length for a GET request exceeds a maximum, then convert the
         response into a HTML form and use POST method.
         
-        @type oidResponse: openid.server.server.OpenIDResponse
-        @param oidResponse: OpenID response object
+        @type oid_response: openid.server.server.OpenIDResponse
+        @param oid_response: OpenID response object
         
         @rtype: basestring
         @return: WSGI response'''
         """
-        if not isinstance(oidResponse, server.OpenIDResponse):
+        if not isinstance(oid_response, server.OpenIDResponse):
             log.error("OpenID Response is %r type, expecting %r",
-                      type(oidResponse), server.OpenIDResponse)
+                      type(oid_response), server.OpenIDResponse)
             return self._render.errorPage(self.environ, self.start_response,
                                           "Error setting a response.  Please "
                                           "report this fault to your site "
@@ -1415,7 +1419,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                           code=500)
         
         try:
-            webresponse = self.oidserver.encodeResponse(oidResponse)
+            webresponse = self.oidserver.encodeResponse(oid_response)
         except server.EncodingError, why:
             text = why.response.encodeToKVForm()
             response = self._render.errorPage(self.environ, self.start_response, 
@@ -1426,7 +1430,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         
         # If the content length exceeds the maximum to represent on a URL, it's
         # rendered as a form instead
-        # FIXME: Got rid out oidResponse.renderAsForm() test as it doesn't 
+        # FIXME: Got rid out oid_response.renderAsForm() test as it doesn't 
         # give consistent answers.  
         #
         # The FORM_MATCH_TEXT test detects whether the response needs to be 
@@ -1533,23 +1537,19 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
     method = property(getMethod, setMethod, None, 
                       "Method name keyed from requested URL")
     
-    def getSessionMiddlewareEnvironKeyName(self):
-        return self.__sessionMiddlewareEnvironKeyName
+    @property
+    def session_mware_environ_keyname(self):
+        return self.__session_mware_environ_keyname
 
-    def setSessionMiddlewareEnvironKeyName(self, value):
+    @session_mware_environ_keyname.setter
+    def session_mware_environ_keyname(self, value):
         if not isinstance(value, basestring):
             raise TypeError('Expecting string type for '
-                            '"sessionMiddlewareEnvironKeyName" attribute; '
+                            '"session_mware_environ_keyname" attribute; '
                             'got %r' %
                             type(value))
-        self.__sessionMiddlewareEnvironKeyName = value
+        self.__session_mware_environ_keyname = value
 
-    sessionMiddlewareEnvironKeyName = property(
-                                  getSessionMiddlewareEnvironKeyName, 
-                                  setSessionMiddlewareEnvironKeyName, 
-                                  None, 
-                                  "environ key name for Beaker Session "
-                                  "middleware")
     def getSession(self):
         return self.__session
 
@@ -1563,28 +1563,25 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
 
     session = property(getSession, setSession, None, "Session's Docstring")
 
-    def getOidResponse(self):
+    @property
+    def oid_response(self):
         return self.__session.get(
                         OpenIDProviderMiddleware.OID_RESPONSE_SESSION_KEYNAME)
 
-    def setOidResponse(self, value):
-        """Set property method - oidResponse property is a wrapper to the 
-        session oidResponse dictionary item
+    @oid_response.setter
+    def oid_response(self, value):
+        """Set property method - oid_response property is a wrapper to the 
+        session oid_response dictionary item
         """
         if not isinstance(value, server.OpenIDResponse):
             raise TypeError('Expecting OpenIDResponse type for '
-                            '"oidResponse" attribute; got %r' %
+                            '"oid_response" attribute; got %r' %
                             type(value))
             
         self.__session[OpenIDProviderMiddleware.OID_RESPONSE_SESSION_KEYNAME
                        ] = value
                        
         self.__session.save()
-                       
-    oidResponse = property(getOidResponse, 
-                           setOidResponse, 
-                           None, 
-                           "OpenID response object")
     
     def getSregResponse(self):
         return self.__sregResponse
@@ -1655,82 +1652,6 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
 
     axResponse = property(getAxResponse, setAxResponse, None, 
                           "Attribute Exchange response object")
-
-
-class OpenIDProviderWithHttpBasicAuthMiddleware(OpenIDProviderMiddleware):
-    '''OpenID Provider with support for HTTP Basic Auth'''
-    
-    @classmethod
-    def app_factory(cls, app_conf, **local_conf):
-        openidprovider_class = super(OpenIDProviderWithHttpBasicAuthMiddleware, 
-                                     cls)
-        openidprovider_app = openidprovider_class.app_factory(app_conf, 
-                                                              **local_conf)
-
-        # Wrap OpenID Provider to provide HTTP basic auth functionality
-        basic_auth_filter = HttpBasicAuthMiddleware.filter_app_factory(
-                                                    openidprovider_app, 
-                                                    app_conf, **local_conf)
-        
-        # Set authentication callback for Basic Auth middleware so that it uses
-        # the same authentication settings as the OpenID Provider
-        basic_auth_filter.authentication_callback = \
-                                    openidprovider_app.authentication_callback
-                                    
-        # Set intercept path for HTTP Basic Auth filter - it should correspond 
-        # to the OpenID provider endpoint
-        basic_auth_filter.re_path_match_list = (
-                            openidprovider_app.paths['path_openidserver'], )
-        
-        return basic_auth_filter
-
-    @property
-    def authentication_callback(self):
-        '''Return authentication callback function for use by HTTP Basic Auth
-        middleware
-        '''
-        def authenticate(environ, start_response, username, password):
-            '''Authentication callback for use with HTTP Basic Auth middleware.
-            It applies the same authentication procedure as used with the 
-            browser-based interface but tailored for scripted clients
-            '''
-            session = environ.get(self.sessionMiddlewareEnvironKeyName, {})
-            if (OpenIDProviderMiddleware.USERNAME_SESSION_KEYNAME in session):
-                # user is already logged in
-                return
-            
-            identity_uri = None
-            
-            if None in (username, password):
-                raise HTTPUnauthorized()
-            
-            # Invoke custom authentication interface plugin
-            try:
-                self._authN.logon(environ, identity_uri, username, password)
-                
-            except AuthNInterfaceError, e:
-                log.error("Authentication error: %s", traceback.format_exc())
-
-                raise HTTPUnauthorized()
-                               
-            except Exception, e:
-                log.error("Unexpected %s type exception raised during "
-                          "authentication: %s", type(e),
-                          traceback.format_exc())
-                raise
-            
-            # Set user in environ
-            environ['REMOTE_USER'] = username
-            
-            # Update session information
-            session[OpenIDProviderMiddleware.USERNAME_SESSION_KEYNAME
-                    ] = username
-            session.save()
-            
-                  
-        return authenticate
-
- 
 class RenderingInterfaceError(Exception):
     """Base class for RenderingInterface exceptions
     
@@ -1955,7 +1876,7 @@ class RenderingInterface(object):
                         ('Content-length', str(len(response)))])
         return response
 
-    def decidePage(self, environ, start_response, oidRequest, oidResponse):
+    def decidePage(self, environ, start_response, oid_request, oid_response):
         """Show page giving the user the option to approve the return of their
         credentials to the Relying Party.  This page is also displayed for
         ID select mode if the user is already logged in at the OpenID Provider.
@@ -1971,7 +1892,7 @@ class RenderingInterface(object):
         /'No'.
         This may be set to 'Yes' or 'No'
         'identity': set to the user's identity URL.  This usually is not 
-        required since it can be obtained from oidRequest.identity attribute
+        required since it can be obtained from oid_request.identity attribute
         but in ID Select mode, the identity URL will have been selected or set
         here.
         
@@ -1981,10 +1902,10 @@ class RenderingInterface(object):
         @type start_response: callable
         @param start_response: WSGI start response function.  Should be called
         from this method to set the response code and HTTP header content
-        @type oidRequest: openid.server.server.CheckIDRequest
-        @param oidRequest: OpenID Check ID Request object
-        @type oidResponse: openid.server.server.OpenIDResponse
-        @param oidResponse: OpenID response object
+        @type oid_request: openid.server.server.CheckIDRequest
+        @param oid_request: OpenID Check ID Request object
+        @type oid_response: openid.server.server.OpenIDResponse
+        @param oid_response: OpenID response object
         @rtype: basestring
         @return: WSGI response
         """
