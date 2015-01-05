@@ -131,8 +131,8 @@ class OpenIDProviderWithHttpBasicAuthMiddleware(OpenIDProviderMiddleware):
         return identity_uri
 
     def _authenticate(self, environ, username, password):
-        session = environ.get(self.session_mware_environ_keyname, {})
-        if (OpenIDProviderMiddleware.USERNAME_SESSION_KEYNAME in session):
+        self.session = environ.get(self.session_mware_environ_keyname, {})
+        if (OpenIDProviderMiddleware.USERNAME_SESSION_KEYNAME in self.session):
             # user is already logged in
             return
         
@@ -160,9 +160,9 @@ class OpenIDProviderWithHttpBasicAuthMiddleware(OpenIDProviderMiddleware):
         environ['REMOTE_USER'] = username
         
         # Update session information
-        session[OpenIDProviderMiddleware.USERNAME_SESSION_KEYNAME
-                ] = username
-        session.save()
+        self.session[OpenIDProviderMiddleware.USERNAME_SESSION_KEYNAME
+            ] = username
+        self.session.save()
         
     def _set_response(self, environ, start_response, oid_request, identity_uri):
         '''Add Attribute exchange parameters to the response if OpenID Relying
@@ -175,10 +175,11 @@ class OpenIDProviderWithHttpBasicAuthMiddleware(OpenIDProviderMiddleware):
         '''   
         # Process any request for additional attributes contained in the query
         # from the Relying Party
+        oid_response = oid_request.answer(True, identity=identity_uri)
+        
         try:
-            response = self._create_response(oid_request, 
-                                             identifier=identity_uri)
-            
+            self._add_ax_response(oid_request, oid_response)
+
         except (OpenIDProviderMissingRequiredAXAttrs,
                 OpenIDProviderMissingAXResponseHandler):
             log.error('The requesting Relying Party requires additional '
@@ -198,7 +199,7 @@ class OpenIDProviderWithHttpBasicAuthMiddleware(OpenIDProviderMiddleware):
                       traceback.format_exc())
             raise HTTPUnauthorized()
     
-        webresponse = self.oidserver.encodeResponse(self.oid_response)
+        webresponse = self.oidserver.encodeResponse(oid_response)
         hdr = webresponse.headers.items()
         
         # If the content length exceeds the maximum to represent on a URL,
@@ -229,5 +230,3 @@ class OpenIDProviderWithHttpBasicAuthMiddleware(OpenIDProviderMiddleware):
                                   httplib.responses[webresponse.code]),
                        hdr)
         return [response]        
-
- 

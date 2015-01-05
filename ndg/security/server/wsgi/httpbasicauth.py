@@ -91,6 +91,7 @@ class HttpBasicAuthMiddleware(object):
     # Config file option names
     AUTHN_FUNC_ENV_KEYNAME_OPTNAME = 'authnFuncEnvKeyName'       
     RE_PATH_MATCH_LIST_OPTNAME = 're_path_match_list'
+    USER_AGENT_MATCH_OPTNAME = 'user_agent_match'
     REALM_OPTNAME = 'realm'
     
     PARAM_PREFIX = 'http.auth.basic.'
@@ -111,6 +112,7 @@ class HttpBasicAuthMiddleware(object):
     
     __slots__ = (
         '__re_path_match_list', 
+        '__user_agent_match',
         '__authn_func_environ_keyname', 
         'authentication_callback',
         '__realm',
@@ -123,6 +125,7 @@ class HttpBasicAuthMiddleware(object):
         @type app: function
         """
         self.__re_path_match_list = None
+        self.__user_agent_match = None
         self.__authn_func_environ_keyname = None
 
         # There are two options: pass an authentication function via upstream 
@@ -168,16 +171,26 @@ class HttpBasicAuthMiddleware(object):
         dictionary
         """
         re_path_match_listOptName = prefix + \
-                            HttpBasicAuthMiddleware.RE_PATH_MATCH_LIST_OPTNAME
+                            self.__class__.RE_PATH_MATCH_LIST_OPTNAME
         re_path_match_listVal = app_conf.pop(re_path_match_listOptName, '')
         
         self.re_path_match_list = re_path_match_listVal.split()
+        
+        user_agent_match_optname = prefix + \
+                                        self.__class__.USER_AGENT_MATCH_OPTNAME
+        user_agent_match_val = app_conf.pop(user_agent_match_optname, None)
+        if user_agent_match_val is not None:
+            self.user_agent_match = user_agent_match_val
 
-        paramName = prefix + \
-                    HttpBasicAuthMiddleware.AUTHN_FUNC_ENV_KEYNAME_OPTNAME
+        realm_optname = prefix + self.__class__.REALM_OPTNAME
+        realm_val = app_conf.pop(realm_optname, None)
+        if realm_val is not None:
+            self.realm = realm_val
+                    
+        paramName = prefix + self.__class__.AUTHN_FUNC_ENV_KEYNAME_OPTNAME
                     
         self.authn_func_environ_keyname = app_conf.get(paramName,
-                                HttpBasicAuthMiddleware.AUTHN_FUNC_ENV_KEYNAME)
+                                self.__class__.AUTHN_FUNC_ENV_KEYNAME)
 
     @property
     def authn_func_environ_keyname(self):
@@ -201,7 +214,19 @@ class HttpBasicAuthMiddleware(object):
         self.__re_path_match_list = []
         for re_path in value:
             self.__re_path_match_list.append(re.compile(re_path))
+            
+    @property
+    def user_agent_match(self):
+        return self.__user_agent_match
 
+    @user_agent_match.setter
+    def user_agent_match(self, value):
+        if not isinstance(value, basestring):
+            raise TypeError('Expecting string type for "user_agent_match"; got '
+                            '%r type' % type(value))
+            
+        self.__user_agent_match = value
+        
     @property
     def realm(self):
         """Get realm
@@ -242,6 +267,22 @@ class HttpBasicAuthMiddleware(object):
             
         return False   
 
+    def _user_agent_match(self, environ):
+        """Match input request's user agent HTTP header setting with prescribed
+        value set at initialisation
+        
+        @param environ: WSGI environment variables dictionary
+        @type environ: dict
+        @return: True if request user agent HTTP header field matches the value
+        set, False otherwise
+        @rtype: bool 
+        """
+        user_agent = environ.get('HTTP_USER_AGENT')
+        if user_agent is None:
+            return False
+        else:
+            return self.user_agent_match == user_agent
+        
     @classmethod
     def parse_credentials(cls, environ):
         """Extract username and password from HTTP_AUTHORIZATION environ key
@@ -286,7 +327,7 @@ class HttpBasicAuthMiddleware(object):
         """
         log.debug("HttpBasicAuthNMiddleware.__call__ ...")
         
-        if not self._path_match(environ):
+        if not self._path_match(environ) or not self._user_agent_match(environ):
             return self.__app(environ, start_response)
         
         # Pick up authentication callback from local variable or special key

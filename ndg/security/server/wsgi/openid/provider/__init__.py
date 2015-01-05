@@ -1196,7 +1196,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         """
         return trust_root in self.trustedRelyingParties
     
-    def _addSRegResponse(self, oid_request, oid_response):
+    def _add_sreg_response(self, oid_request, oid_response):
         '''Add Simple Registration attributes to response to Relying Party
         
         @type oid_request: openid.server.server.CheckIDRequest
@@ -1215,7 +1215,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         sreg_resp = sreg.SRegResponse.extractResponse(sreg_req, sreg_data)
         oid_response.addExtension(sreg_resp)
 
-    def _addAXResponse(self, oid_request, oid_response):
+    def _add_ax_response(self, oid_request, oid_response):
         '''Add attributes to response based on the OpenID Attribute Exchange 
         interface
         
@@ -1273,8 +1273,8 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
     def _create_response(self, oid_request, identifier=None):
         '''Create a response object from the input request and add
         Simple Registration and/or Attribute Exchange parameters if handlers
-        were specified - See _addSRegResponse and _addAXResponse methods - and
-        only if the Relying Party has requested them
+        were specified - See _add_sreg_response and _add_ax_response methods - 
+        and only if the Relying Party has requested them
         
         @type oid_request: openid.server.server.CheckIDRequest
         @param oid_request: OpenID Check ID Request object
@@ -1282,8 +1282,8 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         @param identifier: OpenID selected by user - for ID Select mode only
         '''
         oid_response = oid_request.answer(True, identity=identifier)
-        self._addSRegResponse(oid_request, oid_response)
-        self._addAXResponse(oid_request, oid_response)
+        self._add_sreg_response(oid_request, oid_response)
+        self._add_ax_response(oid_request, oid_response)
         
         return oid_response
 

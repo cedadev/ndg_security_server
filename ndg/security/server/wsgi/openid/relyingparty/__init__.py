@@ -251,11 +251,15 @@ class OpenIDRelyingPartyMiddleware(NDGSecurityMiddlewareBase):
                 @param exc_info: exception info
                 '''
                 _status = status
-                for name, val in header:
-                    if (name.lower() == 'content-type' and 
-                        val.startswith('text/html')):
-                        _status = self.getStatusMessage(401)
-                        break
+                
+                # Ignore redirect requests - this is set following a form POST
+                # of the OpenID URL to initiate sign-in
+                if not _status.startswith('30'):
+                    for name, val in header:
+                        if (name.lower() == 'content-type' and 
+                            val.startswith('text/html')):
+                            _status = self.getStatusMessage(401)
+                            break
                     
                 return start_response(_status, header, exc_info)
         else:
