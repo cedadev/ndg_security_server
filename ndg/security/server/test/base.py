@@ -35,14 +35,16 @@ except ImportError:
     sqlAlchemyInstalled = False
     
 TEST_CONFIG_DIR = join(abspath(dirname(__file__)), 'config')
+TEST_INTEGRATION_DIR = join(abspath(dirname(__file__)), 'integration')
 
 mk_data_dirpath = lambda file_:join(TEST_CONFIG_DIR, file_)
     
-    
+        
 class BaseTestCase(unittest.TestCase):
     '''Convenience base class from which other unit tests can extend.  Its
     sets the generic data directory path'''
     CONFIG_DIR_ENVVARNAME = 'NDGSEC_TEST_CONFIG_DIR'
+    INTEGRATION_DIR_ENVVARNAME = 'NDGSEC_INTEGRATION_TEST_DIR'
     
     AUTHORISATION_SERVICE_PORTNUM = 9443
     AUTHORISATION_SERVICE_URI = 'https://localhost:%s/authorisation-service' % \
@@ -131,12 +133,20 @@ class BaseTestCase(unittest.TestCase):
     
     def __init__(self, *arg, **kw):
         '''Enable setting of default test directory on start-up of unit tests'''
-        if BaseTestCase.CONFIG_DIR_ENVVARNAME not in os.environ:
-            os.environ[BaseTestCase.CONFIG_DIR_ENVVARNAME] = TEST_CONFIG_DIR
+        self.__class__.set_config_dir_envvar()
                 
         unittest.TestCase.__init__(self, *arg, **kw)
 
- 
+    @classmethod
+    def set_config_dir_envvar(cls):
+        if cls.CONFIG_DIR_ENVVARNAME not in os.environ:
+            os.environ[cls.CONFIG_DIR_ENVVARNAME] = TEST_CONFIG_DIR
+
+    @classmethod
+    def set_integration_dir_envvar(cls):
+        if cls.INTEGRATION_DIR_ENVVARNAME not in os.environ:
+            os.environ[cls.INTEGRATION_DIR_ENVVARNAME] = TEST_INTEGRATION_DIR
+                   
     @classmethod
     def init_db(cls):
         """Wrapper to _create_db - Create database only if it doesn't already 

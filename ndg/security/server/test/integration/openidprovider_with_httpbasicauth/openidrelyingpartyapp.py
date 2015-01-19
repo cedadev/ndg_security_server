@@ -13,6 +13,7 @@ __revision__ = "$Id$"
 from os import path
 import optparse
 
+from ndg.security.server.test.base import BaseTestCase
 from ndg.security.server.utils.paste_utils import PasteDeployAppServer
 
    
@@ -189,6 +190,9 @@ if __name__ == '__main__':
     
     opt = parser.parse_args()[0]
     
+    BaseTestCase.set_config_dir_envvar()
+    BaseTestCase.set_integration_dir_envvar()
+
     server = PasteDeployAppServer(cfgFilePath=path.abspath(opt.configFilePath), 
                                   port=opt.port) 
     server.start()
