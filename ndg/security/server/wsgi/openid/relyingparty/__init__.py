@@ -138,8 +138,8 @@ class OpenIDRelyingPartyMiddleware(NDGSecurityMiddlewareBase):
         self.signoutPath = app_conf.get(cls.AUTHKIT_COOKIE_SIGNOUTPATH_OPTNAME)
 
         # Set AuthKit customisations
-        app_conf['force_redirect'] = True
-        app_conf['openid_form_fieldname'] = 'openid-identifier'
+        app_conf['authkit.openid.force_redirect'] = True
+        app_conf['authkit.openid.openid_form_fieldname'] = 'openid-identifier'
          
         app = authkit.authenticate.middleware(app, app_conf)
         _app = app
