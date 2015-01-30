@@ -139,7 +139,7 @@ class OpenIDRelyingPartyMiddleware(NDGSecurityMiddlewareBase):
 
         # Set AuthKit customisations
         app_conf['authkit.openid.force_redirect'] = True
-        app_conf['authkit.openid.openid_form_fieldname'] = 'openid-identifier'
+        app_conf['authkit.openid.openid_form_fieldname'] = 'openid_identifier'
          
         app = authkit.authenticate.middleware(app, app_conf)
         _app = app

@@ -91,7 +91,7 @@ class HttpBasicAuthMiddleware(object):
     # Config file option names
     AUTHN_FUNC_ENV_KEYNAME_OPTNAME = 'authnFuncEnvKeyName'       
     RE_PATH_MATCH_LIST_OPTNAME = 're_path_match_list'
-    USER_AGENT_MATCH_OPTNAME = 'user_agent_match'
+    HTTP_HDR_FIELD_MATCH_OPTNAME = 'http_hdr_field_match'
     REALM_OPTNAME = 'realm'
     
     PARAM_PREFIX = 'http.auth.basic.'
@@ -112,7 +112,7 @@ class HttpBasicAuthMiddleware(object):
     
     __slots__ = (
         '__re_path_match_list', 
-        '__user_agent_match',
+        '__http_hdr_field_match',
         '__authn_func_environ_keyname', 
         'authentication_callback',
         '__realm',
@@ -125,7 +125,7 @@ class HttpBasicAuthMiddleware(object):
         @type app: function
         """
         self.__re_path_match_list = None
-        self.__user_agent_match = None
+        self.__http_hdr_field_match = None
         self.__authn_func_environ_keyname = None
 
         # There are two options: pass an authentication function via upstream 
@@ -176,11 +176,11 @@ class HttpBasicAuthMiddleware(object):
         
         self.re_path_match_list = re_path_match_listVal.split()
         
-        user_agent_match_optname = prefix + \
-                                        self.__class__.USER_AGENT_MATCH_OPTNAME
-        user_agent_match_val = app_conf.pop(user_agent_match_optname, None)
-        if user_agent_match_val is not None:
-            self.user_agent_match = user_agent_match_val
+        http_hdr_field_match_optname = prefix + \
+                                        self.__class__.HTTP_HDR_FIELD_MATCH_OPTNAME
+        http_hdr_field_match_val = app_conf.pop(http_hdr_field_match_optname, None)
+        if http_hdr_field_match_val is not None:
+            self.http_hdr_field_match = http_hdr_field_match_val
 
         realm_optname = prefix + self.__class__.REALM_OPTNAME
         realm_val = app_conf.pop(realm_optname, None)
@@ -216,17 +216,22 @@ class HttpBasicAuthMiddleware(object):
             self.__re_path_match_list.append(re.compile(re_path))
             
     @property
-    def user_agent_match(self):
-        return self.__user_agent_match
+    def http_hdr_field_match(self):
+        return self.__http_hdr_field_match
 
-    @user_agent_match.setter
-    def user_agent_match(self, value):
+    @http_hdr_field_match.setter
+    def http_hdr_field_match(self, value):
         if not isinstance(value, basestring):
-            raise TypeError('Expecting string type for "user_agent_match"; got '
-                            '%r type' % type(value))
+            raise TypeError('Expecting string type for "http_hdr_field_match"; '
+                            'got %r type' % type(value))
             
-        self.__user_agent_match = value
+        self.__http_hdr_field_match = [i.strip() for i in value.split(':')]
         
+        if len(self.__http_hdr_field_match) > 2:
+            raise TypeError('Expecting a header field specification with '
+                            '<header field name>:<header field value>, got %r'
+                            % value)
+                    
     @property
     def realm(self):
         """Get realm
@@ -267,7 +272,7 @@ class HttpBasicAuthMiddleware(object):
             
         return False   
 
-    def _user_agent_match(self, environ):
+    def _http_hdr_field_match(self, environ):
         """Match input request's user agent HTTP header setting with prescribed
         value set at initialisation
         
@@ -277,11 +282,16 @@ class HttpBasicAuthMiddleware(object):
         set, False otherwise
         @rtype: bool 
         """
-        user_agent = environ.get('HTTP_USER_AGENT')
-        if user_agent is None:
+        # WSGI spec converts header fields into caps and dashes to underline
+        # chars and adds HTTP_ prefix
+        http_hdr_field_keyname = 'HTTP_' + \
+            self.http_hdr_field_match[0].upper().replace('-','_')
+            
+        http_hdr_field_val = environ.get(http_hdr_field_keyname)
+        if http_hdr_field_val is None:
             return False
         else:
-            return self.user_agent_match == user_agent
+            return self.http_hdr_field_match[1] == http_hdr_field_val
         
     @classmethod
     def parse_credentials(cls, environ):
@@ -327,7 +337,8 @@ class HttpBasicAuthMiddleware(object):
         """
         log.debug("HttpBasicAuthNMiddleware.__call__ ...")
         
-        if not self._path_match(environ) or not self._user_agent_match(environ):
+        if (not self._path_match(environ) or 
+            not self._http_hdr_field_match(environ)):
             return self.__app(environ, start_response)
         
         # Pick up authentication callback from local variable or special key
