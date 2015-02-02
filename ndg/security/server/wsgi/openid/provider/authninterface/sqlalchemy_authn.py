@@ -24,8 +24,7 @@ from sqlalchemy import create_engine, exc
 from ndg.security.common.utils import str2Bool as _str2Bool
 from ndg.security.server.wsgi.openid.provider.authninterface import (
     AbstractAuthNInterface, AuthNInterfaceInvalidCredentials, 
-    AuthNInterfaceRetrieveError, AuthNInterfaceConfigError, 
-    AuthNInterfaceUsername2IdentifierMismatch)
+    AuthNInterfaceRetrieveError, AuthNInterfaceConfigError)
 
 
 class SQLAlchemyAuthnInterface(AbstractAuthNInterface):

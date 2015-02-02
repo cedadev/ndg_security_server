@@ -14,7 +14,8 @@ from os import path
 from OpenSSL import SSL
 
 from ndg.security.server.utils.paste_utils import PasteDeployAppServer
-from ndg.security.server.test.base import BaseTestCase
+from ndg.security.server.test.test_util import TestUserDatabase
+from ndg.security.server.test.base import NDGSEC_TEST_CONFIG_DIR
 
 INI_FILENAME = 'openidprovider.ini'
 INI_FILEPATH = path.join(path.dirname(path.abspath(__file__)), INI_FILENAME)
@@ -30,10 +31,10 @@ import optparse
 #
 # $ ./openidprovider.py -h
 if __name__ == '__main__':       
-    defCertFilePath = path.join(BaseTestCase.NDGSEC_TEST_CONFIG_DIR, 
+    defCertFilePath = path.join(NDGSEC_TEST_CONFIG_DIR, 
                                 'pki', 
                                 'localhost.crt')
-    defPriKeyFilePath = path.join(BaseTestCase.NDGSEC_TEST_CONFIG_DIR, 
+    defPriKeyFilePath = path.join(NDGSEC_TEST_CONFIG_DIR, 
                                   'pki', 
                                   'localhost.key')
     
@@ -70,7 +71,7 @@ if __name__ == '__main__':
                       help="Configuration file path")
     
     # Initialise test user database
-    BaseTestCase.init_db()
+    TestUserDatabase.init_db()
     
     opt = parser.parse_args()[0]
     
