@@ -21,3 +21,8 @@ decision interfaces.  NDG Security uses a XACML based policy engine from the
 package ndg_xacml.  NDG Security has been re-engineered to use a filter based 
 architecture based on WSGI enabling other Python WSGI based applications to be 
 protected in a flexible manner without the need to modify application code.
+
+Releases
+--------
+ * 2.4.0: update to OpenID Provider to support HTTP Basic Auth to allow easy
+ authentication with non-browser based clients
