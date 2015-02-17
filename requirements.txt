@@ -1,0 +1,12 @@
+AuthKit
+Beaker
+Genshi==0.6
+M2Crypto
+Paste
+PasteDeploy
+PasteScript
+SQLAlchemy
+WebOb
+pyOpenSSL
+python-openid
+
