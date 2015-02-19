@@ -368,6 +368,8 @@ class SamlPepFilterBase(SessionMiddlewareBase):
             for pat in self.ignore_file_list_pat:
                 if re.match(pat, resourceURI):
                     return False
+                
+            return True
 
         elif self.__localPdp is None:
             log.debug("No Local PDP set: passing on request to main "
