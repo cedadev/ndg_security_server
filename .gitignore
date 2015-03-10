@@ -3,3 +3,4 @@
 service.log
 *.log*
 *.pyc
+dist

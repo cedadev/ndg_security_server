@@ -1,4 +1,4 @@
-AuthKit
+AuthKit==0.4.6-ceda
 Beaker
 Genshi==0.6
 M2Crypto
@@ -7,6 +7,6 @@ PasteDeploy
 PasteScript
 SQLAlchemy
 WebOb
-pyOpenSSL
+#pyOpenSSL
 python-openid
 
