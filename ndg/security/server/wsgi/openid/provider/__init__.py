@@ -87,7 +87,7 @@ class IdentityMapping(object):
 # Place here to avoid circular import error with IdentityMapping class     
 from ndg.security.server.wsgi.openid.provider.authninterface import (
     AbstractAuthNInterface, AuthNInterfaceError, 
-    AuthNInterfaceInvalidCredentials)
+    AuthNInterfaceInvalidCredentials, AuthNInterfaceConfigError)
 from ndg.security.server.wsgi.openid.provider.axinterface import (AXInterface,
     MissingRequiredAttrs, AXInterfaceReloginRequired)
 
@@ -826,7 +826,8 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                                 environ,
                                                 self.query['username'])
                 
-            except AuthNInterfaceInvalidCredentials:
+            except (AuthNInterfaceInvalidCredentials,
+                    AuthNInterfaceConfigError):
                 log.error("No username %r matching an OpenID URL: %s",
                           self.query.get('username'),
                           traceback.format_exc())
@@ -881,7 +882,8 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                                 environ,
                                                 self.query['username'])
                 
-            except AuthNInterfaceInvalidCredentials:
+            except (AuthNInterfaceInvalidCredentials, 
+                    AuthNInterfaceConfigError):
                 log.error("No username %r matching an OpenID URL: %s",
                           self.query.get('username'),
                           traceback.format_exc())
@@ -902,6 +904,11 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                        "If the problem persists contact the site "
                        "administrator.") 
                 
+                response = self._render.login(environ, start_response,
+                                          msg=msg,
+                                          success_to=self.urls['url_decide'])
+                return response
+                            
             expectedIdentityURI = self.createIdentityURI(self.identityUriTmpl,
                                                          userIdentifiers[0])
             if identityURI != expectedIdentityURI:
@@ -1375,7 +1382,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                         'report this fault to your site administrator.')
                     return response
                 
-                return self._displayResponse(oid_response)
+                return self._displayResponse(self.oid_response)
             else:
                 # This OpenID is being used for a login for the first time.  
                 # Check with the user whether they want to approval the Relying

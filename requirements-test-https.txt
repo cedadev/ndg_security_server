@@ -7,4 +7,6 @@ PasteDeploy
 PasteScript
 SQLAlchemy
 WebOb
+pyOpenSSL
 python-openid
+

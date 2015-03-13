@@ -24,9 +24,16 @@ protected in a flexible manner without the need to modify application code.
 
 Releases
 --------
+ * 2.4.1: 
+  * fix to OpenID Provider templates
+  * pip package requirements file
+  * fix bug in ``ndg.security.server.wsgi.openid.provider.OpenIDProviderMiddleware`` -
+    reference local oid_response var instead of self member.
+  * fix bug in exception handling for authentication interface include
+    ``AuthNInterfaceConfigError`` type in exception handling.
  * 2.4.0:
-  ** update to OpenID Provider to support HTTP Basic Auth to allow easy
-     authentication with non-browser based clients.  
-  ** Added new attribute to SAML PEP filter to allow simpler configuration of
-     ignore files i.e. files that shouldn't be passed on by the PEP to the 
-     authorisation filter.
+  * update to OpenID Provider to support HTTP Basic Auth to allow easy
+    authentication with non-browser based clients.  
+  * Added new attribute to SAML PEP filter to allow simpler configuration of
+    ignore files i.e. files that shouldn't be passed on by the PEP to the 
+    authorisation filter.
