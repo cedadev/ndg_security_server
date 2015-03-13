@@ -8,3 +8,4 @@ PasteScript
 SQLAlchemy
 WebOb
 python-openid
+psycopg2

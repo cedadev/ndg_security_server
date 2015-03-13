@@ -8,13 +8,14 @@ __author__ = "P J Kershaw"
 __date__ = "20/11/08"
 __copyright__ = "(C) 2009 Science and Technology Facilities Council"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
-__revision__ = "$Id: openidproviderapp.py 7861 2011-01-31 13:48:11Z pjkersha $"
+__revision__ = "$Id$"
 from os import path 
       
 from OpenSSL import SSL
 
 from ndg.security.server.utils.paste_utils import PasteDeployAppServer
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.test_util import TestUserDatabase
+from ndg.security.server.test.base import NDGSEC_TEST_CONFIG_DIR
 
 INI_FILENAME = 'openidprovider.ini'
 INI_FILEPATH = path.join(path.dirname(path.abspath(__file__)), INI_FILENAME)
@@ -30,10 +31,10 @@ import optparse
 #
 # $ ./openidprovider.py -h
 if __name__ == '__main__':       
-    defCertFilePath = path.join(BaseTestCase.NDGSEC_TEST_CONFIG_DIR, 
+    defCertFilePath = path.join(NDGSEC_TEST_CONFIG_DIR, 
                                 'pki', 
                                 'localhost.crt')
-    defPriKeyFilePath = path.join(BaseTestCase.NDGSEC_TEST_CONFIG_DIR, 
+    defPriKeyFilePath = path.join(NDGSEC_TEST_CONFIG_DIR, 
                                   'pki', 
                                   'localhost.key')
     
@@ -70,13 +71,12 @@ if __name__ == '__main__':
                       help="Configuration file path")
     
     # Initialise test user database
-    BaseTestCase.init_db()
+    TestUserDatabase.init_db()
     
     opt = parser.parse_args()[0]
     
     if opt.withSSL.lower() == 'true':        
-        ssl_context = SSL.Context(SSL.SSLv23_METHOD)
-        ssl_context.set_options(SSL.OP_NO_SSLv2)
+        ssl_context = SSL.Context(SSL.TLSv1_METHOD)
     
         ssl_context.use_privatekey_file(opt.priKeyFilePath)
         ssl_context.use_certificate_file(opt.certFilePath)
