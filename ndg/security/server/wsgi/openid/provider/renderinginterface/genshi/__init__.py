@@ -412,13 +412,18 @@ class GenshiRendering(RenderingInterface):
         
         # Get all the content namespaced as AX type
         axArgs = oidResponse.fields.getArgs(ax.AXMessage.ns_uri)
-        
-        # Add to access object for convenient access based on type URI
-        axFetchResponse = ax.FetchResponse()
-        axFetchResponse.parseExtensionArgs(axArgs)  
-        
-        ax_req = ax.FetchRequest.fromOpenIDRequest(oidRequest)
-        axRequestedAttr = ax_req.requested_attributes
+        if len(axArgs) == 0:
+            log.debug('No Attribute eXchange (AX) arguments specified')
+            axRequestedAttr = {}
+            axFetchResponse = None
+        else:
+            # Add to access object for convenient access based on type URI
+            axFetchResponse = ax.FetchResponse()
+            axFetchResponse.parseExtensionArgs(axArgs)  
+            
+            ax_req = ax.FetchRequest.fromOpenIDRequest(oidRequest)
+            axRequestedAttr = ax_req.requested_attributes
+            
         self.environ = environ
         
         if oidRequest.idSelect():

@@ -24,6 +24,10 @@ protected in a flexible manner without the need to modify application code.
 
 Releases
 --------
+ * 2.4.2:
+  * fix to Attribute Exchange handling in Genshi renderer.  Renderer now 
+    correctly ignores AX if no attributes were requested by the OpenID
+    Relying Party.
  * 2.4.1: 
   * fix to OpenID Provider templates
   * pip package requirements file
