@@ -19,7 +19,7 @@ except ImportError:
     use_setuptools()
     from setuptools import setup
 
-_entryPoints = """
+_ENTRY_POINTS = """
     [console_scripts] 
     myproxy-saml-assertion-cert-ext-app=ndg.security.server.myproxy.certificate_extapp.saml_attribute_assertion:CertExtConsoleApp.run
 
@@ -69,7 +69,7 @@ protected in a flexible manner without the need to modify application code.
 
 setup(
     name =           		'ndg_security_server',
-    version =        		'2.4.1',
+    version =        		'2.4.2',
     description =    		'Server side components for running NERC DataGrid '
                             'Security Services',
     long_description =		LONG_DESCR,
@@ -93,14 +93,14 @@ setup(
         'openid-services': ['Genshi==0.6']
     },
     # Set ndg.security.common dependency
-    dependency_links =      ["http://dist.ceda.ac.uk/pip"],
+    dependency_links =      ["http://dist.ceda.ac.uk/pip/"],
     packages =			    find_packages(),
     namespace_packages =	['ndg', 'ndg.security'],
     include_package_data =  True,
     package_data = {
         # See MANIFEST.in for ndg.security.server.paster_templates files
     },
-    entry_points =           _entryPoints,
+    entry_points =           _ENTRY_POINTS,
     test_suite =		    'ndg.security.server.test',
     zip_safe =              False
 )
