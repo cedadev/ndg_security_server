@@ -194,10 +194,9 @@ class AuthnRedirectInitiatorMiddleware(AuthnRedirectMiddleware):
         @return: redirect response
         """       
         return2URI = construct_url(self.environ)
-        quotedReturn2URI = urllib.quote(return2URI, safe='')
         return2URIQueryArg = urllib.urlencode(
             {AuthnRedirectInitiatorMiddleware.RETURN2URI_ARGNAME: 
-             quotedReturn2URI})
+             return2URI})
 
         redirectURI = self.redirectURI
         
