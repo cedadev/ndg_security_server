@@ -98,6 +98,29 @@ class AuthnRedirectMiddleware(SessionMiddlewareBase):
     @cvar RETURN2URI_ARGNAME: name of URI query argument used to pass the 
     return to URI between initiator and consumer classes"""
     RETURN2URI_ARGNAME = 'ndg.security.r'
+   
+    '''
+    @type propertyDefaults: dict
+    @cvar propertyDefaults: valid configuration property keywords    
+    '''
+    propertyDefaults = {
+        'return2UriArgName': RETURN2URI_ARGNAME,
+    }
+    propertyDefaults.update(SessionMiddlewareBase.propertyDefaults)
+         
+    def __init__(self, app, global_conf, **app_conf):
+        '''
+        @type app: callable following WSGI interface
+        @param app: next middleware application in the chain      
+        @type global_conf: dict        
+        @param global_conf: PasteDeploy global configuration dictionary
+        @type app_conf: dict        
+        @param app_conf: PasteDeploy application specific configuration 
+        dictionary
+        '''
+        super(AuthnRedirectMiddleware, self).__init__(app, global_conf,
+                                                      **app_conf)
+        self.__class__.RETURN2URI_ARGNAME = self.return2UriArgName
 
 
 class AuthnRedirectInitiatorMiddleware(AuthnRedirectMiddleware):
@@ -171,10 +194,9 @@ class AuthnRedirectInitiatorMiddleware(AuthnRedirectMiddleware):
         @return: redirect response
         """       
         return2URI = construct_url(self.environ)
-        quotedReturn2URI = urllib.quote(return2URI, safe='')
         return2URIQueryArg = urllib.urlencode(
             {AuthnRedirectInitiatorMiddleware.RETURN2URI_ARGNAME: 
-             quotedReturn2URI})
+             return2URI})
 
         redirectURI = self.redirectURI
         
