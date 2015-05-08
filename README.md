@@ -24,6 +24,9 @@ protected in a flexible manner without the need to modify application code.
 
 Releases
 --------
+ * 2.4.3:
+  * Enhancements to authentication redirect interface to allow customisation of
+    ``ndg.security.r`` HTTP GET query argument.
  * 2.4.2:
   * fix to Attribute Exchange handling in Genshi renderer.  Renderer now 
     correctly ignores AX if no attributes were requested by the OpenID
