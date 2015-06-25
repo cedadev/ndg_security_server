@@ -12,6 +12,7 @@ import logging
 log = logging.getLogger(__name__)
 
 from ndg.security.server.xacml.ctx_handler import saml_ctx_handler
+from ndg.security.common.utils.classfactory import importModuleObject
 
 
 class AuthorisationServiceMiddlewareError(Exception):
