@@ -66,14 +66,12 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
     URI as implemented in AuthKit
     '''
     AX_SESSION_KEYNAME = 'openid.ax'
-    SM_URI_SESSION_KEYNAME = 'sessionManagerURI'
     ID_SESSION_KEYNAME = 'sessionId'
     PEP_CTX_SESSION_KEYNAME = 'pepCtx'
     CREDENTIAL_WALLET_SESSION_KEYNAME = 'credentialWallet'
     
     SESSION_KEYNAMES = (
         SessionMiddlewareBase.USERNAME_SESSION_KEYNAME, 
-        SM_URI_SESSION_KEYNAME, 
         ID_SESSION_KEYNAME, 
         PEP_CTX_SESSION_KEYNAME, 
         CREDENTIAL_WALLET_SESSION_KEYNAME
@@ -173,18 +171,18 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
             log.debug("SessionHandlerMiddleware.__call__: caught sign out "
                       "path [%s]", self.signoutPath)
             
-            _start_response = self._doLogout(environ, start_response, session)
+            _start_response = self._do_logout(environ, start_response, session)
         else:
             log.debug("SessionHandlerMiddleware.__call__: checking for "
                       "REMOTE_* environment variable settings set by OpenID "
                       "Relying Party signin...")
-            self._setSession(environ, session)
+            self._set_session(environ, session)
 
             _start_response = start_response
             
         return self._app(environ, _start_response)
     
-    def _doLogout(self, environ, start_response, session):
+    def _do_logout(self, environ, start_response, session):
         """Execute logout action, 
          - clear the beaker session
          - set the referrer URI to redirect back to by setting a custom 
@@ -252,7 +250,7 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
                 
         return _start_response
         
-    def _setSession(self, environ, session):
+    def _set_session(self, environ, session):
         """Check for REMOTE_USER and REMOTE_USER_DATA set by authentication
         handlers and set a new session from them if present
         
@@ -281,9 +279,11 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
                       "username=%s", environ[
                         SessionHandlerMiddleware.USERNAME_ENVIRON_KEYNAME])
             
+#             session[SessionHandlerMiddleware.USERNAME_SESSION_KEYNAME
+#                     ] = environ[
+#                         SessionHandlerMiddleware.USERNAME_ENVIRON_KEYNAME]
             session[SessionHandlerMiddleware.USERNAME_SESSION_KEYNAME
-                    ] = environ[
-                        SessionHandlerMiddleware.USERNAME_ENVIRON_KEYNAME]
+                    ] = 'https://localhost:7443/openid/philip.kershaw'
             session.save()
             
         # Check for auxiliary user data
@@ -297,9 +297,7 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
                           SessionHandlerMiddleware.USERDATA_ENVIRON_KEYNAME
                       ])
             
-            if (SessionHandlerMiddleware.SM_URI_SESSION_KEYNAME not in 
-                session or 
-                SessionHandlerMiddleware.ID_SESSION_KEYNAME not in session):
+            if SessionHandlerMiddleware.ID_SESSION_KEYNAME not in session:
                 
                 # eval is safe here because AuthKit cookie is signed and 
                 # AuthKit middleware checks for tampering            
@@ -311,7 +309,7 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
                     
                     # Save attributes keyed by attribute name
                     session[SessionHandlerMiddleware.AX_SESSION_KEYNAME
-                            ] = SessionHandlerMiddleware._parseOpenIdAX(ax)
+                            ] = SessionHandlerMiddleware._parse_openid_ax(ax)
                     
                     log.debug("SessionHandlerMiddleware.__call__: updated "
                               "session with OpenID AX values: %r",
@@ -319,13 +317,6 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
                                 SessionHandlerMiddleware.AX_SESSION_KEYNAME
                               ])
                         
-                    # Save Session Manager specific attributes
-                    sessionManagerURI = ax.get(
-                            SessionHandlerMiddleware.SM_URI_AX_KEYNAME)
-                        
-                    session[SessionHandlerMiddleware.SM_URI_SESSION_KEYNAME
-                            ] = sessionManagerURI
-
                     sessionId = ax.get(
                             SessionHandlerMiddleware.SESSION_ID_AX_KEYNAME)
                     session[SessionHandlerMiddleware.ID_SESSION_KEYNAME
@@ -334,23 +325,19 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
                     session.save()
                     
                     log.debug("SessionHandlerMiddleware.__call__: updated "
-                              "session "
-                              "with sessionManagerURI=%s and "
-                              "sessionId=%s", 
-                              sessionManagerURI, 
-                              sessionId)
+                              "session with sessionId=%s", sessionId)
                 
             # Call AuthKit logout method to clear the AuthKit cookie. The
             # session is now bound to the beaker session.
-            _logout_user = environ[
-                SessionHandlerMiddleware.AUTH_TKT_LOGOUT_USER_ENVIRON_KEYNAME]
-            _logout_user()
+#             _logout_user = environ[
+#                 SessionHandlerMiddleware.AUTH_TKT_LOGOUT_USER_ENVIRON_KEYNAME]
+#             _logout_user()
         else:
             log.debug("SessionHandlerMiddleware.__call__: REMOTE_USER_DATA "
                       "is not set")
                     
     @staticmethod                    
-    def _parseOpenIdAX(ax):
+    def _parse_openid_ax(ax):
         """Return a dictionary of attribute exchange attributes parsed from the 
         OpenID Provider response set in the REMOTE_USER_DATA AuthKit environ
         key

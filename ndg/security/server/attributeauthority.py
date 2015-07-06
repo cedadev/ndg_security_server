@@ -29,7 +29,7 @@ from ndg.saml.saml2.core import (Response, Assertion, Attribute,
                                  StatusCode, StatusMessage)
 
 from ndg.security.common.saml_utils.esgf import ESGFSamlNamespaces
-from ndg.security.common.X509 import X500DN
+from ndg.security.common.openssl import X500DN
 from ndg.security.common.utils.classfactory import instantiateClass
 from ndg.security.common.utils.factory import importModuleObject
 from ndg.security.common.utils.configfileparsers import (
@@ -927,7 +927,7 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
             
             pat = SQLAlchemyAttributeInterface.SAML_VALID_REQUESTOR_DNS_PAT
             self.__samlValidRequestorDNs = [
-                X500DN.fromString(dn) for dn in pat.split(value)
+                X500DN.from_string(dn) for dn in pat.split(value)
             ]
             
         elif isinstance(value, (tuple, list)):
@@ -1039,7 +1039,7 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
         requestedAttributeNames = [attribute.name
                                    for attribute in attributeQuery.attributes]
         
-        requestorDN = X500DN.fromString(attributeQuery.issuer.value)
+        requestorDN = X500DN.from_string(attributeQuery.issuer.value)
 
         if not self._queryDbForSamlSubject(userId):
             raise UserIdNotKnown('Subject Id "%s" is not known to this '
@@ -1047,7 +1047,7 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
 
         if (len(self.samlValidRequestorDNs) > 0 and
             requestorDN not in self.samlValidRequestorDNs):
-            raise InvalidRequestorId('Requestor identity "%s" is invalid' %
+            raise InvalidRequestorId('Requester identity "%s" is invalid' %
                                      requestorDN)
 
         unknownAttrNames = [attrName for attrName in requestedAttributeNames

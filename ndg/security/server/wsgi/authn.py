@@ -18,7 +18,10 @@ log = logging.getLogger(__name__)
 import re
 import webob
 import urllib
+import hashlib
+
 from paste.request import construct_url, parse_querystring
+from paste.auth.auth_tkt import AuthTicket, parse_ticket, BadTicket
 import authkit.authenticate
 from authkit.authenticate.multi import MultiHandler
 
@@ -30,6 +33,36 @@ from ndg.security.server.wsgi.session import (SessionMiddlewareBase,
 
 from ndg.security.server.wsgi.ssl import AuthKitSSLAuthnMiddleware
 
+DEFAULT_DIGEST = hashlib.md5
+
+
+class NDGSecurityCookie(AuthTicket):
+    '''Use custom cookie implementation for AuthKit to enable compatibility
+    with CEDA site services dj_security which uses Paste's AuthTicket
+    '''
+    
+    @staticmethod
+    def parse_ticket(secret, ticket, ip, session):
+        '''Parse cookie and check its signature.
+        
+        :var secret: shared secret used between multiple trusted peers to 
+        verify signature of cookie
+        :var ticket: signed cookie content
+        :var ip: originating client IP address - extracted from X Forwarded
+        or Remote address iterms in HTTP header
+        :var session: AuthKit session object content
+        :return: tuple of parsed cookie content
+        '''
+        if session is not None:
+            if not session.has_key('authkit.cookie.user'):
+                raise BadTicket('No authkit.cookie.user key exists in the '
+                                'session')
+            if not session.has_key('authkit.cookie.user_data'):
+                raise BadTicket('No authkit.cookie.user_data key exists in the '
+                                'session')
+
+        return parse_ticket(secret, ticket, ip, digest_algo=DEFAULT_DIGEST)
+        
 class AuthnException(NDGSecurityMiddlewareError):
     """Base exception for this module"""
 
@@ -94,34 +127,35 @@ class AuthnRedirectMiddleware(SessionMiddlewareBase):
     """Base class for Authentication HTTP redirect initiator and redirect
     response WSGI middleware
 
-    @type RETURN2URI_ARGNAME: basestring
-    @cvar RETURN2URI_ARGNAME: name of URI query argument used to pass the 
+    :type RETURN2URI_ARGNAME: basestring
+    :cvar RETURN2URI_ARGNAME: name of URI query argument used to pass the 
     return to URI between initiator and consumer classes"""
     RETURN2URI_ARGNAME = 'ndg.security.r'
    
     '''
-    @type propertyDefaults: dict
-    @cvar propertyDefaults: valid configuration property keywords    
+    :type propertyDefaults: dict
+    :cvar propertyDefaults: valid configuration property keywords    
     '''
     propertyDefaults = {
-        'return2UriArgName': RETURN2URI_ARGNAME,
+        'return2uri_argname': RETURN2URI_ARGNAME,
     }
     propertyDefaults.update(SessionMiddlewareBase.propertyDefaults)
          
     def __init__(self, app, global_conf, **app_conf):
         '''
-        @type app: callable following WSGI interface
-        @param app: next middleware application in the chain      
-        @type global_conf: dict        
-        @param global_conf: PasteDeploy global configuration dictionary
-        @type app_conf: dict        
-        @param app_conf: PasteDeploy application specific configuration 
+        :type app: callable following WSGI interface
+        :param app: next middleware application in the chain      
+        :type global_conf: dict        
+        :param global_conf: PasteDeploy global configuration dictionary
+        :type app_conf: dict        
+        :param app_conf: PasteDeploy application specific configuration 
         dictionary
         '''
+        self.return2uri_argname = self.__class__.RETURN2URI_ARGNAME
+        
         super(AuthnRedirectMiddleware, self).__init__(app, global_conf,
                                                       **app_conf)
-        self.__class__.RETURN2URI_ARGNAME = self.return2UriArgName
-
+        
 
 class AuthnRedirectInitiatorMiddleware(AuthnRedirectMiddleware):
     '''Middleware to initiate a redirect to another URI if a user is not 
@@ -130,8 +164,8 @@ class AuthnRedirectInitiatorMiddleware(AuthnRedirectMiddleware):
     AuthKit.authenticate.middleware must be in place upstream of this 
     middleware.  AuthenticationMiddleware wrapper handles this.
     
-    @type propertyDefaults: dict
-    @cvar propertyDefaults: valid configuration property keywords    
+    :type propertyDefaults: dict
+    :cvar propertyDefaults: valid configuration property keywords    
     '''
     propertyDefaults = {
         'redirectURI': None,
@@ -143,14 +177,14 @@ class AuthnRedirectInitiatorMiddleware(AuthnRedirectMiddleware):
 
     def __init__(self, app, global_conf, **app_conf):
         '''
-        @type app: callable following WSGI interface
-        @param app: next middleware application in the chain      
-        @type global_conf: dict        
-        @param global_conf: PasteDeploy global configuration dictionary
-        @type prefix: basestring
-        @param prefix: prefix for configuration items
-        @type app_conf: dict        
-        @param app_conf: PasteDeploy application specific configuration 
+        :type app: callable following WSGI interface
+        :param app: next middleware application in the chain      
+        :type global_conf: dict        
+        :param global_conf: PasteDeploy global configuration dictionary
+        :type prefix: basestring
+        :param prefix: prefix for configuration items
+        :type app_conf: dict        
+        :param app_conf: PasteDeploy application specific configuration 
         dictionary
         '''
         self.__redirectURI = None
@@ -195,8 +229,7 @@ class AuthnRedirectInitiatorMiddleware(AuthnRedirectMiddleware):
         """       
         return2URI = construct_url(self.environ)
         return2URIQueryArg = urllib.urlencode(
-            {AuthnRedirectInitiatorMiddleware.RETURN2URI_ARGNAME: 
-             return2URI})
+                                        {self.return2uri_argname: return2URI})
 
         redirectURI = self.redirectURI
         
@@ -269,19 +302,19 @@ class AuthnRedirectResponseMiddleware(AuthnRedirectMiddleware):
         params = dict(parse_querystring(environ))
         
         # Store the return URI query argument in a beaker session
-        quotedReferrer = params.get(self.__class__.RETURN2URI_ARGNAME, '')
+        quotedReferrer = params.get(self.return2uri_argname, '')
         referrerURI = urllib.unquote(quotedReferrer)
         if referrerURI:
-            session[self.__class__.RETURN2URI_ARGNAME] = referrerURI
+            session[self.return2uri_argname] = referrerURI
             session.save()
             
         # Check for a return URI setting in the beaker session and if the user
         # has just been authenticated by the AuthKit SSL Client authentication
         # middleware.  If so, redirect to this URL deleting the beaker session
         # URL setting
-        return2URI = session.get(self.__class__.RETURN2URI_ARGNAME)    
+        return2URI = session.get(self.return2uri_argname)    
         if self.sslAuthnSucceeded and return2URI:
-            del session[self.__class__.RETURN2URI_ARGNAME]
+            del session[self.return2uri_argname]
             session.save()
             return self.redirect(return2URI)
 
@@ -323,14 +356,14 @@ class AuthenticationMiddleware(MultiHandler, NDGSecurityMiddlewareBase):
 
     def __init__(self, app, global_conf, prefix='', **app_conf):
         '''
-        @type app: callable following WSGI interface
-        @param app: next middleware application in the chain      
-        @type global_conf: dict        
-        @param global_conf: PasteDeploy global configuration dictionary
-        @type prefix: basestring
-        @param prefix: prefix for configuration items
-        @type app_conf: dict        
-        @param app_conf: PasteDeploy application specific configuration 
+        :type app: callable following WSGI interface
+        :param app: next middleware application in the chain      
+        :type global_conf: dict        
+        :param global_conf: PasteDeploy global configuration dictionary
+        :type prefix: basestring
+        :param prefix: prefix for configuration items
+        :type app_conf: dict        
+        :param app_conf: PasteDeploy application specific configuration 
         dictionary
         '''
         
@@ -346,6 +379,9 @@ class AuthenticationMiddleware(MultiHandler, NDGSecurityMiddlewareBase):
             if k.startswith(sessionHandlerPrefix):
                 del app_conf[k]
         
+        # Override AuthKit cookie handling to use version compatible with 
+        # CEDA site services dj_security
+        app_conf['authkit.cookie.ticket_class'] = NDGSecurityCookie
         app = authkit.authenticate.middleware(app, app_conf)        
         
         MultiHandler.__init__(self, app)

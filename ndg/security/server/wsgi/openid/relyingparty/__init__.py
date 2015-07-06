@@ -23,9 +23,17 @@ import authkit.authenticate
 from authkit.authenticate.open_id import AuthOpenIDHandler
 from beaker.middleware import SessionMiddleware
 
-# SSL based whitelisting 
-from M2Crypto import SSL
-from M2Crypto.m2urllib2 import build_opener, HTTPSHandler
+# SSL based whitelisting
+try:
+    from M2Crypto import SSL
+    from M2Crypto.m2urllib2 import build_opener, HTTPSHandler
+    _M2CRYPTO_NOT_INSTALLED = False
+except ImportError:
+    import warnings
+    warnings.warn("M2Crypto is not installed - IdP SSL-based validation is "
+                  "disabled")
+    _M2CRYPTO_NOT_INSTALLED = True
+    
 from openid.fetchers import setDefaultFetcher, Urllib2Fetcher
 
 from ndg.security.common.utils.classfactory import instantiateClass
@@ -274,6 +282,10 @@ class OpenIDRelyingPartyMiddleware(NDGSecurityMiddlewareBase):
     def _initIdPValidation(self, idpWhitelistConfigFilePath):
         """Initialise M2Crypto based urllib2 HTTPS handler to enable SSL 
         authentication of OpenID Providers"""
+        if _M2CRYPTO_NOT_INSTALLED:
+            raise ImportError("M2Crypto is required for SSL-based IdP "
+                              "validation but it is not installed.")
+        
         log.info("Setting parameters for SSL Authentication of OpenID "
                  "Provider ...")
         
