@@ -279,11 +279,9 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
                       "username=%s", environ[
                         SessionHandlerMiddleware.USERNAME_ENVIRON_KEYNAME])
             
-#             session[SessionHandlerMiddleware.USERNAME_SESSION_KEYNAME
-#                     ] = environ[
-#                         SessionHandlerMiddleware.USERNAME_ENVIRON_KEYNAME]
             session[SessionHandlerMiddleware.USERNAME_SESSION_KEYNAME
-                    ] = 'https://localhost:7443/openid/philip.kershaw'
+                    ] = environ[
+                        SessionHandlerMiddleware.USERNAME_ENVIRON_KEYNAME]
             session.save()
             
         # Check for auxiliary user data

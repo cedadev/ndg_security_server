@@ -38,7 +38,7 @@ from ndg.xacml.parsers.etree.factory import (
 from ndg.security.server.wsgi.session import (SessionMiddlewareBase, 
                                               SessionHandlerMiddleware)
 from ndg.security.common.credentialwallet import SAMLAssertionWallet
-from ndg.security.common.utils import str2Bool
+from ndg.security.common.utils import str2Bool, is_iterable
 
 
 class SamlPepFilterConfigError(Exception):
@@ -72,6 +72,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
     SESSION_KEY_PARAM_NAME = 'sessionKey'
     CACHE_DECISIONS_PARAM_NAME = 'cacheDecisions'   
     LOCAL_POLICY_FILEPATH_PARAM_NAME = 'localPolicyFilePath'
+    IGNORE_FILE_LIST_PARAM_NAME = 'ignore_file_list_pat'
     
     CREDENTIAL_WALLET_SESSION_KEYNAME = \
         SessionHandlerMiddleware.CREDENTIAL_WALLET_SESSION_KEYNAME
@@ -82,7 +83,8 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         AUTHZ_SERVICE_URI,
         SESSION_KEY_PARAM_NAME,
         CACHE_DECISIONS_PARAM_NAME,
-        LOCAL_POLICY_FILEPATH_PARAM_NAME
+        LOCAL_POLICY_FILEPATH_PARAM_NAME,
+        IGNORE_FILE_LIST_PARAM_NAME
     )
     
     XACML_ATTRIBUTEVALUE_CLASS_FACTORY = XacmlAttributeValueClassFactory()
@@ -104,7 +106,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         self.__cacheDecisions = False
         self.__localPdp = None
         self.__localPolicyFilePath = None
-        self.ignore_file_list_pat = None
+        self._ignore_file_list_pat = None
 
     def _getLocalPolicyFilePath(self):
         return self.__localPolicyFilePath
@@ -136,6 +138,21 @@ class SamlPepFilterBase(SessionMiddlewareBase):
                             "so avoiding the web service call performance "
                             "penalty")
 
+    @property
+    def ignore_file_list_pat(self):
+        return self._ignore_file_list_pat[:]
+    
+    @ignore_file_list_pat.setter
+    def ignore_file_list_pat(self, value):
+        if isinstance(value, basestring):
+            # Assume split on line boundaries
+            self._ignore_file_list_pat = value.splitlines()
+        elif is_iterable(value):
+            self._ignore_file_list_pat = [i for i in value]
+        else:
+            raise TypeError('Expecting string or iterable type for '
+                            '"ignore_file_list_pat" got %r' % value)
+            
     def _getClient(self):
         return self.__client
 

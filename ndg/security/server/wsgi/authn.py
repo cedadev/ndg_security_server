@@ -18,12 +18,12 @@ log = logging.getLogger(__name__)
 import re
 import webob
 import urllib
-import hashlib
 
 from paste.request import construct_url, parse_querystring
 from paste.auth.auth_tkt import AuthTicket, parse_ticket, BadTicket
 import authkit.authenticate
 from authkit.authenticate.multi import MultiHandler
+from crypto_cookie.auth_tkt import SecureCookie
 
 from ndg.security.server.wsgi import (NDGSecurityMiddlewareBase, 
                                       NDGSecurityMiddlewareError, 
@@ -33,38 +33,12 @@ from ndg.security.server.wsgi.session import (SessionMiddlewareBase,
 
 from ndg.security.server.wsgi.ssl import AuthKitSSLAuthnMiddleware
 
-DEFAULT_DIGEST = hashlib.md5
 
-
-class NDGSecurityCookie(AuthTicket):
-    '''Use custom cookie implementation for AuthKit to enable compatibility
-    with CEDA site services dj_security which uses Paste's AuthTicket
-    '''
-    
-    @staticmethod
-    def parse_ticket(secret, ticket, ip, session):
-        '''Parse cookie and check its signature.
-        
-        :var secret: shared secret used between multiple trusted peers to 
-        verify signature of cookie
-        :var ticket: signed cookie content
-        :var ip: originating client IP address - extracted from X Forwarded
-        or Remote address iterms in HTTP header
-        :var session: AuthKit session object content
-        :return: tuple of parsed cookie content
-        '''
-        if session is not None:
-            if not session.has_key('authkit.cookie.user'):
-                raise BadTicket('No authkit.cookie.user key exists in the '
-                                'session')
-            if not session.has_key('authkit.cookie.user_data'):
-                raise BadTicket('No authkit.cookie.user_data key exists in the '
-                                'session')
-
-        return parse_ticket(secret, ticket, ip, digest_algo=DEFAULT_DIGEST)
-        
 class AuthnException(NDGSecurityMiddlewareError):
     """Base exception for this module"""
+
+class AuthnConfigError(AuthnException):
+    """Error setting configuration for the authentication middleware"""
 
 
 class AuthenticationEnforcementFilter(object):
@@ -381,7 +355,20 @@ class AuthenticationMiddleware(MultiHandler, NDGSecurityMiddlewareBase):
         
         # Override AuthKit cookie handling to use version compatible with 
         # CEDA site services dj_security
-        app_conf['authkit.cookie.ticket_class'] = NDGSecurityCookie
+        app_conf['authkit.cookie.ticket_class'] = SecureCookie
+        
+        # This also requires special handling of cookie secret - the secret is
+        # include in the ini file base 64 encoded but for actual use, needs to
+        # be in decoded form
+        encoded_cookie_secret = app_conf.get('authkit.cookie.secret')
+        if not encoded_cookie_secret:
+            raise AuthnConfigError('Error, "authkit.cookie.secret" setting '
+                                   'is missing.  It must be set as a base 64 '
+                                   'encoded string')
+            
+        app_conf['authkit.cookie.secret'] = encoded_cookie_secret.decode(
+                                                                    'base64')
+        
         app = authkit.authenticate.middleware(app, app_conf)        
         
         MultiHandler.__init__(self, app)
