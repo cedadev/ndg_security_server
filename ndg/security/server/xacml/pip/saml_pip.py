@@ -134,8 +134,7 @@ class PIP(PIPInterface):
     # Subject attributes makes no sense for external configuration - these 
     # are set at run time based on the given subject identity
     DISALLOWED_ATTRIBUTE_QUERY_OPTNAMES = (
-        AttributeQuerySslSOAPBinding.SUBJECT_ID_OPTNAME,
-        AttributeQuerySslSOAPBinding.QUERY_ATTRIBUTES_ATTRNAME
+        AttributeQuerySslSOAPBinding.SUBJECT_ID_OPTNAME
     )
     
     # Special attribute setting for SAML Attribute Query attributes - see

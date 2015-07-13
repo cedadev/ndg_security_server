@@ -19,14 +19,14 @@ from paste.deploy import loadapp
 from paste.script.util.logging_config import fileConfig
 
 from ndg.security.server.utils.paste_utils import PasteDeployAppServer
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase, NDGSEC_TEST_CONFIG_DIR
 
 this_dir = path.dirname(__file__)
 if not os.environ.get('NDGSEC_INTEGRATION_TEST_DIR'):
     os.environ['NDGSEC_INTEGRATION_TEST_DIR'] = path.dirname(this_dir)
     
 if not os.environ.get('NDGSEC_TEST_CONFIG_DIR'):
-    os.environ['NDGSEC_TEST_CONFIG_DIR'] = BaseTestCase.NDGSEC_TEST_CONFIG_DIR
+    os.environ['NDGSEC_TEST_CONFIG_DIR'] = NDGSEC_TEST_CONFIG_DIR
     
      
 class OpenSSLVerifyCallbackMiddleware(object):
@@ -81,10 +81,10 @@ INI_FILENAME = 'securityservices.ini'
 if __name__ == '__main__':    
     cfgFilePath = path.join(path.dirname(path.abspath(__file__)), INI_FILENAME) 
      
-    defCertFilePath = path.join(BaseTestCase.NDGSEC_TEST_CONFIG_DIR, 
+    defCertFilePath = path.join(NDGSEC_TEST_CONFIG_DIR, 
                                 'pki', 
                                 'localhost.crt')
-    defPriKeyFilePath = path.join(BaseTestCase.NDGSEC_TEST_CONFIG_DIR, 
+    defPriKeyFilePath = path.join(NDGSEC_TEST_CONFIG_DIR, 
                                   'pki', 
                                   'localhost.key')
         
