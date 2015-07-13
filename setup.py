@@ -69,7 +69,7 @@ protected in a flexible manner without the need to modify application code.
 
 setup(
     name =           		'ndg_security_server',
-    version =        		'2.4.3',
+    version =        		'2.5.0',
     description =    		'Server side components for running NERC DataGrid '
                             'Security Services',
     long_description =		LONG_DESCR,
@@ -90,7 +90,8 @@ setup(
         'xacml':  ["ndg_xacml"],
         'myproxy-saml-assertion-cert-ext-app': ['MyProxyClient'],
         'integration-tests': ['pyOpenSSL'],
-        'openid-services': ['Genshi==0.6']
+        'openid-services': ['Genshi==0.6'],
+        'ceda-site-services': ['crypto-cookie']
     },
     # Set ndg.security.common dependency
     dependency_links =      ["http://dist.ceda.ac.uk/pip/"],

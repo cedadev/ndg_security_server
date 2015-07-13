@@ -7,6 +7,6 @@ PasteDeploy
 PasteScript
 SQLAlchemy
 WebOb
-pyOpenSSL
 python-openid
-
+psycopg2
+crypto-cookie

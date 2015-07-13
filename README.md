@@ -24,6 +24,9 @@ protected in a flexible manner without the need to modify application code.
 
 Releases
 --------
+ * 2.5.0:
+  * Integration with PyDAP and CEDA site services to use new ``crypto-cookie`` 
+    package.
  * 2.4.3:
   * Enhancements to authentication redirect interface to allow customisation of
     ``ndg.security.r`` HTTP GET query argument.
