@@ -87,6 +87,11 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         IGNORE_FILE_LIST_PARAM_NAME
     )
     
+    OPTIONAL_PARAM_NAMES = (
+        LOCAL_POLICY_FILEPATH_PARAM_NAME,
+        IGNORE_FILE_LIST_PARAM_NAME                            
+    )
+    
     XACML_ATTRIBUTEVALUE_CLASS_FACTORY = XacmlAttributeValueClassFactory()
     
     __slots__ = (
@@ -234,10 +239,9 @@ class SamlPepFilterBase(SessionMiddlewareBase):
             if value is not None:
                 setattr(self, name, value)
                 
-            elif name != self.__class__.LOCAL_POLICY_FILEPATH_PARAM_NAME:
-                # Policy file setting is optional
+            # All but the local policy settings are manadatory
+            elif name not in self.__class__.OPTIONAL_PARAM_NAMES:
                 raise SamlPepFilterConfigError('Missing option %r' % paramName)
-            
 
         # Parse authorisation decision query options
         queryPrefix = prefix + self.__class__.AUTHZ_DECISION_QUERY_PARAMS_PREFIX
@@ -344,7 +348,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         self.session[walletKeyName] = credWallet
         self.session.save()
         
-    def saveResultCtx(self, request, response, save=True):
+    def save_result_ctx(self, request, response, save=True):
         """Set PEP context information in the Beaker session using standard key
         names.  This is a snapshot of the last request and the response 
         received.  It can be used by downstream middleware to provide contextual
@@ -372,7 +376,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         XacmlDecision.DENY_STR, XacmlDecision.INDETERMINATE_STR
     )
     
-    def isApplicableRequest(self, resourceURI):
+    def is_applicable_request(self, resourceURI):
         """A local PDP can filter out some requests to avoid the need to call
         out to the authorisation service 
         
@@ -406,7 +410,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
 
     def _createXacmlRequestCtx(self, resourceURI):
         """Wrapper to create a request context for a local PDP - see 
-        isApplicableRequest
+        is_applicable_request
         
         :param resourceURI: URI of requested resource
         :type resourceURI: basestring
@@ -449,7 +453,7 @@ class SamlPepFilter(SamlPepFilterBase):
         remoteUser = request.remote_user or ''
         
         # Apply local PDP if set
-        if not self.isApplicableRequest(requestURI):
+        if not self.is_applicable_request(requestURI):
             # The local PDP has returned a decision that the requested URI is
             # not applicable and so the authorisation service need not be 
             # invoked.  This step is an efficiency measure to avoid multiple
@@ -503,7 +507,7 @@ class SamlPepFilter(SamlPepFilterBase):
             
             # Record the result in the user's session to enable later 
             # interrogation by any result handler Middleware
-            self.saveResultCtx(query, samlAuthzResponse)
+            self.save_result_ctx(query, samlAuthzResponse)
         
         
         # Set HTTP 403 Forbidden response if any of the decisions returned are

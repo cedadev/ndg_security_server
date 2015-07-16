@@ -137,7 +137,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
         requestURI = request.url
         
         # Apply local PDP if set
-        if not self.isApplicableRequest(requestURI):
+        if not self.is_applicable_request(requestURI):
             # The local PDP has returned a decision that the requested URI is
             # not applicable and so the authorisation service need not be 
             # invoked.  This step is an efficiency measure to avoid multiple
@@ -173,7 +173,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
             # pickling of XACML requests fails (in Python 2.6.2)
             # Record the result in the user's session to enable later 
             # interrogation by any result handler Middleware
-            # self.saveResultCtx(self.client.query, samlAuthzResponse)
+            # self.save_result_ctx(self.client.query, samlAuthzResponse)
         
         (assertion,
          error_status,
