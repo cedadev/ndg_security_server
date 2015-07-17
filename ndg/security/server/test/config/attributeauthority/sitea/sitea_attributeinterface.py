@@ -10,7 +10,7 @@ __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = '$Id:siteAUserRoles.py 4371 2008-10-29 09:44:51Z pjkersha $'
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from uuid import uuid4
 
 from ndg.saml.common.xml import SAMLConstants
@@ -20,19 +20,19 @@ from ndg.saml.saml2.core import (Assertion, Attribute, AttributeStatement,
 
 from ndg.security.common.saml_utils.esgf import (ESGFSamlNamespaces,
                                                  ESGFGroupRoleAttributeValue)
-from ndg.security.common.X509 import X500DN
+from ndg.security.common.openssl import X500DN
 from ndg.security.server.attributeauthority import (AttributeInterface, 
                                                     InvalidRequestorId, 
                                                     AttributeNotKnownError, 
                                                     AttributeReleaseDenied, 
                                                     UserIdNotKnown)
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase
 
 
 class TestUserRoles(AttributeInterface):
     """Test User Roles class dynamic import for Attribute Authority"""
-    ATTRIBUTE_NAMES = BaseTestCase.ATTRIBUTE_NAMES
-    ATTRIBUTE_VALUES = BaseTestCase.ATTRIBUTE_VALUES
+    ATTRIBUTE_NAMES = ()
+    ATTRIBUTE_VALUES = ()
 
     SAML_ATTRIBUTE_NAMES = ATTRIBUTE_NAMES + (
         ESGFSamlNamespaces.EMAILADDRESS_ATTRNAME,

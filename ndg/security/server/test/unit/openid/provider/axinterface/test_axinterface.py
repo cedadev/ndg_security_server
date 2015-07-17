@@ -12,7 +12,7 @@ from os import path
 
 from openid.extensions.ax import FetchRequest, FetchResponse, AttrInfo
         
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase
 from ndg.security.server.wsgi.openid.provider.axinterface import (
                                                         AXInterfaceConfigError)
 from ndg.security.server.wsgi.openid.provider.axinterface.sqlalchemy_ax import (

@@ -9,13 +9,17 @@ logging.basicConfig(level=logging.DEBUG)
 
 from beaker.middleware import SessionMiddleware
 import paste.fixture
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase
 from ndg.security.server.wsgi.client_proxy.middleware import (NDGSecurityProxy,
-                                        MyProxyProvisionedSessionMiddleware)
+                                        MyProxyProvisionedSessionMiddleware,
+                                        myproxy_client_installed)
 
 
 class SecurityProxyTestCase(BaseTestCase):
     '''Test Security HTTP(S) proxy'''
+    
+    @unittest.skipIf(not myproxy_client_installed, 'Need Paste to run '
+                     'SecurityProxyTestCase')
 
     def test01hardWired(self):
         app = NDGSecurityProxy('http://localhost:7080/test_securedURI')
@@ -32,7 +36,7 @@ class SecurityProxyTestCase(BaseTestCase):
         app.initialise({}, **local_conf)
         app = SessionMiddleware(app, environ_key='ndg.security.session')
         extra_environ = {
-            'REMOTE_USER': BaseTestCase.OPENID_URI 
+            'REMOTE_USER': 'https://localhost:7443/openid/pjk'
         }
         app = paste.fixture.TestApp(app, extra_environ=extra_environ)
         
@@ -40,16 +44,6 @@ class SecurityProxyTestCase(BaseTestCase):
         self.assert_(response)
         print(response)
     
-#    def test02fromIniFile(self):
-#        here_dir = os.path.dirname(os.path.abspath(__file__))
-#        app = loadapp('config:test.ini', relative_to=here_dir)
-#        self.app = paste.fixture.TestApp(app)
-#        
-#        response = self.app.get('/')
-#        self.assert_(response) 
-#        print(response)      
-
-
+    
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

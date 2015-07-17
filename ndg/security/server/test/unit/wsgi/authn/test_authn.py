@@ -27,7 +27,7 @@ mkPath = lambda file: jnPath(os.environ['NDGSEC_COMBINED_SRVS_UNITTEST_DIR'],
 
 import paste.fixture
 from paste.deploy import loadapp
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase
 from ndg.security.common.X509 import X509Cert
 from ndg.security.server.wsgi.ssl import AuthKitSSLAuthnMiddleware
 

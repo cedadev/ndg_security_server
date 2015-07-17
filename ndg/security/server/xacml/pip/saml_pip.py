@@ -2,6 +2,7 @@
 Attribute Authority
 
 """
+from Finder.Finder_items import items
 __author__ = "P J Kershaw"
 __date__ = "06/08/10"
 __copyright__ = "(C) 2010 Science and Technology Facilities Council"
@@ -27,11 +28,13 @@ from ndg.xacml.core.context.request import Request as XacmlRequestCtx
 from ndg.saml.saml2.core import (Attribute as SamlAttribute,
                                  Assertion as SamlAssertion)
 from ndg.saml.utils import TypedList as SamlTypedList
+from ndg.saml.utils.factory import AttributeQueryFactory
 from ndg.saml.saml2.binding.soap.client.attributequery import \
                                             AttributeQuerySslSOAPBinding
                                             
 from ndg.security.common.utils import VettedDict, str2Bool
 from ndg.security.common.credentialwallet import SAMLAssertionWallet
+from ndg.security.server.utils.parsers import keyword_parser
 
 
 class SessionCache(object):  
@@ -134,18 +137,25 @@ class PIP(PIPInterface):
     # Subject attributes makes no sense for external configuration - these 
     # are set at run time based on the given subject identity
     DISALLOWED_ATTRIBUTE_QUERY_OPTNAMES = (
-        AttributeQuerySslSOAPBinding.SUBJECT_ID_OPTNAME
+        'subject.nameID.value'
     )
     
     # Special attribute setting for SAML Attribute Query attributes - see
     # __setattr__
-    ATTRIBUTE_QUERY_ATTRNAME = 'attributeQuery'
+    ATTRIBUTE_QUERY_ATTRNAME = 'attribute_query.'
     LEN_ATTRIBUTE_QUERY_ATTRNAME = len(ATTRIBUTE_QUERY_ATTRNAME)
     
     # +1 allows for '.' or other separator e.g. 
-    # pip.attributeQuery.issuerName
+    # pip.attribute_query.issuerName
     #                   ^
-    ATTRIBUTE_QUERY_ATTRNAME_OFFSET = LEN_ATTRIBUTE_QUERY_ATTRNAME + 1
+    ATTRIBUTE_QUERY_ATTRNAME_OFFSET = LEN_ATTRIBUTE_QUERY_ATTRNAME
+
+    # Likewise for the query binding.  The binding is the join between SAML
+    # message and the transport.  In this case SOAP over SSL.
+    ATTRIBUTE_QUERY_BINDING_ATTRNAME = 'attribute_query_binding.'
+    LEN_ATTRIBUTE_QUERY_BINDING_ATTRNAME = len(ATTRIBUTE_QUERY_BINDING_ATTRNAME)
+    ATTRIBUTE_QUERY_BINDING_ATTRNAME_OFFSET = \
+                                        LEN_ATTRIBUTE_QUERY_BINDING_ATTRNAME + 1
     
     DEFAULT_OPT_PREFIX = 'saml_pip.'
 
@@ -157,7 +167,8 @@ class PIP(PIPInterface):
         '__subjectAttributeId',
         '__mappingFilePath', 
         '__attributeId2AttributeAuthorityMap',
-        '__attributeQueryBinding',
+        '__attribute_query',
+        '__attribute_query_binding',
         '__cacheSessions',
         '__sessionCacheDataDir',
         '__sessionCacheTimeout',
@@ -189,8 +200,9 @@ class PIP(PIPInterface):
         _typeCheckers = (lambda val: isinstance(val, basestring),)*2
         self.__attributeId2AttributeAuthorityMap = VettedDict(*_typeCheckers)
         
-        self.__attributeQueryBinding = AttributeQuerySslSOAPBinding()
-        
+        self.__attribute_query = AttributeQueryFactory.create()
+        self.__attribute_query_binding = AttributeQuerySslSOAPBinding()
+    
         self.__cacheSessions = True
 
     def _getSessionCacheTimeout(self):
@@ -272,22 +284,6 @@ class PIP(PIPInterface):
                                    doc="Data Directory for Session Cache.  "
                                        "This setting will be ignored if "
                                        '"cacheSessions" is set to False')
-    
-    def _get_subjectAttributeId(self):
-        return self.__subjectAttributeId
-
-    def _set_subjectAttributeId(self, value):
-        if not isinstance(value, basestring):
-            raise TypeError('Expecting string type for "subjectAttributeId"; '
-                            'got %r' % type(value))
-        self.__subjectAttributeId = value
-
-    subjectAttributeId = property(_get_subjectAttributeId, 
-                                  _set_subjectAttributeId,
-                                  doc="The attribute ID of the subject value "
-                                      "to extract from the XACML request "
-                                      "context and pass in the SAML attribute "
-                                      "query")
                                        
     def _getMappingFilePath(self):
         return self.__mappingFilePath
@@ -312,91 +308,22 @@ class PIP(PIPInterface):
                         "endpoint")
     
     @property
-    def attributeQueryBinding(self):
-        """SAML SOAP Attribute Query client binding object"""
-        return self.__attributeQueryBinding
+    def attribute_query(self):
+        '''Attribute Query to be used to query attribute service'''
+        return self.__attribute_query
     
-    @classmethod
-    def fromConfig(cls, cfg, **kw):
-        '''Alternative constructor makes object from config file settings
-        @type cfg: basestring /ConfigParser derived type
-        @param cfg: configuration file path or ConfigParser type object
-        @rtype: ndg.security.server.xacml.pip.saml_pip.PIP
-        @return: new instance of this class
-        '''
-        obj = cls()
-        obj.parseConfig(cfg, **kw)
-        
-        return obj
-
-    def parseConfig(self, cfg, prefix=DEFAULT_OPT_PREFIX, section='DEFAULT'):
-        '''Read config settings from a file, config parser object or dict
-        
-        @type cfg: basestring / ConfigParser derived type / dict
-        @param cfg: configuration file path or ConfigParser type object
-        @type prefix: basestring
-        @param prefix: prefix for option names e.g. "attributeQuery."
-        @type section: basetring
-        @param section: configuration file section from which to extract
-        parameters.
-        '''  
-        if isinstance(cfg, basestring):
-            cfgFilePath = path.expandvars(cfg)
-            
-            # Add a 'here' helper option for setting dir paths in the config
-            # file
-            hereDir = path.abspath(path.dirname(cfgFilePath))
-            _cfg = SafeConfigParser(defaults={'here': hereDir})
-            
-            # Make option name reading case sensitive
-            _cfg.optionxform = str
-            _cfg.read(cfgFilePath)
-            items = _cfg.items(section)
-            
-        elif isinstance(cfg, ConfigParser):
-            items = cfg.items(section)
-         
-        elif isinstance(cfg, dict):
-            items = cfg.items()     
-        else:
-            raise AttributeError('Expecting basestring, ConfigParser or dict '
-                                 'type for "cfg" attribute; got %r type' % 
-                                 type(cfg))
-        
-        prefixLen = len(prefix)
-        
-        for optName, val in items:
-            if prefix:
-                # Filter attributes based on prefix
-                if optName.startswith(prefix):
-                    setattr(self, optName[prefixLen:], val)
-            else:
-                # No prefix set - attempt to set all attributes   
-                setattr(self, optName, val)
-                            
-    def __setattr__(self, name, value):
-        """Enable setting of AttributeQuerySslSOAPBinding attributes from
-        names starting with attributeQuery.* / attributeQuery_*.  Addition for
-        setting these values from ini file
-        """
-
-        # Coerce into setting AttributeQuerySslSOAPBinding attributes - 
-        # names must start with 'attributeQuery\W' e.g.
-        # attributeQuery.clockSkewTolerance or attributeQuery_issuerDN
-        if name.startswith(self.__class__.ATTRIBUTE_QUERY_ATTRNAME):
-            queryAttrName = name[
-                                self.__class__.ATTRIBUTE_QUERY_ATTRNAME_OFFSET:]
-            
-            # Skip subject related parameters to prevent settings from static
-            # configuration.  These are set at runtime
-            if min([queryAttrName.startswith(i) 
-                    for i in self.__class__.DISALLOWED_ATTRIBUTE_QUERY_OPTNAMES
-                    ]):
-                super(PIP, self).__setattr__(name, value)
-                
-            setattr(self.__attributeQueryBinding, queryAttrName, value)            
-        else:
-            super(PIP, self).__setattr__(name, value)
+    @property
+    def attribute_query_binding(self):
+        """SAML SOAP Attribute Query client binding object"""
+        return self.__attribute_query_binding
+    
+    def __setattr__(self, name, val):
+        if '.' in name:
+            obj_name, obj_attr_name = name.split('.', 1)
+            obj = getattr(self, obj_name)
+            keyword_parser(obj, **{obj_attr_name: val})
+        else:   
+            return super(PIP, self).__setattr__(name, val)
     
     def readMappingFile(self):
         """Read the file which maps attribute names to Attribute Authorities
@@ -437,6 +364,7 @@ class PIP(PIPInterface):
             
         attributeFormat = attributeDesignator.dataType
         attributeId = attributeDesignator.attributeId
+        exptd_attribute_id = self.attribute_query.subject.nameID.format
         
         if not isinstance(context, XacmlRequestCtx):
             raise TypeError('Expecting %r type for context input; got %r' %
@@ -461,7 +389,7 @@ class PIP(PIPInterface):
         subjectId = None
         for subject in context.subjects:
             for attribute in subject.attributes:
-                if attribute.attributeId == self.subjectAttributeId:
+                if attribute.attributeId == exptd_attribute_id:
                     if len(attribute.attributeValues) != 1:
                         raise PIPRequestCtxException("Expecting a single "
                                                      "attribute value "
@@ -471,8 +399,7 @@ class PIP(PIPInterface):
         
         if subjectId is None:
             raise PIPRequestCtxException('No subject found of type %r in '
-                                         'request context' %
-                                         self.subjectAttributeId)
+                                         'request context' % exptd_attribute_id)
         elif not subjectId:
             # Empty string
             return None
@@ -512,15 +439,14 @@ class PIP(PIPInterface):
             samlAttribute = SamlAttribute()
             samlAttribute.name = attributeId
             samlAttribute.nameFormat = attributeFormat
-            self.attributeQueryBinding.subjectIdFormat = \
-                                                        self.subjectAttributeId
-            query = self.attributeQueryBinding.makeQuery()
+            self.attribute_query_binding.subjectIdFormat = exptd_attribute_id
+            query = self.attribute_query_binding.makeQuery()
             query.attributes.append(samlAttribute)
             
             # Dispatch query
             try:
-                self.attributeQueryBinding.setQuerySubjectId(query, subjectId)
-                response = self.attributeQueryBinding.send(query,
+                self.attribute_query_binding.setQuerySubjectId(query, subjectId)
+                response = self.attribute_query_binding.send(query,
                                                     uri=attributeAuthorityURI)
                 
                 log.debug('Retrieved response from attribute service %r',
@@ -532,7 +458,7 @@ class PIP(PIPInterface):
             finally:
                 # !Ensure relevant query attributes are reset ready for any 
                 # subsequent query!
-                self.attributeQueryBinding.subjectIdFormat = ''
+                self.attribute_query_binding.subjectIdFormat = ''
         
             if assertions is None:
                 assertions = SamlTypedList(SamlAssertion)

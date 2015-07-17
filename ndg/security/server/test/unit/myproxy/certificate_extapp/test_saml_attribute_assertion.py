@@ -19,7 +19,7 @@ from cStringIO import StringIO
 import unittest
 
 from ndg.security.common.saml_utils.esgf import ESGFSamlNamespaces
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase
 from ndg.security.server.myproxy.certificate_extapp.saml_attribute_assertion \
     import CertExtApp, CertExtConsoleApp
 

@@ -12,13 +12,15 @@ __revision__ = '$Id$'
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
+import unittest
 import urllib2
 import base64
 import paste.fixture
-from ndg.security.test.unit.base import BaseTestCase
-from ndg.security.server.wsgi.authn import HTTPBasicAuthMiddleware, \
-    HTTPBasicAuthUnauthorized
+from paste.httpexceptions import HTTPUnauthorized
 
+from ndg.security.server.test.base import BaseTestCase
+from ndg.security.server.wsgi.httpbasicauth import HttpBasicAuthMiddleware
+    
 
 class TestAuthnApp(object):
     '''Test Application for the Authentication handler to protect'''
@@ -41,7 +43,7 @@ class TestAuthnApp(object):
         return [TestAuthnApp.response]
 
 
-class HTTPBasicAuthPluginMiddleware(object):
+class HttpBasicAuthPluginMiddleware(object):
     USERNAME = 'testuser'
     PASSWORD = 'password'
     
@@ -50,17 +52,17 @@ class HTTPBasicAuthPluginMiddleware(object):
         
     def __call__(self, environ, start_response):
         def authenticate(environ, username, password):
-            if username == HTTPBasicAuthPluginMiddleware.USERNAME and \
-               password == HTTPBasicAuthPluginMiddleware.PASSWORD:
+            if username == HttpBasicAuthPluginMiddleware.USERNAME and \
+               password == HttpBasicAuthPluginMiddleware.PASSWORD:
                 return
             else:
-                raise HTTPBasicAuthUnauthorized("Invalid credentials")
+                raise HTTPUnauthorized("Invalid credentials")
             
         environ['authenticate'] = authenticate
         return self._app(environ, start_response)
     
     
-class HTTPBasicAuthMiddlewareTestCase(BaseTestCase):
+class HttpBasicAuthMiddlewareTestCase(BaseTestCase):
     SERVICE_PORTNUM = 10443
     WGET_CMD = 'wget'
     WGET_USER_OPTNAME = '--http-user'
@@ -70,17 +72,17 @@ class HTTPBasicAuthMiddlewareTestCase(BaseTestCase):
     
     def __init__(self, *args, **kwargs):
         app = TestAuthnApp({})
-        app = HTTPBasicAuthMiddleware(app, {}, prefix='',
-                                               authnFunc='authenticate')
-        self.wsgiapp = HTTPBasicAuthPluginMiddleware(app)
+        app = HttpBasicAuthMiddleware.filter_app_factory(app, {}, prefix='',
+                                      authnFunc='authenticate')
+        self.wsgiapp = HttpBasicAuthPluginMiddleware(app)
         
         self.app = paste.fixture.TestApp(self.wsgiapp)
          
         BaseTestCase.__init__(self, *args, **kwargs)
 
     def test01PasteFixture(self):
-        username = HTTPBasicAuthPluginMiddleware.USERNAME
-        password = HTTPBasicAuthPluginMiddleware.PASSWORD
+        username = HttpBasicAuthPluginMiddleware.USERNAME
+        password = HttpBasicAuthPluginMiddleware.PASSWORD
         
         base64String = base64.encodestring('%s:%s' % (username, password))[:-1]
         authHeader =  "Basic %s" % base64String
@@ -94,12 +96,12 @@ class HTTPBasicAuthMiddlewareTestCase(BaseTestCase):
     def test02Urllib2Client(self):
         # Thread separate Paster based service 
         self.addService(app=self.wsgiapp, 
-                        port=HTTPBasicAuthMiddlewareTestCase.SERVICE_PORTNUM)
+                        port=self.__class__.SERVICE_PORTNUM)
         
-        username = HTTPBasicAuthPluginMiddleware.USERNAME
-        password = HTTPBasicAuthPluginMiddleware.PASSWORD
+        username = HttpBasicAuthPluginMiddleware.USERNAME
+        password = HttpBasicAuthPluginMiddleware.PASSWORD
         url = 'http://localhost:%d/test_200' % \
-            HTTPBasicAuthMiddlewareTestCase.SERVICE_PORTNUM
+            self.__class__.SERVICE_PORTNUM
             
         req = urllib2.Request(url)
         base64String = base64.encodestring('%s:%s' % (username, password))[:-1]
@@ -113,22 +115,22 @@ class HTTPBasicAuthMiddlewareTestCase(BaseTestCase):
         
     def test03WGetClient(self):
         uri = ('http://localhost:%d/test_200' % 
-                  HTTPBasicAuthMiddlewareTestCase.SERVICE_PORTNUM)
+                  self.__class__.SERVICE_PORTNUM)
                   
-        username = HTTPBasicAuthPluginMiddleware.USERNAME
-        password = HTTPBasicAuthPluginMiddleware.PASSWORD
+        username = HttpBasicAuthPluginMiddleware.USERNAME
+        password = HttpBasicAuthPluginMiddleware.PASSWORD
         
         import os
         import subprocess
         cmd = "%s %s %s=%s %s=%s %s=%s" % (
-            HTTPBasicAuthMiddlewareTestCase.WGET_CMD, 
+            self.__class__.WGET_CMD, 
             uri,
-            HTTPBasicAuthMiddlewareTestCase.WGET_USER_OPTNAME,
+            self.__class__.WGET_USER_OPTNAME,
             username,
-            HTTPBasicAuthMiddlewareTestCase.WGET_PASSWD_OPTNAME,
+            self.__class__.WGET_PASSWD_OPTNAME,
             password,
-            HTTPBasicAuthMiddlewareTestCase.WGET_OUTPUT_OPTNAME,
-            HTTPBasicAuthMiddlewareTestCase.WGET_STDOUT)
+            self.__class__.WGET_OUTPUT_OPTNAME,
+            self.__class__.WGET_STDOUT)
         
         p = subprocess.Popen(cmd, shell=True)
         status = os.waitpid(p.pid, 0)

@@ -25,7 +25,7 @@ from ndg.xacml.core.context.subject import Subject
 
 from ndg.saml.saml2.core import Issuer as SamlIssuer
 
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase
 from ndg.security.server.xacml.pip.saml_pip import PIP
 
 

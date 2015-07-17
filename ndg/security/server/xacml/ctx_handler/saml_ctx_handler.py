@@ -417,7 +417,6 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
         xacmlAttributeValueFactory = XacmlAttributeValueClassFactory()
         
         openidSubjectAttribute = XacmlAttribute()
-        roleAttribute = XacmlAttribute()
         
         openidSubjectAttribute.attributeId = \
                                 samlAuthzDecisionQuery.subject.nameID.format
@@ -593,5 +592,7 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
         authzDecisionStatement = XACMLAuthzDecisionStatement()
         authzDecisionStatement.xacmlContextResponse = xacmlResponse
         if authzDecisionQuery.returnContext:
-            authzDecisionStatement.xacmlContextRequest = authzDecisionQuery.xacmlContextRequest
+            authzDecisionStatement.xacmlContextRequest = \
+                                        authzDecisionQuery.xacmlContextRequest
+                                        
         assertion.statements.append(authzDecisionStatement)

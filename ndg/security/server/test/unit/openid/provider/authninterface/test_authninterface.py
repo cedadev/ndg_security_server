@@ -11,7 +11,7 @@ __revision__ = '$Id$'
 from os import path
 import unittest
       
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase
 from ndg.security.server.wsgi.openid.provider.authninterface import (
                                                     AuthNInterfaceConfigError)
 from ndg.security.server.wsgi.openid.provider.authninterface.sqlalchemy_authn \

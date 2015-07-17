@@ -16,7 +16,7 @@ from os import path
 import unittest
 
 from ConfigParser import SafeConfigParser
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase
 from ndg.security.server.xacml.ctx_handler.saml_ctx_handler import SamlCtxHandler
 
 

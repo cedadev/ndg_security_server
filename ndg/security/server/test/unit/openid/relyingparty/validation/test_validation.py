@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 import os
 import unittest
-from ndg.security.test.unit.base import BaseTestCase, mkDataDirPath
+from ndg.security.server.test.base import BaseTestCase, mk_data_dirpath
 from ndg.security.server.wsgi.openid.relyingparty.validation import (
     IdPValidator, IdPValidationDriver, IdPInvalidException, 
     SSLIdPValidationDriver, SSLClientAuthNValidator)
@@ -60,7 +60,7 @@ class IdentifierPlaceHolder(object):
 from M2Crypto import X509
 
 class X509StoreCtxPlaceHolder(object):
-    x509CertFilePath = mkDataDirPath(os.path.join('pki', 'localhost.crt'))
+    x509CertFilePath = mk_data_dirpath(os.path.join('pki', 'localhost.crt'))
     
     def get1_chain(self):
         return [X509.load_cert(X509StoreCtxPlaceHolder.x509CertFilePath)]

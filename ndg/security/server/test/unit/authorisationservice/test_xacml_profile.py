@@ -42,6 +42,7 @@ from ndg.soap.etree import SOAPEnvelope
 logging.basicConfig()
 log = logging.getLogger(__name__)
 
+
 class TestApp(object):
     '''Test Application'''
     response = "Test application"

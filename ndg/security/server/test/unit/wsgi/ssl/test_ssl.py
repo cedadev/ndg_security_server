@@ -17,7 +17,7 @@ import re
 
 import paste.fixture
 from paste.deploy import loadapp
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase
 from ndg.security.common.X509 import X509Cert
 
 class TestSSLClientAuthnApp(BaseTestCase):

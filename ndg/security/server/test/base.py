@@ -73,7 +73,7 @@ class BaseTestCase(unittest.TestCase):
     
     def __init__(self, *arg, **kw):
         '''Enable setting of default test directory on start-up of unit tests'''
-        self.__class__.set_config_dir_envvar()
+        set_config_dir_envvar()
                 
         unittest.TestCase.__init__(self, *arg, **kw)
 
