@@ -13,11 +13,10 @@ import logging
 log = logging.getLogger(__name__)
 
 import traceback
-from datetime import datetime, timedelta
-from uuid import uuid4
 from string import Template
 
 from sqlalchemy import create_engine, exc
+from ConfigParser import ConfigParser
 
 from ndg.security.common.config import Config, importElementTree
 ElementTree = importElementTree()
@@ -41,8 +40,7 @@ from ndg.saml.saml2.binding.soap.client.attributequery import \
 from ndg.security.common.saml_utils.esgf import (ESGFSamlNamespaces,
                                                 ESGFDefaultQueryAttributes)
 from ndg.security.common.utils.etree import prettyPrint
-from ndg.security.common.X509 import X500DN
-from ndg.security.server.wsgi.openid.provider import IdentityMapping
+from ndg.security.common.openssl import X500DN
 from ndg.security.common.utils.configfileparsers import (     
                                                     CaseSensitiveConfigParser,)
 

@@ -57,18 +57,25 @@ class DiscoveryInfoPlaceHolder(object):
 class IdentifierPlaceHolder(object):
     getIdentifier = lambda self: 'myid'
 
-from M2Crypto import X509
+try:
+    from M2Crypto import X509
+    m2crypto_installed = True
+    
+    class X509StoreCtxPlaceHolder(object):
+        x509CertFilePath = mk_data_dirpath(os.path.join('pki', 'localhost.crt'))
+        
+        def get1_chain(self):
+            return [X509.load_cert(X509StoreCtxPlaceHolder.x509CertFilePath)]
 
-class X509StoreCtxPlaceHolder(object):
-    x509CertFilePath = mk_data_dirpath(os.path.join('pki', 'localhost.crt'))
+except ImportError:
+    m2crypto_installed = False
     
-    def get1_chain(self):
-        return [X509.load_cert(X509StoreCtxPlaceHolder.x509CertFilePath)]
-    
+
 class IdPValidationTestCase(BaseTestCase):
     thisDir = os.path.dirname(os.path.abspath(__file__))
     IDP_CONFIG_FILEPATH = os.path.join(thisDir, 'idpvalidator.xml')
     os.environ['NDGSEC_UNITTEST_IDPVALIDATION_DIR'] = thisDir
+    
     
     def test01IdPConfigFileEnvVarNotSet(self):
         identifier = IdentifierPlaceHolder()
@@ -91,6 +98,8 @@ class IdPValidationTestCase(BaseTestCase):
         validDiscoveries = idPValidationDriver.performIdPValidation(identifier)
         self.assert_(len(validDiscoveries) == 2)
         
+    @unittest.skipIf(not m2crypto_installed, "Skipping IdPValidationTestCase "
+                     "M2Crypto is not installed.")
     def test03SSLValidation(self):
         idpConfigFilePath = os.path.join(IdPValidationTestCase.thisDir, 
                                          'ssl-idp-validator.xml')

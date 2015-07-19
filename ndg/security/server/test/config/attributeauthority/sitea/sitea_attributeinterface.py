@@ -26,7 +26,7 @@ from ndg.security.server.attributeauthority import (AttributeInterface,
                                                     AttributeNotKnownError, 
                                                     AttributeReleaseDenied, 
                                                     UserIdNotKnown)
-from ndg.security.server.test.base import BaseTestCase
+from ndg.security.server.test.base import TestUserDatabase
 
 
 class TestUserRoles(AttributeInterface):
@@ -87,8 +87,8 @@ class TestUserRoles(AttributeInterface):
     SAML_ASSERTION_LIFETIME = 8*60*60
     
     VALID_USER_IDS = ("https://openid.localhost/philip.kershaw",
-                      BaseTestCase.OPENID_URI)
-    VALID_REQUESTOR_IDS = BaseTestCase.VALID_REQUESTOR_IDS
+                      TestUserDatabase.OPENID_URI)
+    VALID_REQUESTOR_IDS = TestUserDatabase.VALID_REQUESTOR_IDS
     
     INSUFFICIENT_PRIVILEGES_REQUESTOR_ID = X500DN.fromString(
                                         "/O=Site B/CN=Authorisation Service")
