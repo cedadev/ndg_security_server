@@ -13,6 +13,7 @@ logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
 from os import path
+from urllib2 import URLError
 import unittest
 
 from ndg.xacml.core.attributedesignator import SubjectAttributeDesignator
@@ -23,8 +24,10 @@ from ndg.xacml.core.context.subject import Subject
 
 from ndg.saml.saml2.core import Issuer as SamlIssuer
 
-from ndg.security.server.test.base import BaseTestCase, TEST_CONFIG_DIR
+from ndg.security.server.test.base import BaseTestCase
 from ndg.security.server.test.test_util import TestUserDatabase
+from ndg.security.server.test.service_testrunner import \
+                                                AttributeAuthorityTestRunner
 from ndg.security.server.xacml.pip.saml_pip import PIP
 
 
@@ -46,7 +49,7 @@ class SamlPipTestCase(BaseTestCase):
     CLNT_PRIKEY_FILEPATH = path.join(BaseTestCase.PKI_DIR, 'localhost.key')
                                    
     attributeValueClassFactory = AttributeValueClassFactory()
-            
+      
     def test01CreateAndCheckAttributes(self):
         pip = PIP()
         self.assert_(pip)
@@ -154,73 +157,44 @@ class SamlPipTestCase(BaseTestCase):
         return pip, designator, ctx
     
     def test03Query(self):
-        self._start_sitea_attributeauthority(withSSL=True, 
-                    port=self.__class__.SITEA_SSL_ATTRIBUTEAUTHORITY_PORTNUM)
-        
-        pip, designator, ctx = self.__class__._initQuery()
-        
-        # Avoid caching to avoid impacting other tests in this class
-        pip.cacheSessions = False
-        
-        attributeValues = pip.attributeQuery(ctx, designator)
-        self.assert_(len(attributeValues) > 0)
-        print("PIP retrieved attribute values %r" % attributeValues)
-        
-        self._stop_sitea_attributeauthority()
-        
-    def _start_sitea_attributeauthority(self, withSSL=False, port=None):
-        from ndg.security.server.utils.paste_utils import PasteDeployAppServer
-        
-        from OpenSSL import SSL
-        
-        ssl_context = SSL.Context(SSL.TLSv1_METHOD)
-        ssl_context.set_options(SSL.OP_NO_SSLv2|SSL.OP_NO_SSLv3)
-    
-        priKeyFilePath = BaseTestCase.SSL_PRIKEY_FILEPATH
-        certFilePath = BaseTestCase.SSL_CERT_FILEPATH
-        
-        ssl_context.use_privatekey_file(priKeyFilePath)
-        ssl_context.use_certificate_file(certFilePath)
-        
-        configFilePath = path.join(TEST_CONFIG_DIR,
-                                   'attributeauthority', 'sitea',
-                                   'attribute-service.ini')
-        
-        self._aa_srvc = PasteDeployAppServer(
-                                cfgFilePath=path.abspath(configFilePath), 
-                                port=port,
-                                ssl_context=ssl_context) 
-        self._aa_srvc.startThread()
-        
-    def _stop_sitea_attributeauthority(self):
-        self._aa_srvc.terminateThread()
+        aa_testrunner = AttributeAuthorityTestRunner()
+        aa_testrunner.start_service()
+        try:
+            pip, designator, ctx = self.__class__._initQuery()
             
-# TODO: fix test - left out for now because can't get threading to correctly 
-# close down the Attribute Authority thread.
-#    def test05SessionCaching(self):
-#        self._start_sitea_attributeauthority(withSSL=True, 
-#                    port=self.__class__.SITEA_SSL_ATTRIBUTEAUTHORITY_PORTNUM)
-#        
-#        pipA, designator, ctx = self._initQuery()
-#        attributeValuesA = pipA.attributeQuery(ctx, designator)
-#        
-#        pipB = self._createPIP()
-#        pipB.cacheSessions = False
-#        
-#        attributeValuesB = pipB.attributeQuery(ctx, designator)
-#        
-#        self.stopAllServices()
-#        
-#        attributeValuesA2 = pipA.attributeQuery(ctx, designator)
-#        self.assert_(len(attributeValuesA2) > 0)
-#        
-#        try:
-#            attributeValuesB2 = pipB.attributeQuery(ctx, designator)
-#            self.fail("Expected URLError exception for call with no-caching "
-#                      "set")
-#        except URLError, e:
-#            print("Pass: expected %r error for call with no-caching set" % e)
+            # Avoid caching to avoid impacting other tests in this class
+            pip.cacheSessions = False
+            
+            attributeValues = pip.attributeQuery(ctx, designator)
+            self.assert_(len(attributeValues) > 0)
+            print("PIP retrieved attribute values %r" % attributeValues)
         
+        finally:
+            aa_testrunner.stop_service()
+            
+    def test05SessionCaching(self):
+        aa_testrunner = AttributeAuthorityTestRunner()
+        aa_testrunner.start_service()
+        try:
+            pipA, designator, ctx = self._initQuery()
+            attributeValuesA = pipA.attributeQuery(ctx, designator)
+            
+            pipB = self._createPIP()
+            pipB.cacheSessions = False
+            
+            attributeValuesB = pipB.attributeQuery(ctx, designator)
+        finally:  
+            aa_testrunner.stop_service()
+        
+        attributeValuesA2 = pipA.attributeQuery(ctx, designator)
+        self.assert_(len(attributeValuesA2) > 0)
+        
+        try:
+            attributeValuesB2 = pipB.attributeQuery(ctx, designator)
+            self.fail("Expected URLError exception for call with no-caching "
+                      "set")
+        except URLError:
+            print("Pass: expected %r error for call with no-caching set")        
         
         
 if __name__ == "__main__":
