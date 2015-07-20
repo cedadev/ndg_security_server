@@ -26,7 +26,8 @@ from ndg.security.server.attributeauthority import (AttributeInterface,
                                                     AttributeNotKnownError, 
                                                     AttributeReleaseDenied, 
                                                     UserIdNotKnown)
-from ndg.security.server.test.base import TestUserDatabase
+from ndg.security.server.test.base import BaseTestCase
+from ndg.security.server.test.test_util import TestUserDatabase
 
 
 class TestUserRoles(AttributeInterface):
@@ -88,9 +89,9 @@ class TestUserRoles(AttributeInterface):
     
     VALID_USER_IDS = ("https://openid.localhost/philip.kershaw",
                       TestUserDatabase.OPENID_URI)
-    VALID_REQUESTOR_IDS = TestUserDatabase.VALID_REQUESTOR_IDS
+    VALID_REQUESTOR_IDS = BaseTestCase.VALID_REQUESTOR_IDS
     
-    INSUFFICIENT_PRIVILEGES_REQUESTOR_ID = X500DN.fromString(
+    INSUFFICIENT_PRIVILEGES_REQUESTOR_ID = X500DN.from_string(
                                         "/O=Site B/CN=Authorisation Service")
     
     def __init__(self, propertiesFilePath=None):
@@ -170,4 +171,3 @@ class TestUserRoles(AttributeInterface):
  
         assertion.attributeStatements.append(attributeStatement)       
         response.assertions.append(assertion)
- 

@@ -27,8 +27,8 @@ try:
     _M2CRYPTO_NOT_INSTALLED = False
 except ImportError:
     import warnings
-    warnings.warn("M2Crypto is not installed - IdP SSL-based validation is "
-                  "disabled")
+    warnings.warn(
+        "M2Crypto is not installed - IdP SSL-based validation is disabled")
     _M2CRYPTO_NOT_INSTALLED = True
 
 try:

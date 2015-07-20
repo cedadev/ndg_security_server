@@ -16,7 +16,7 @@ import paste.fixture
 from paste.deploy import loadapp
 from OpenSSL import crypto
 
-from ndg.security.server.test.base import CONFIG_DIR_ENVVARNAME
+from ndg.security.server.test.base import CONFIG_DIR_ENVVARNAME, BaseTestCase
 
 
 class TestSSLClientAuthnApp(BaseTestCase):
@@ -75,13 +75,14 @@ class SSLClientAuthNTestCase(BaseTestCase):
         sslClientCertFilePath = os.path.join(
                                 os.environ[CONFIG_DIR_ENVVARNAME],
                                 'pki',
-                                'local.crt')
+                                'localhost.crt')
         
         with open(sslClientCertFilePath) as ssl_cert_file:
             ssl_client_cert = crypto.load_certificate(crypto.FILETYPE_PEM, 
                                                       ssl_cert_file.read())
             
-        extra_environ = {'HTTPS':'1', 'SSL_CLIENT_CERT': ssl_client_cert}
+        pem_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, ssl_client_cert)
+        extra_environ = {'HTTPS':'1', 'SSL_CLIENT_CERT': pem_cert}
         response = self.app.get('/secured/uri',
                                 extra_environ=extra_environ,
                                 status=200)

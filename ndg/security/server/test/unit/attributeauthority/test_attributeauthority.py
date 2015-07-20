@@ -3,6 +3,7 @@
 
 NERC Data Grid Project
 """
+from ndg.security.server.test.test_util import TestUserDatabase
 __author__ = "P J Kershaw"
 __date__ = "15/12/08"
 __copyright__ = "(C) 2009 Science and Technology Facilities Council"
@@ -22,7 +23,7 @@ from os import path
 import pickle
 
 from ndg.security.server.test.base import BaseTestCase
-
+from ndg.security.server.test.test_util import TestUserDatabase
 from ndg.security.common.utils.configfileparsers import (
     CaseSensitiveConfigParser)
 from ndg.security.server.attributeauthority import (AttributeAuthority, 
@@ -88,7 +89,7 @@ class AttributeAuthorityTestCase(BaseTestCase):
         self.assert_(isinstance(aa2.attributeInterface, AttributeInterface))
     
         
-class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
+class SQLAlchemyAttributeInterfaceTestCase(TestUserDatabase):
     THIS_DIR = THIS_DIR
     PROPERTIES_FILENAME = 'test_sqlalchemyattributeinterface.cfg'
     PROPERTIES_FILEPATH = path.join(THIS_DIR, PROPERTIES_FILENAME)
@@ -125,7 +126,7 @@ class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
             os.environ['NDGSEC_AA_UNITTEST_DIR'
                        ] = os.path.abspath(os.path.dirname(__file__))
             
-        self.init_db()
+        self.__class__.init_db()
         
     def test01TrySamlAttribute2SqlQuery__setattr__(self):
         if self.skipTests:
@@ -354,8 +355,7 @@ class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
         attributeQuery.subject = Subject()  
         attributeQuery.subject.nameID = NameID()
         attributeQuery.subject.nameID.format = ESGFSamlNamespaces.NAMEID_FORMAT
-        attributeQuery.subject.nameID.value = \
-                                SQLAlchemyAttributeInterfaceTestCase.OPENID_URI
+        attributeQuery.subject.nameID.value = self.__class__.OPENID_URI
     
         emailAddressAttribute = Attribute()
         emailAddressAttribute.name = ESGFSamlNamespaces.EMAILADDRESS_ATTRNAME

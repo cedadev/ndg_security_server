@@ -16,8 +16,6 @@ import unittest
 import paste.fixture
 from paste.deploy import loadapp
 
-from ndg.security.server.wsgi.attributeauthority import \
-    AttributeAuthorityMiddleware
 
 class TestAttributeAuthorityApp(object):
     '''Test harness for Attribute Authority'''
@@ -49,5 +47,6 @@ class AttributeAuthorityMiddlewareTestCase(unittest.TestCase):
         self.assert_(response) 
         print(response)      
         
+
 if __name__ == "__main__":
     unittest.main()

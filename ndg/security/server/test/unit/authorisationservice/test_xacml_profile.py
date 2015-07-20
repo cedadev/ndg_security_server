@@ -164,7 +164,8 @@ class AuthServiceWithXacmlProfileTestCase(unittest.TestCase):
                               error_message)))
 
             self.assertEqual(
-                assertion.statements[0].xacmlContextResponse.results[0].decision.value,
+                assertion.statements[0].xacmlContextResponse.results[0
+                                                            ].decision.value,
                 expected_decision)
         else:
             self.assertEqual(error_status, expected_status)

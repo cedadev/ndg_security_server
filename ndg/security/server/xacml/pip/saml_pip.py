@@ -439,13 +439,18 @@ class PIP(PIPInterface):
             samlAttribute = SamlAttribute()
             samlAttribute.name = attributeId
             samlAttribute.nameFormat = attributeFormat
-            self.attribute_query_binding.subjectIdFormat = exptd_attribute_id
-            query = self.attribute_query_binding.makeQuery()
+            
+            # Copy attributes for this query from constants set at 
+            # initialisation
+            query = AttributeQueryFactory.create()
+            query.subject.nameID.value = subjectId
+            query.subject.nameID.format = exptd_attribute_id
+            query.issuer.value = self.attribute_query.issuer.value
+            query.issuer.format = self.attribute_query.issuer.format
             query.attributes.append(samlAttribute)
             
             # Dispatch query
             try:
-                self.attribute_query_binding.setQuerySubjectId(query, subjectId)
                 response = self.attribute_query_binding.send(query,
                                                     uri=attributeAuthorityURI)
                 
@@ -455,10 +460,6 @@ class PIP(PIPInterface):
                 log.exception('Error querying Attribute service %r with '
                               'subject %r', attributeAuthorityURI, subjectId)
                 raise
-            finally:
-                # !Ensure relevant query attributes are reset ready for any 
-                # subsequent query!
-                self.attribute_query_binding.subjectIdFormat = ''
         
             if assertions is None:
                 assertions = SamlTypedList(SamlAssertion)

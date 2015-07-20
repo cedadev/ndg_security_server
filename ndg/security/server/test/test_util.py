@@ -15,7 +15,8 @@ import logging
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-    
+
+from ndg.security.common.saml_utils.esgf import ESGFGroupRoleAttributeValue    
 from ndg.security.server.test.base import NDGSEC_TEST_CONFIG_DIR
 
 logging.basicConfig()
@@ -204,7 +205,23 @@ class TestUserDatabase(object):
         session.commit() 
         
         return db
+
+
+
+def dbAttr2ESGFGroupRole(attrVal):
+    """Callback for SQLAlchemyAttributeInterface class to convert attribute 
+    value as stored in the SQLite Db defined here to an ESGF Group/Role 
+    Attribute Value type
+    """
+    groupRoleAttrValue = ESGFGroupRoleAttributeValue()
     
+    # The group/role is stored in a single field in the database with a colon
+    # separator
+    groupRoleAttrValue.value = attrVal.split(':')
+    
+    return groupRoleAttrValue  
+
+  
 if __name__ == "__main__":
     import sys
     

@@ -15,8 +15,6 @@ log = logging.getLogger(__name__)
 from os import path
 import unittest
 
-from urllib2 import URLError
-
 from ndg.xacml.core.attributedesignator import SubjectAttributeDesignator
 from ndg.xacml.core.attribute import Attribute
 from ndg.xacml.core.attributevalue import AttributeValueClassFactory
@@ -25,7 +23,8 @@ from ndg.xacml.core.context.subject import Subject
 
 from ndg.saml.saml2.core import Issuer as SamlIssuer
 
-from ndg.security.server.test.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase, TEST_CONFIG_DIR
+from ndg.security.server.test.test_util import TestUserDatabase
 from ndg.security.server.xacml.pip.saml_pip import PIP
 
 
@@ -39,7 +38,8 @@ class SamlPipTestCase(BaseTestCase):
     CONFIG_FILENAME = 'saml_pip.cfg'
     CONFIG_FILEPATH = path.join(THIS_DIR, CONFIG_FILENAME)
     
-    NDGS_ATTR_ID = BaseTestCase.ATTRIBUTE_NAMES[0]
+    NDGS_ATTR_ID = TestUserDatabase.ATTRIBUTE_NAMES[0]
+    OPENID_URI = TestUserDatabase.OPENID_URI
     OPENID_ATTR_ID = 'urn:esg:openid'
     
     CLNT_CERT_FILEPATH = path.join(BaseTestCase.PKI_DIR, 'localhost.crt')
@@ -106,7 +106,7 @@ class SamlPipTestCase(BaseTestCase):
         
         anyUriAttrValue = cls.attributeValueClassFactory(openidAttr.dataType)
         
-        openidAttrVal = anyUriAttrValue(cls.OPENID_URI)
+        openidAttrVal = anyUriAttrValue(TestUserDatabase.OPENID_URI)
         openidAttr.attributeValues.append(openidAttrVal) 
         
         return ctx
@@ -117,15 +117,17 @@ class SamlPipTestCase(BaseTestCase):
         pip = PIP()
         pip.mappingFilePath = cls.MAPPING_FILEPATH
         pip.readMappingFile()
-        pip.subjectAttributeId = cls.OPENID_ATTR_ID
         
-        pip.attributeQueryBinding.issuerName = \
-                                            'O=NDG, OU=Security, CN=localhost'
-        pip.attributeQueryBinding.issuerFormat = SamlIssuer.X509_SUBJECT
-        pip.attributeQueryBinding.sslCertFilePath = cls.CLNT_CERT_FILEPATH
-        pip.attributeQueryBinding.sslPriKeyFilePath = cls.CLNT_PRIKEY_FILEPATH
+        pip.attribute_query.subject.nameID.value = cls.OPENID_URI
+        pip.attribute_query.subject.nameID.format = cls.OPENID_ATTR_ID
+        
+        pip.attribute_query.issuer.value = 'O=NDG, OU=Security, CN=localhost'
+        pip.attribute_query.issuer.format = SamlIssuer.X509_SUBJECT
+        
+        pip.attribute_query_binding.sslCertFilePath = cls.CLNT_CERT_FILEPATH
+        pip.attribute_query_binding.sslPriKeyFilePath = cls.CLNT_PRIKEY_FILEPATH
             
-        pip.attributeQueryBinding.sslCACertDir = cls.CACERT_DIR
+        pip.attribute_query_binding.sslCACertDir = cls.CACERT_DIR
         
         return pip
 
@@ -152,7 +154,7 @@ class SamlPipTestCase(BaseTestCase):
         return pip, designator, ctx
     
     def test03Query(self):
-        self.startSiteAAttributeAuthority(withSSL=True, 
+        self._start_sitea_attributeauthority(withSSL=True, 
                     port=self.__class__.SITEA_SSL_ATTRIBUTEAUTHORITY_PORTNUM)
         
         pip, designator, ctx = self.__class__._initQuery()
@@ -164,19 +166,39 @@ class SamlPipTestCase(BaseTestCase):
         self.assert_(len(attributeValues) > 0)
         print("PIP retrieved attribute values %r" % attributeValues)
         
-        self.stopAllServices()
+        self._stop_sitea_attributeauthority()
         
-    def test04InitFromConfigFile(self):
-        # Initialise from settings in a config file
-        pip = PIP.fromConfig(self.__class__.CONFIG_FILEPATH)
-        self.assert_(pip.mappingFilePath)
-        self.assert_(pip.sessionCacheTimeout == 1800)
-        self.assert_(pip.sessionCacheAssertionClockSkewTol == 3.0)
+    def _start_sitea_attributeauthority(self, withSSL=False, port=None):
+        from ndg.security.server.utils.paste_utils import PasteDeployAppServer
         
+        from OpenSSL import SSL
+        
+        ssl_context = SSL.Context(SSL.TLSv1_METHOD)
+        ssl_context.set_options(SSL.OP_NO_SSLv2|SSL.OP_NO_SSLv3)
+    
+        priKeyFilePath = BaseTestCase.SSL_PRIKEY_FILEPATH
+        certFilePath = BaseTestCase.SSL_CERT_FILEPATH
+        
+        ssl_context.use_privatekey_file(priKeyFilePath)
+        ssl_context.use_certificate_file(certFilePath)
+        
+        configFilePath = path.join(TEST_CONFIG_DIR,
+                                   'attributeauthority', 'sitea',
+                                   'attribute-service.ini')
+        
+        self._aa_srvc = PasteDeployAppServer(
+                                cfgFilePath=path.abspath(configFilePath), 
+                                port=port,
+                                ssl_context=ssl_context) 
+        self._aa_srvc.startThread()
+        
+    def _stop_sitea_attributeauthority(self):
+        self._aa_srvc.terminateThread()
+            
 # TODO: fix test - left out for now because can't get threading to correctly 
 # close down the Attribute Authority thread.
 #    def test05SessionCaching(self):
-#        self.startSiteAAttributeAuthority(withSSL=True, 
+#        self._start_sitea_attributeauthority(withSSL=True, 
 #                    port=self.__class__.SITEA_SSL_ATTRIBUTEAUTHORITY_PORTNUM)
 #        
 #        pipA, designator, ctx = self._initQuery()

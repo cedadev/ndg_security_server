@@ -8,11 +8,9 @@ __copyright__ = "(C) 2009 Science and Technology Facilities Council"
 __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = '$Id$'
-from os import path
-
 from openid.extensions.ax import FetchRequest, FetchResponse, AttrInfo
         
-from ndg.security.server.test.base import BaseTestCase
+from ndg.security.server.test.test_util import TestUserDatabase
 from ndg.security.server.wsgi.openid.provider.axinterface import (
                                                         AXInterfaceConfigError)
 from ndg.security.server.wsgi.openid.provider.axinterface.sqlalchemy_ax import (
@@ -20,10 +18,10 @@ from ndg.security.server.wsgi.openid.provider.axinterface.sqlalchemy_ax import (
 
 
 
-class SQLAlchemyAXInterfaceTestCase(BaseTestCase):    
+class SQLAlchemyAXInterfaceTestCase(TestUserDatabase):    
     def __init__(self, *arg, **kw):
         super(SQLAlchemyAXInterfaceTestCase, self).__init__(*arg, **kw)
-        self.init_db()
+        self.__class__.init_db()
             
     def test01InvalidQueryUsernameKey(self):
         interface = SQLAlchemyAXInterface()
