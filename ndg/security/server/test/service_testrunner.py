@@ -49,11 +49,24 @@ class AttributeAuthorityTestRunner(ServiceTestRunner):
     '''Start an Attribute Authority Service thread for use with client calls
     in unit tests
     '''
-    CONFIG_FILE_PATH = path.join(TEST_CONFIG_DIR,'attributeauthority', 'sitea',
+    CONFIG_FILE_PATH = path.join(TEST_CONFIG_DIR, 'attributeauthority', 'sitea',
                                  'attribute-service.ini')
     
     def __init__(self, config_filepath=CONFIG_FILE_PATH, 
                  port=BaseTestCase.SITEA_SSL_ATTRIBUTEAUTHORITY_PORTNUM, **kw):
         super(AttributeAuthorityTestRunner, self).__init__(config_filepath, 
                                                            port=port, **kw)
+        
+
+class AuthorisationServiceTestRunner(ServiceTestRunner):    
+    '''Start an Attribute Authority Service thread for use with client calls
+    in unit tests
+    '''
+    CONFIG_FILE_PATH = path.join(TEST_CONFIG_DIR, 'authorisationservice', 
+                                 'authorisation-service.ini')
+    
+    def __init__(self, config_filepath=CONFIG_FILE_PATH, 
+                 port=BaseTestCase.AUTHORISATION_SERVICE_PORTNUM, **kw):
+        super(AuthorisationServiceTestRunner, self).__init__(config_filepath, 
+                                                             port=port, **kw)
   

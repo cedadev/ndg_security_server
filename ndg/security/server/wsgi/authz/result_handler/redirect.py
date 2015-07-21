@@ -14,9 +14,8 @@ __license__ = "BSD - see LICENSE file in top-level directory"
 import logging
 log = logging.getLogger(__name__)
 
-from httplib import UNAUTHORIZED, FORBIDDEN
+from httplib import UNAUTHORIZED
 
-from ndg.security.server.wsgi import NDGSecurityMiddlewareBase
 from ndg.security.server.wsgi.authz.result_handler import (
     PEPResultHandlerMiddlewareBase, PEPResultHandlerMiddlewareConfigError)
 
@@ -50,7 +49,7 @@ class HTTPRedirectPEPResultHandlerMiddleware(PEPResultHandlerMiddlewareBase):
         super(PEPResultHandlerMiddlewareBase, self).__init__(app, {})
         
         redirectURI = app_conf.get(prefix + \
-                    HTTPRedirectPEPResultHandlerMiddleware.REDIRECT_URI_PARAMNAME)
+                HTTPRedirectPEPResultHandlerMiddleware.REDIRECT_URI_PARAMNAME)
         if redirectURI is None:
             raise PEPResultHandlerMiddlewareConfigError("Missing required "
                 "parameter %r" % prefix + \

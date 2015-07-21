@@ -220,6 +220,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
         """
         if actions is None:
             actions = []
+            
         if httpMethod == 'GET':
             ### TODO Should action be related to HTTP method?
             return cls._createXacmlProfileRequestCtx(subjectIdFormat,

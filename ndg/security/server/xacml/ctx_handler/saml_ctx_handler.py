@@ -357,14 +357,14 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
         # Set XPath implementation for attribute selector.
         ### TODO make this configurable?
         if xacmlRequest.elem is not None:
-            xacmlRequest.attributeSelector = \
-                EtreeXPathSelector(xacmlRequest.elem)
+            xacmlRequest.attributeSelector = EtreeXPathSelector(
+                                                            xacmlRequest.elem)
 
         # Call the PDP
         xacmlResponse = self.pdp.evaluate(xacmlRequest)
         
         # Create the SAML Response
-        (samlResponse, assertion) = self._createSAMLResponseAssertion(
+        samlResponse, assertion = self._createSAMLResponseAssertion(
                                     samlAuthzDecisionQuery, pepRequest.response)
 
         # Add decision statement to assertion.
@@ -528,8 +528,7 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
         
         return (response, assertion)
 
-    def _createSamlAuthzDecisionStatement(self, assertion,
-                                          authzDecisionQuery,
+    def _createSamlAuthzDecisionStatement(self, assertion, authzDecisionQuery,
                                           xacmlResponse):
         """Adds an AuthzDecisionStatement to an assertion, converting the XACML
         response decision to a SAML decision.
