@@ -333,11 +333,16 @@ class PIP(PIPInterface):
             _line = path.expandvars(line).strip()
             
             if _line and not _line.startswith('#'):
-                attributeId, attributeAuthorityURI = _line.split(
+                try:
+                    attribute_id, attribute_authority_uri = _line.split(
                                         self.__class__.MAPPING_FILE_FIELD_SEP)
-                 
-                self.__attributeId2AttributeAuthorityMap[attributeId.strip()
-                                            ] = attributeAuthorityURI.strip()
+                except ValueError:
+                    raise PIPConfigException("Error parsing line - expecting "
+                                             "form '<attribute id>, <attribute "
+                                             "authority uri>', got: %r" % _line)
+                    
+                self.__attributeId2AttributeAuthorityMap[attribute_id.strip()
+                                            ] = attribute_authority_uri.strip()
         
     def attributeQuery(self, context, attributeDesignator):
         """Query this PIP for the given request context attribute specified by

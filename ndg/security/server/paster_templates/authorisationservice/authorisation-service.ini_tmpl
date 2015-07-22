@@ -185,4 +185,4 @@ datefmt = %Y/%m/%d %H:%M:%S
 class = handlers.RotatingFileHandler
 level=NOTSET
 formatter=generic
-args=(os.path.join('%%{outputDir}', 'log', 'service.log'), 'a', 10000, 2)
+args=(os.path.join('%%{outputDir}', 'service.log'), 'a', 10000, 2)

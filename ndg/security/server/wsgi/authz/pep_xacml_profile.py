@@ -107,6 +107,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
 
         '''
         self.client = XACMLAuthzDecisionQuerySslSOAPBinding()
+        
         # Additional parameter required for XAML profile:
         for name in self.__class__.PARAM_NAMES:
             paramName = prefix + name
@@ -265,19 +266,15 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
         xacmlAttributeValueFactory = XacmlAttributeValueClassFactory()
         
         openidSubjectAttribute = XacmlAttribute()
-        
-        openidSubjectAttribute.attributeId = \
-                                subjectNameIdFormat
+        openidSubjectAttribute.attributeId = subjectNameIdFormat
                                         
         XacmlAnyUriAttributeValue = xacmlAttributeValueFactory(
                                             XacmlAttributeValue.ANY_TYPE_URI)
         
-        openidSubjectAttribute.dataType = XacmlAnyUriAttributeValue.IDENTIFIER
-        
+        openidSubjectAttribute.dataType = XacmlAnyUriAttributeValue.IDENTIFIER        
         openidSubjectAttribute.attributeValues.append(
                                                     XacmlAnyUriAttributeValue())
-        openidSubjectAttribute.attributeValues[-1].value = \
-                                subjectNameId
+        openidSubjectAttribute.attributeValues[-1].value = subjectNameId
         
         xacmlSubject.attributes.append(openidSubjectAttribute)
 
@@ -296,8 +293,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
                             
         resourceAttribute.dataType = XacmlAnyUriAttributeValue.IDENTIFIER
         resourceAttribute.attributeValues.append(XacmlAnyUriAttributeValue())
-        resourceAttribute.attributeValues[-1].value = \
-                                                resourceUri
+        resourceAttribute.attributeValues[-1].value = resourceUri
 
         xacmlRequest.resources.append(resource)
         

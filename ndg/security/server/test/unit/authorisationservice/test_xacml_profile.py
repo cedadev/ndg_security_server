@@ -62,6 +62,7 @@ class TestApp(object):
     def app_factory(cls, globalConfig, **localConfig):
         return cls(globalConfig, **localConfig)
 
+
 class AuthServiceWithXacmlProfileTestCase(unittest.TestCase):
     """Tests calls to the authorisation service using the XACML-SAML profile.
     The authorisation service is called directly using paste.fixture.TestApp

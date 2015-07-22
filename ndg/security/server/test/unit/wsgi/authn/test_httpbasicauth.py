@@ -19,6 +19,7 @@ import paste.fixture
 from paste.httpexceptions import HTTPUnauthorized
 
 from ndg.security.server.test.base import BaseTestCase
+from ndg.security.server.utils.paste_utils import PasteDeployAppServer
 from ndg.security.server.wsgi.httpbasicauth import HttpBasicAuthMiddleware
     
 
@@ -64,11 +65,6 @@ class HttpBasicAuthPluginMiddleware(object):
     
 class HttpBasicAuthMiddlewareTestCase(BaseTestCase):
     SERVICE_PORTNUM = 10443
-    WGET_CMD = 'wget'
-    WGET_USER_OPTNAME = '--http-user'
-    WGET_PASSWD_OPTNAME = '--http-password'
-    WGET_OUTPUT_OPTNAME = '--output-document'
-    WGET_STDOUT = '-'
     
     def __init__(self, *args, **kwargs):
         app = TestAuthnApp({})
@@ -95,47 +91,28 @@ class HttpBasicAuthMiddlewareTestCase(BaseTestCase):
         
     def test02Urllib2Client(self):
         # Thread separate Paster based service 
-        self.addService(app=self.wsgiapp, 
-                        port=self.__class__.SERVICE_PORTNUM)
-        
-        username = HttpBasicAuthPluginMiddleware.USERNAME
-        password = HttpBasicAuthPluginMiddleware.PASSWORD
-        url = 'http://localhost:%d/test_200' % \
-            self.__class__.SERVICE_PORTNUM
+        srvc = PasteDeployAppServer(app=self.wsgiapp, 
+                                    port=self.__class__.SERVICE_PORTNUM)
+        srvc.startThread()
+        try:
+            username = HttpBasicAuthPluginMiddleware.USERNAME
+            password = HttpBasicAuthPluginMiddleware.PASSWORD
+            url = 'http://localhost:%d/test_200' % \
+                self.__class__.SERVICE_PORTNUM
+                
+            req = urllib2.Request(url)
+            base64String = base64.encodestring('%s:%s' % 
+                                               (username, password))[:-1]
+            authHeader =  "Basic %s" % base64String
+            req.add_header("Authorization", authHeader)
             
-        req = urllib2.Request(url)
-        base64String = base64.encodestring('%s:%s' % (username, password))[:-1]
-        authHeader =  "Basic %s" % base64String
-        req.add_header("Authorization", authHeader)
-        
-        handle = urllib2.urlopen(req)
-        
-        response = handle.read()
-        print (response)
-        
-    def test03WGetClient(self):
-        uri = ('http://localhost:%d/test_200' % 
-                  self.__class__.SERVICE_PORTNUM)
-                  
-        username = HttpBasicAuthPluginMiddleware.USERNAME
-        password = HttpBasicAuthPluginMiddleware.PASSWORD
-        
-        import os
-        import subprocess
-        cmd = "%s %s %s=%s %s=%s %s=%s" % (
-            self.__class__.WGET_CMD, 
-            uri,
-            self.__class__.WGET_USER_OPTNAME,
-            username,
-            self.__class__.WGET_PASSWD_OPTNAME,
-            password,
-            self.__class__.WGET_OUTPUT_OPTNAME,
-            self.__class__.WGET_STDOUT)
-        
-        p = subprocess.Popen(cmd, shell=True)
-        status = os.waitpid(p.pid, 0)
-        self.failIf(status[-1] != 0, "Expecting 0 exit status for %r" % cmd)
-
+            handle = urllib2.urlopen(req)
+            
+            response = handle.read()
+            print (response)
+        finally:
+            srvc.terminateThread()
+            
 
 if __name__ == "__main__":
     unittest.main()
