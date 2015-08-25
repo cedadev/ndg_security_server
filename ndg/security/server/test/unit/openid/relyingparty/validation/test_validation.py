@@ -16,7 +16,7 @@ import unittest
 from ndg.security.server.test.base import BaseTestCase, mk_data_dirpath
 from ndg.security.server.wsgi.openid.relyingparty.validation import (
     IdPValidator, IdPValidationDriver, IdPInvalidException, 
-    SSLIdPValidationDriver, SSLClientAuthNValidator)
+    SSLIdPValidationDriver)
     
     
 class ProviderWhitelistValidator(IdPValidator):

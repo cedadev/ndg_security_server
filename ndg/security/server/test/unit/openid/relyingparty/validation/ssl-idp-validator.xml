@@ -11,8 +11,8 @@
     <validator name="ndg.security.server.wsgi.openid.relyingparty.validation.SSLClientAuthNValidator">
         <parameter name="configFilePath" value="$NDGSEC_UNITTEST_IDPVALIDATION_DIR/ssl-valid-server-names.cfg"/>
         <parameter name="caCertDirPath" value="$NDGSEC_TEST_CONFIG_DIR/ca"/>
-        <parameter name="certFilePath" value="$NDGSEC_TEST_CONFIG_DIR/pki/test.crt"/>
-        <parameter name="priKeyFilePath" value="$NDGSEC_TEST_CONFIG_DIR/pki/test.key"/>
+        <parameter name="certFilePath" value="$NDGSEC_TEST_CONFIG_DIR/pki/localhost.crt"/>
+        <parameter name="priKeyFilePath" value="$NDGSEC_TEST_CONFIG_DIR/pki/localhost.key"/>
         <parameter name="priKeyPwd" value=""/>
     </validator>
 </IdPValidators>

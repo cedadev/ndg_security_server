@@ -119,8 +119,8 @@ _ATTRIBUTE_SERVICE_NONLOCALID_XRD_ENTRY_TMPL = DoublePercentTemplate(
 class AttributeServiceTemplate(TemplateBase):
     """Paster template for the SAML attribute service"""
     
-    DEFAULT_PORT = 5000
-    DEFAULT_MOUNT_PATH = '/AttributeService'
+    DEFAULT_PORT = 5443
+    DEFAULT_MOUNT_PATH = '/attribute-service'
     DEFAULT_ISSUER_NAME = 'O=NDG, OU=Security, CN=localhost'
     DEFAULT_ISSUER_FORMAT = Issuer.X509_SUBJECT
     
@@ -169,12 +169,12 @@ class AttributeServiceTemplate(TemplateBase):
 class AuthorisationServiceTemplate(TemplateBase):
     """Paster template for the SAML authorisation service"""
     
-    DEFAULT_PORT = 5100
-    DEFAULT_MOUNT_PATH = '/AuthorisationService'
+    DEFAULT_PORT = 9443
+    DEFAULT_MOUNT_PATH = '/authorisation-service'
     DEFAULT_ISSUER_NAME = 'O=NDG, OU=Security, CN=localhost'
     DEFAULT_ISSUER_FORMAT = Issuer.X509_SUBJECT
     DEFAULT_RESOURCE_BASE_URI = 'http://localhost:7080/'
-    DEFAULT_ATTRIBUTE_SERVICE_URI = 'http://localhost:%d%s' % (
+    DEFAULT_ATTRIBUTE_SERVICE_URI = 'https://localhost:%d%s' % (
                                     AttributeServiceTemplate.DEFAULT_PORT, 
                                     AttributeServiceTemplate.DEFAULT_MOUNT_PATH)
     

@@ -22,6 +22,7 @@ dbConnectionString = sqlite:///%(here)s/user.db
 use = egg:Paste#http
 host = 0.0.0.0
 port = %%{portNumber}
+ssl_pem = %(here)s/pki/localhost.pem
 
 [app:AttributeAuthorityStaticContent]
 use = egg:Paste#static
@@ -89,7 +90,7 @@ attributeAuthority.attributeInterface.samlSubjectSqlQuery = select count(*) from
 #attributeAuthority.attributeInterface.samlAttribute2SqlQuery.emailAddress = "urn:esg:email:address" "select emailaddress from users where openid = '${userId}'"
 #attributeAuthority.attributeInterface.samlAttribute2SqlQuery.4 = "urn:siteA:security:authz:1.0:attr" "select attributename from attributes where attributetype = 'urn:siteA:security:authz:1.0:attr' and openid = '${userId}'"
 #attributeAuthority.attributeInterface.samlAttribute2SqlQuery.esgGroupRole = 
-#	"urn:esg:sitea:grouprole" "select attributename from attributes where attributetype = 'urn:esg:sitea:grouprole' and openid = '${userId}'" "ndg.security.test.unit.dbAttr2ESGFGroupRole"
+#	"urn:esg:sitea:grouprole" "select attributename from attributes where attributetype = 'urn:esg:sitea:grouprole' and openid = '${userId}'" "ndg.security.server.test.test_util.dbAttr2ESGFGroupRole"
 
 # This is a convenient cheat for testing.  It enables a query with _ANY_ subject
 # ID to get a response by pretending to be the user, 
@@ -100,7 +101,7 @@ attributeAuthority.attributeInterface.samlAttribute2SqlQuery.lastName = "urn:esg
 attributeAuthority.attributeInterface.samlAttribute2SqlQuery.emailAddress = "urn:esg:email:address" "select emailaddress from users where openid = 'https://localhost:7443/openid/philip.kershaw'"
 attributeAuthority.attributeInterface.samlAttribute2SqlQuery.4 = "urn:siteA:security:authz:1.0:attr" "select attributename from attributes where attributetype = 'urn:siteA:security:authz:1.0:attr' and openid = 'https://localhost:7443/openid/philip.kershaw'"
 attributeAuthority.attributeInterface.samlAttribute2SqlQuery.esgGroupRole = 
-    "urn:esg:sitea:grouprole" "select attributename from attributes where attributetype = 'urn:esg:sitea:grouprole' and openid = 'https://localhost:7443/openid/philip.kershaw'" "ndg.security.test.unit.dbAttr2ESGFGroupRole"
+    "urn:esg:sitea:grouprole" "select attributename from attributes where attributetype = 'urn:esg:sitea:grouprole' and openid = 'https://localhost:7443/openid/philip.kershaw'" "ndg.security.server.test.test_util.dbAttr2ESGFGroupRole"
 
 # Set the permissible requester Distinguished Names as set in the SAML client 
 # query issuer field.  Comment out or remove if this is not required.  Nb.

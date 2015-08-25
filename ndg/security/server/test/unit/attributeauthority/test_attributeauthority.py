@@ -3,7 +3,6 @@
 
 NERC Data Grid Project
 """
-from ndg.security.server.test.test_util import TestUserDatabase
 __author__ = "P J Kershaw"
 __date__ = "15/12/08"
 __copyright__ = "(C) 2009 Science and Technology Facilities Council"

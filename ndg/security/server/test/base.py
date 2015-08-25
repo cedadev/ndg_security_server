@@ -44,12 +44,12 @@ class BaseTestCase(unittest.TestCase):
                                 AUTHORISATION_SERVICE_PORTNUM
                          
     SITEA_ATTRIBUTEAUTHORITY_PORTNUM = 5000
-    SITEA_ATTRIBUTEAUTHORITY_URI = 'http://localhost:%s/AttributeAuthority' % \
+    SITEA_ATTRIBUTEAUTHORITY_URI = 'http://localhost:%s/attribute-service' % \
                                     SITEA_ATTRIBUTEAUTHORITY_PORTNUM
                                     
     SITEA_SSL_ATTRIBUTEAUTHORITY_PORTNUM = 5443
     SITEA_SSL_ATTRIBUTEAUTHORITY_URI = \
-        'https://localhost:%d/AttributeAuthority' % \
+        'https://localhost:%d/attribute-service' % \
                                     SITEA_SSL_ATTRIBUTEAUTHORITY_PORTNUM
     SSL_CERT_DN = "/O=NDG/OU=Security/CN=localhost"
                                     

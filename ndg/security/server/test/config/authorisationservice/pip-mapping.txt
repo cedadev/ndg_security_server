@@ -18,7 +18,7 @@
 # $Id$
 
 # Entries are whitespace delimited <attribute id> <attribute authority>
-urn:siteA:security:authz:1.0:attr, https://localhost:5443/AttributeAuthority
-urn:esg:sitea:grouprole, https://localhost:5443/AttributeAuthority
+urn:siteA:security:authz:1.0:attr, https://localhost:5443/attribute-service
+urn:esg:sitea:grouprole, https://localhost:5443/attribute-service
 myattributeid, https://myattributeauthority.ac.uk/
 http://someotherattributeid.schema, https://another.ac.uk/attributeservice/

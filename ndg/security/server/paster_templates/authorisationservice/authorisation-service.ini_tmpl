@@ -28,7 +28,8 @@ samlClockSkewTolerance = 1.0
 [server:main]
 use = egg:Paste#http
 host = 0.0.0.0
-port = 5100
+port = 9443
+ssl_pem = %(here)s/pki/localhost.pem
 
 # Add static content here if required but note that none is needed for the 
 # service to function
