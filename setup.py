@@ -40,7 +40,7 @@ _ENTRY_POINTS = """
 # catch here for latter case.
 THIS_DIR = os.path.dirname(__file__)
 try:
-    LONG_DESCR = open(os.path.join(THIS_DIR, 'README.md')).read()
+    LONG_DESCR = open(os.path.join(THIS_DIR, 'README.rst')).read()
 except IOError:
     LONG_DESCR = """\
 NDG Security Server-side components package
@@ -69,7 +69,7 @@ protected in a flexible manner without the need to modify application code.
 
 setup(
     name =           		'ndg_security_server',
-    version =        		'2.5.0',
+    version =        		'2.6.0',
     description =    		'Server side components for running NERC DataGrid '
                             'Security Services',
     long_description =		LONG_DESCR,
