@@ -79,13 +79,14 @@ setup(
     maintainer_email =   	'Philip.Kershaw@stfc.ac.uk',
     url =            		'http://github.com/cedadev/ndg_security_server',
     license =               'BSD - See LICENCE file for details',
-    install_requires =		[   'ndg_security_common',
-                                'Paste',
-                                'WebOb',
-                                'beaker',
-                                'AuthKit',
-                                'SQLAlchemy'
-                            ],
+    install_requires =		[
+        'ndg_security_common',
+        'Paste',
+        'WebOb',
+        'beaker',
+        'AuthKit',
+        'SQLAlchemy'
+    ],
     extras_require = {
         'xacml':  ["ndg_xacml"],
         'myproxy-saml-assertion-cert-ext-app': ['MyProxyClient'],
@@ -97,11 +98,7 @@ setup(
     dependency_links =      ["http://dist.ceda.ac.uk/pip/"],
     packages =			    find_packages(),
     namespace_packages =	['ndg', 'ndg.security'],
-    include_package_data =  True,
-    package_data = {
-        # See MANIFEST.in for ndg.security.server.paster_templates files
-    },
-    entry_points =           _ENTRY_POINTS,
+    entry_points =          _ENTRY_POINTS,
     test_suite =		    'ndg.security.server.test',
     zip_safe =              False
 )
