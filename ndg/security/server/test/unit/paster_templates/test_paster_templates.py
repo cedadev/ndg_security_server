@@ -70,7 +70,7 @@ class AttributeServiceTemplateTestCase(unittest.TestCase):
     ATTRIBUTE_SERVICE_CONF_DIRPATH = path.join(HERE_DIR, 
                                                ATTRIBUTE_SERVICE_CONF_DIR)
     ATTRIBUTE_SERVICE_CONF_DIR_FILES = (
-        'pki', 'attribute-service.ini', 'user.db', 'log'
+        'pki', 'attribute-service.ini', 'user.db'
     )
     
     def test01Run(self):

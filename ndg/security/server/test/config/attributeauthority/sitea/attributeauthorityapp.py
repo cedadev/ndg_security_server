@@ -51,8 +51,8 @@ if __name__ == '__main__':
     if opt.certFilePath:    
         from OpenSSL import SSL
         
-        ssl_context = SSL.Context(SSL.SSLv23_METHOD)
-        ssl_context.set_options(SSL.OP_NO_SSLv2)
+        ssl_context = SSL.Context(SSL.TLSv1_METHOD)
+        ssl_context.set_options(SSL.OP_NO_SSLv2|SSL.OP_NO_SSLv3)
     
         ssl_context.use_privatekey_file(opt.priKeyFilePath)
         ssl_context.use_certificate_file(opt.certFilePath)

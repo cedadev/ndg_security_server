@@ -13,9 +13,8 @@ logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
 from os import path
-import unittest
-
 from urllib2 import URLError
+import unittest
 
 from ndg.xacml.core.attributedesignator import SubjectAttributeDesignator
 from ndg.xacml.core.attribute import Attribute
@@ -25,7 +24,10 @@ from ndg.xacml.core.context.subject import Subject
 
 from ndg.saml.saml2.core import Issuer as SamlIssuer
 
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase
+from ndg.security.server.test.test_util import TestUserDatabase
+from ndg.security.server.test.service_testrunner import \
+                                                AttributeAuthorityTestRunner
 from ndg.security.server.xacml.pip.saml_pip import PIP
 
 
@@ -39,14 +41,15 @@ class SamlPipTestCase(BaseTestCase):
     CONFIG_FILENAME = 'saml_pip.cfg'
     CONFIG_FILEPATH = path.join(THIS_DIR, CONFIG_FILENAME)
     
-    NDGS_ATTR_ID = BaseTestCase.ATTRIBUTE_NAMES[0]
+    NDGS_ATTR_ID = TestUserDatabase.ATTRIBUTE_NAMES[0]
+    OPENID_URI = TestUserDatabase.OPENID_URI
     OPENID_ATTR_ID = 'urn:esg:openid'
     
     CLNT_CERT_FILEPATH = path.join(BaseTestCase.PKI_DIR, 'localhost.crt')
     CLNT_PRIKEY_FILEPATH = path.join(BaseTestCase.PKI_DIR, 'localhost.key')
                                    
     attributeValueClassFactory = AttributeValueClassFactory()
-            
+      
     def test01CreateAndCheckAttributes(self):
         pip = PIP()
         self.assert_(pip)
@@ -106,7 +109,7 @@ class SamlPipTestCase(BaseTestCase):
         
         anyUriAttrValue = cls.attributeValueClassFactory(openidAttr.dataType)
         
-        openidAttrVal = anyUriAttrValue(cls.OPENID_URI)
+        openidAttrVal = anyUriAttrValue(TestUserDatabase.OPENID_URI)
         openidAttr.attributeValues.append(openidAttrVal) 
         
         return ctx
@@ -117,15 +120,17 @@ class SamlPipTestCase(BaseTestCase):
         pip = PIP()
         pip.mappingFilePath = cls.MAPPING_FILEPATH
         pip.readMappingFile()
-        pip.subjectAttributeId = cls.OPENID_ATTR_ID
         
-        pip.attributeQueryBinding.issuerName = \
-                                            'O=NDG, OU=Security, CN=localhost'
-        pip.attributeQueryBinding.issuerFormat = SamlIssuer.X509_SUBJECT
-        pip.attributeQueryBinding.sslCertFilePath = cls.CLNT_CERT_FILEPATH
-        pip.attributeQueryBinding.sslPriKeyFilePath = cls.CLNT_PRIKEY_FILEPATH
+        pip.attribute_query.subject.nameID.value = cls.OPENID_URI
+        pip.attribute_query.subject.nameID.format = cls.OPENID_ATTR_ID
+        
+        pip.attribute_query.issuer.value = 'O=NDG, OU=Security, CN=localhost'
+        pip.attribute_query.issuer.format = SamlIssuer.X509_SUBJECT
+        
+        pip.attribute_query_binding.sslCertFilePath = cls.CLNT_CERT_FILEPATH
+        pip.attribute_query_binding.sslPriKeyFilePath = cls.CLNT_PRIKEY_FILEPATH
             
-        pip.attributeQueryBinding.sslCACertDir = cls.CACERT_DIR
+        pip.attribute_query_binding.sslCACertDir = cls.CACERT_DIR
         
         return pip
 
@@ -152,53 +157,44 @@ class SamlPipTestCase(BaseTestCase):
         return pip, designator, ctx
     
     def test03Query(self):
-        self.startSiteAAttributeAuthority(withSSL=True, 
-                    port=self.__class__.SITEA_SSL_ATTRIBUTEAUTHORITY_PORTNUM)
+        aa_testrunner = AttributeAuthorityTestRunner()
+        aa_testrunner.start_service()
+        try:
+            pip, designator, ctx = self.__class__._initQuery()
+            
+            # Avoid caching to avoid impacting other tests in this class
+            pip.cacheSessions = False
+            
+            attributeValues = pip.attributeQuery(ctx, designator)
+            self.assert_(len(attributeValues) > 0)
+            print("PIP retrieved attribute values %r" % attributeValues)
         
-        pip, designator, ctx = self.__class__._initQuery()
+        finally:
+            aa_testrunner.stop_service()
+            
+    def test05SessionCaching(self):
+        aa_testrunner = AttributeAuthorityTestRunner()
+        aa_testrunner.start_service()
+        try:
+            pipA, designator, ctx = self._initQuery()
+            attributeValuesA = pipA.attributeQuery(ctx, designator)
+            
+            pipB = self._createPIP()
+            pipB.cacheSessions = False
+            
+            attributeValuesB = pipB.attributeQuery(ctx, designator)
+        finally:  
+            aa_testrunner.stop_service()
         
-        # Avoid caching to avoid impacting other tests in this class
-        pip.cacheSessions = False
+        attributeValuesA2 = pipA.attributeQuery(ctx, designator)
+        self.assert_(len(attributeValuesA2) > 0)
         
-        attributeValues = pip.attributeQuery(ctx, designator)
-        self.assert_(len(attributeValues) > 0)
-        print("PIP retrieved attribute values %r" % attributeValues)
-        
-        self.stopAllServices()
-        
-    def test04InitFromConfigFile(self):
-        # Initialise from settings in a config file
-        pip = PIP.fromConfig(self.__class__.CONFIG_FILEPATH)
-        self.assert_(pip.mappingFilePath)
-        self.assert_(pip.sessionCacheTimeout == 1800)
-        self.assert_(pip.sessionCacheAssertionClockSkewTol == 3.0)
-        
-# TODO: fix test - left out for now because can't get threading to correctly 
-# close down the Attribute Authority thread.
-#    def test05SessionCaching(self):
-#        self.startSiteAAttributeAuthority(withSSL=True, 
-#                    port=self.__class__.SITEA_SSL_ATTRIBUTEAUTHORITY_PORTNUM)
-#        
-#        pipA, designator, ctx = self._initQuery()
-#        attributeValuesA = pipA.attributeQuery(ctx, designator)
-#        
-#        pipB = self._createPIP()
-#        pipB.cacheSessions = False
-#        
-#        attributeValuesB = pipB.attributeQuery(ctx, designator)
-#        
-#        self.stopAllServices()
-#        
-#        attributeValuesA2 = pipA.attributeQuery(ctx, designator)
-#        self.assert_(len(attributeValuesA2) > 0)
-#        
-#        try:
-#            attributeValuesB2 = pipB.attributeQuery(ctx, designator)
-#            self.fail("Expected URLError exception for call with no-caching "
-#                      "set")
-#        except URLError, e:
-#            print("Pass: expected %r error for call with no-caching set" % e)
-        
+        try:
+            attributeValuesB2 = pipB.attributeQuery(ctx, designator)
+            self.fail("Expected URLError exception for call with no-caching "
+                      "set")
+        except URLError:
+            print("Pass: expected %r error for call with no-caching set")        
         
         
 if __name__ == "__main__":

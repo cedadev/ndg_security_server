@@ -42,6 +42,7 @@ from ndg.soap.etree import SOAPEnvelope
 logging.basicConfig()
 log = logging.getLogger(__name__)
 
+
 class TestApp(object):
     '''Test Application'''
     response = "Test application"
@@ -60,6 +61,7 @@ class TestApp(object):
     @classmethod
     def app_factory(cls, globalConfig, **localConfig):
         return cls(globalConfig, **localConfig)
+
 
 class AuthServiceWithXacmlProfileTestCase(unittest.TestCase):
     """Tests calls to the authorisation service using the XACML-SAML profile.
@@ -163,7 +165,8 @@ class AuthServiceWithXacmlProfileTestCase(unittest.TestCase):
                               error_message)))
 
             self.assertEqual(
-                assertion.statements[0].xacmlContextResponse.results[0].decision.value,
+                assertion.statements[0].xacmlContextResponse.results[0
+                                                            ].decision.value,
                 expected_decision)
         else:
             self.assertEqual(error_status, expected_status)

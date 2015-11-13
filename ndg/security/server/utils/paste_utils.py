@@ -8,10 +8,11 @@ __copyright__ = "(C) 2011 Science and Technology Facilities Council"
 __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = '$Id:$'
+import select
 from os import path
+from threading import Thread
 
 import paste.httpserver
-from threading import Thread
 from paste.deploy import loadapp
 from paste.script.util.logging_config import fileConfig
 
@@ -52,7 +53,12 @@ class PasteDeployAppServer(object):
     
     def start(self):
         """Start server"""
-        self.pasteServer.serve_forever()
+        try:
+            self.pasteServer.serve_forever()
+        except select.error:
+            # File descriptor error can be raised if a test fails - no need to
+            # take any further action
+            pass
         
     def startThread(self):
         """Start server in a separate thread"""

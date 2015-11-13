@@ -41,7 +41,8 @@ class SimpleRequestFilterTestCase(unittest.TestCase):
             
         for resource_uri in resource_uri_ignore_list:
             self.assertFalse(
-                self.policy_enforcement_point.isApplicableRequest(resource_uri),
+                self.policy_enforcement_point.is_applicable_request(
+                                                                resource_uri),
                 'Expecting False result for %r' % resource_uri)
 
     def test02_apply_list(self):
@@ -54,8 +55,30 @@ class SimpleRequestFilterTestCase(unittest.TestCase):
             
         for resource_uri in resource_uri_apply_list:
             self.assertTrue(
-                self.policy_enforcement_point.isApplicableRequest(resource_uri),
+                self.policy_enforcement_point.is_applicable_request(
+                                                                resource_uri),
                 'Expecting True result for %r' % resource_uri)
 
+    def test03_parse_from_config_file(self):
+        app = None
+        global_conf = {}
+        app_conf = {
+            "prefix": 'p.',
+            "p.sessionKey": 'my-key',
+            "p.cacheDecisions": 'False',
+            "p.authzServiceURI": 'https://localhost:7443/AuthorisationService/',
+            "p.ignore_file_list_pat": """http://localhost/css/style.css
+                http://localhost/static/logo.png
+                http://localhost/combo.js
+            """
+        }
+        app = SamlPepFilter.filter_app_factory(app, global_conf, **app_conf)
+        
+        for pat in app.ignore_file_list_pat:
+            self.assertIn(pat, 
+                         app_conf[app_conf['prefix'] +'ignore_file_list_pat'], 
+                         'Error setting "ignore_file_list_pat" config item')
+       
+        
 if __name__ == "__main__":
     unittest.main()

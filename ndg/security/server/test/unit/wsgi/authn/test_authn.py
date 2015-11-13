@@ -9,26 +9,14 @@ __copyright__ = "(C) 2009 Science and Technology Facilities Council"
 __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = '$Id$'
-import logging
-
-
 import unittest
 import os
-import sys
-import getpass
-import re
-import base64
-import urllib2
-
-from os.path import expandvars as xpdVars
-from os.path import join as jnPath
-mkPath = lambda file: jnPath(os.environ['NDGSEC_COMBINED_SRVS_UNITTEST_DIR'], 
-                             file)
 
 import paste.fixture
 from paste.deploy import loadapp
-from ndg.security.test.unit.base import BaseTestCase
-from ndg.security.common.X509 import X509Cert
+from OpenSSL import crypto
+
+from ndg.security.server.test.base import CONFIG_DIR_ENVVARNAME, BaseTestCase
 from ndg.security.server.wsgi.ssl import AuthKitSSLAuthnMiddleware
 
 
@@ -99,6 +87,7 @@ class WSGIAuthNTestController(unittest.TestCase):
         
     def test04Catch200WithNotLoggedIn(self):
         response = self.app.get('/test_200WithNotLoggedIn', status=200)
+        self.assert_(response, 'Expecting response for not logged in')
 
 
 class WsgiSSLClientAuthnTestController(BaseTestCase):
@@ -113,19 +102,23 @@ class WsgiSSLClientAuthnTestController(BaseTestCase):
         BaseTestCase.__init__(self, *arg, **kw)
         
     def test01(self):
-        thisDir = os.path.dirname(__file__)
         sslClientCertFilePath = os.path.join(
-                                os.environ[BaseTestCase.configDirEnvVarName],
+                                os.environ[CONFIG_DIR_ENVVARNAME],
                                 'pki',
-                                'test.crt')
-        sslClientCert = X509Cert.Read(sslClientCertFilePath).toString()
+                                'localhost.crt')
         
-        # Add APache SSL environment variables and sdummy AuthKit set user
+        with open(sslClientCertFilePath) as cert_file:
+            ssl_client_cert = crypto.load_certificate(crypto.FILETYPE_PEM, 
+                                                      cert_file.read())
+            
+        pem_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, ssl_client_cert)
+        
+        # Add Apache SSL environment variables and dummy AuthKit set user
         # session cookie method
         extra_environ = {
             'HTTPS':'1', 
-            'SSL_CLIENT_CERT': sslClientCert,
-            AuthKitSSLAuthnMiddleware.SET_USER_ENVIRON_KEYNAME: lambda id: None
+            'SSL_CLIENT_CERT': pem_cert,
+            AuthKitSSLAuthnMiddleware.SET_USER_ENVIRON_KEYNAME: lambda id_: None
             }
 
         print("request secured URI '/test_sslClientAuthn' ...")
@@ -140,7 +133,7 @@ class WsgiSSLClientAuthnTestController(BaseTestCase):
         redirectResponse = response.follow(extra_environ=extra_environ,
                                            status=302)
 
-        print("Redirect back to secured URI with authenticated session %r ..."%
+        print("Redirect back to secured URI with authenticated session %r ..." %
               redirectResponse.header_dict['location'])
         
         finalResponse = redirectResponse.follow(extra_environ=extra_environ,

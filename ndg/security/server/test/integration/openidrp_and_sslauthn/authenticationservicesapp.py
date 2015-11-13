@@ -15,7 +15,7 @@ import optparse
 from OpenSSL import SSL
 
 from ndg.security.server.utils.paste_utils import PasteDeployAppServer
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase
 
 INI_FILEPATH = path.join(path.dirname(path.abspath(__file__)), 
                             'authenticationservices.ini')    

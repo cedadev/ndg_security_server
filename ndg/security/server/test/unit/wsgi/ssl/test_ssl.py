@@ -9,16 +9,15 @@ __copyright__ = "(C) 2009 Science and Technology Facilities Council"
 __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = '$Id$'
-import logging
-
 import unittest
 import os
-import re
 
 import paste.fixture
 from paste.deploy import loadapp
-from ndg.security.test.unit.base import BaseTestCase
-from ndg.security.common.X509 import X509Cert
+from OpenSSL import crypto
+
+from ndg.security.server.test.base import CONFIG_DIR_ENVVARNAME, BaseTestCase
+
 
 class TestSSLClientAuthnApp(BaseTestCase):
     '''Test Application for the Authentication handler to protect'''
@@ -73,13 +72,17 @@ class SSLClientAuthNTestCase(BaseTestCase):
                                 status=401)
     
     def test03ClientCertSet(self):
-        thisDir = os.path.dirname(__file__)
         sslClientCertFilePath = os.path.join(
-                                os.environ[BaseTestCase.configDirEnvVarName],
+                                os.environ[CONFIG_DIR_ENVVARNAME],
                                 'pki',
-                                'test.crt')
-        sslClientCert = X509Cert.Read(sslClientCertFilePath).toString()
-        extra_environ = {'HTTPS':'1', 'SSL_CLIENT_CERT': sslClientCert}
+                                'localhost.crt')
+        
+        with open(sslClientCertFilePath) as ssl_cert_file:
+            ssl_client_cert = crypto.load_certificate(crypto.FILETYPE_PEM, 
+                                                      ssl_cert_file.read())
+            
+        pem_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, ssl_client_cert)
+        extra_environ = {'HTTPS':'1', 'SSL_CLIENT_CERT': pem_cert}
         response = self.app.get('/secured/uri',
                                 extra_environ=extra_environ,
                                 status=200)

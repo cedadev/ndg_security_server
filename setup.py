@@ -40,7 +40,7 @@ _ENTRY_POINTS = """
 # catch here for latter case.
 THIS_DIR = os.path.dirname(__file__)
 try:
-    LONG_DESCR = open(os.path.join(THIS_DIR, 'README.md')).read()
+    LONG_DESCR = open(os.path.join(THIS_DIR, 'README.rst')).read()
 except IOError:
     LONG_DESCR = """\
 NDG Security Server-side components package
@@ -69,7 +69,7 @@ protected in a flexible manner without the need to modify application code.
 
 setup(
     name =           		'ndg_security_server',
-    version =        		'2.5.0',
+    version =        		'2.6.0',
     description =    		'Server side components for running NERC DataGrid '
                             'Security Services',
     long_description =		LONG_DESCR,
@@ -79,13 +79,14 @@ setup(
     maintainer_email =   	'Philip.Kershaw@stfc.ac.uk',
     url =            		'http://github.com/cedadev/ndg_security_server',
     license =               'BSD - See LICENCE file for details',
-    install_requires =		[   'ndg_security_common',
-                                'Paste',
-                                'WebOb',
-                                'beaker',
-                                'AuthKit',
-                                'SQLAlchemy'
-                            ],
+    install_requires =		[
+        'ndg_security_common',
+        'Paste',
+        'WebOb',
+        'beaker',
+        'AuthKit',
+        'SQLAlchemy'
+    ],
     extras_require = {
         'xacml':  ["ndg_xacml"],
         'myproxy-saml-assertion-cert-ext-app': ['MyProxyClient'],
@@ -97,11 +98,7 @@ setup(
     dependency_links =      ["http://dist.ceda.ac.uk/pip/"],
     packages =			    find_packages(),
     namespace_packages =	['ndg', 'ndg.security'],
-    include_package_data =  True,
-    package_data = {
-        # See MANIFEST.in for ndg.security.server.paster_templates files
-    },
-    entry_points =           _ENTRY_POINTS,
+    entry_points =          _ENTRY_POINTS,
     test_suite =		    'ndg.security.server.test',
     zip_safe =              False
 )

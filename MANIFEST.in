@@ -8,7 +8,10 @@
 # Copyright (C) 2011 STFC
 # 
 # BSD - See LICENCE file for details
-recursive-include ndg/security/server/paster_templates/ *
+recursive-include ndg/security/server/paster_templates *
 recursive-include ndg/security/server/wsgi/authz/result_handler/genshi/templates/ *
 recursive-include ndg/security/server/wsgi/openid/relyingparty/signin_interface/genshi/templates/ *
-recursive-include ndg/security/server/wsgi/openid/provider/renderinginterface/genshi/templates/ * 
+recursive-include ndg/security/server/wsgi/openid/provider/renderinginterface/genshi/templates * 
+recursive-include ndg/security/server/test *
+#recursive-include ndg/security/server/paster_templates/openidprovider user.db *.py *_tmpl
+#recursive-include ndg/security/server/paster_templates/securedapp *

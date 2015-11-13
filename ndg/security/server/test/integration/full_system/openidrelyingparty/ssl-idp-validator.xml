@@ -12,7 +12,7 @@
         <!-- 
         <parameter name="configFilePath" value="$NDGSEC_INTEGRATION_TEST_DIR/full_system/openidrelyingparty/ssl-valid-server-names.cfg"/>
          -->       
-        <!-- <parameter name="caCertDirPath" value="$NDGSEC_TEST_CONFIG_DIR/pki/ca"/>  -->
+        <parameter name="caCertDirPath" value="$NDGSEC_TEST_CONFIG_DIR/pki/ca"/> 
         <!--  
         <parameter name="certFilePath" value="$NDGSEC_TEST_CONFIG_DIR/pki/localhost.crt"/>
         <parameter name="priKeyFilePath" value="$NDGSEC_TEST_CONFIG_DIR/pki/localhost.key"/>
