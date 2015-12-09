@@ -190,7 +190,7 @@ formatter = console
 class = handlers.RotatingFileHandler
 level=NOTSET
 formatter=generic
-args=(os.path.join('%%{outputDir}', 'log', 'service.log'), 'a', 100000, 10)
+args=(os.path.join('%%{outputDir}', 'service.log'), 'a', 100000, 10)
 
 [formatter_generic]
 format = %(asctime)s.%(msecs)03d %(levelname)-7.7s [%(name)s:%(lineno)s] %(message)s

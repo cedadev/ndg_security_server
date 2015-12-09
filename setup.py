@@ -69,7 +69,7 @@ protected in a flexible manner without the need to modify application code.
 
 setup(
     name =           		'ndg_security_server',
-    version =        		'2.6.0',
+    version =        		'2.6.1',
     description =    		'Server side components for running NERC DataGrid '
                                 'Security Services',
     long_description =		LONG_DESCR,
@@ -113,7 +113,6 @@ setup(
             'paster_templates/authorisationservice/*_tmpl',
             'paster_templates/authorisationservice/public/index.html',
             'paster_templates/openidprovider/*.py',
-            'paster_templates/openidprovider/log/',
             'paster_templates/openidprovider/pki/localhost.*',
             'paster_templates/openidprovider/pki/ca/*.0',
             'paster_templates/openidprovider/*_tmpl',
