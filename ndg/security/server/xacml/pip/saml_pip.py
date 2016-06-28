@@ -2,7 +2,6 @@
 Attribute Authority
 
 """
-from Finder.Finder_items import items
 __author__ = "P J Kershaw"
 __date__ = "06/08/10"
 __copyright__ = "(C) 2010 Science and Technology Facilities Council"
@@ -13,7 +12,6 @@ import logging
 log = logging.getLogger(__name__)
 
 from os import path
-from ConfigParser import SafeConfigParser, ConfigParser
 import base64
 
 import beaker.session
