@@ -356,9 +356,6 @@ class AuthenticationMiddleware(MultiHandler, NDGSecurityMiddlewareBase):
         # Override AuthKit cookie handling to use version compatible with 
         # CEDA site services dj_security
         app_conf['authkit.cookie.ticket_class'] = SecureCookie
-        # Hack to force authkit to use SecureCookie's parse_ticket function
-        import authkit.authenticate.cookie
-        authkit.authenticate.cookie.parse_ticket = SecureCookie.parse_ticket
         
         # This also requires special handling of cookie secret - the secret is
         # include in the ini file base 64 encoded but for actual use, needs to
