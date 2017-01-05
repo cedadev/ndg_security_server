@@ -2,7 +2,6 @@
 Attribute Authority
 
 """
-from Finder.Finder_items import items
 __author__ = "P J Kershaw"
 __date__ = "06/08/10"
 __copyright__ = "(C) 2010 Science and Technology Facilities Council"
