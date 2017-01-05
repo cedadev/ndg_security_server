@@ -24,6 +24,10 @@ protected in a flexible manner without the need to modify application code.
 
 Releases
 --------
+ * 2.6.2:
+  * updated sqlalchemy handling for queries
+  * updated test certs and ca
+  * remove unneeded import from ``saml_pip``
  * 2.5.0:
   * Integration with PyDAP and CEDA site services to use new ``crypto-cookie`` 
     package.
@@ -47,3 +51,14 @@ Releases
   * Added new attribute to SAML PEP filter to allow simpler configuration of
     ignore files i.e. files that shouldn't be passed on by the PEP to the 
     authorisation filter.
+
+Test Notes
+----------
+The Python-OpenID package uses ``urllib2`` by default for HTTP calls to the OpenID Provider.
+This can be overridden to give improved SSL verification by using ``M2Crypto``.  Alternatively,
+If ``pycurl`` is installed, this can also be used as an alternative.  However, pycurl there is no
+way to override the CA trust root settings externally.  Workarounds are either to:
+ * add additional CA certs to the OS CA bundle
+ * monkey patch Python-OpenID ``openid.fetchers.CurlHTTPFetcher.fetch`` adding a ``CAPATH`` setting:
+``c.setopt(pycurl.CAPATH, "my-ca-dir-path")``
+
