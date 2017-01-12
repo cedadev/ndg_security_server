@@ -26,7 +26,7 @@ from ndg.security.server.test.test_util import TestUserDatabase
 from ndg.security.common.utils.configfileparsers import (
     CaseSensitiveConfigParser)
 from ndg.security.server.attributeauthority import (AttributeAuthority,
-    SQLAlchemyAttributeInterface, InvalidAttributeFormat, AttributeInterface)
+    SQLAlchemyAttributeInterface, AttributeInterface)
 
 from ndg.saml.saml2.core import (Response, Attribute, SAMLVersion, Subject,
                                  NameID, Issuer, AttributeQuery,
@@ -100,14 +100,14 @@ class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
                                ":userId")
 
     SAML_LASTNAME_SQLQUERY = ("select lastname from users where openid = "
-                              ":userId'")
+                              ":userId")
 
     SAML_EMAILADDRESS_SQLQUERY = ("select emailaddress from users where "
                                   "openid = :userId")
 
     SAML_ATTRIBUTES_SQLQUERY = ("select attributename from attributes, users "
                                 "where users.openid = :userId and "
-                                "attributes.username = users.username")
+                                "attributes.openid = users.openid")
 
     def __init__(self, *arg, **kw):
         super(SQLAlchemyAttributeInterfaceTestCase, self).__init__(*arg, **kw)
@@ -134,22 +134,22 @@ class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
         attributeInterface = SQLAlchemyAttributeInterface()
 
         # Define queries for SAML attribute names
+        attributeInterface.samlAttribute2SqlQuery = {
+
+            ESGFSamlNamespaces.EMAILADDRESS_ATTRNAME:
+                self.__class__.SAML_EMAILADDRESS_SQLQUERY,
+            TestUserDatabase.ATTRIBUTE_NAMES[0]:
+                self.__class__.SAML_ATTRIBUTES_SQLQUERY
+        }
+
         attributeInterface.samlAttribute2SqlQuery_firstName = '"%s" "%s"' % (
             ESGFSamlNamespaces.FIRSTNAME_ATTRNAME,
             self.__class__.SAML_FIRSTNAME_SQLQUERY)
 
         setattr(attributeInterface,
                 'samlAttribute2SqlQuery.lastName',
-                "%s %s" % (ESGFSamlNamespaces.LASTNAME_ATTRNAME,
-                self.__class__.SAML_LASTNAME_SQLQUERY))
-
-        attributeInterface.samlAttribute2SqlQuery[
-            ESGFSamlNamespaces.EMAILADDRESS_ATTRNAME] = (
-                self.__class__.SAML_EMAILADDRESS_SQLQUERY)
-
-        attributeInterface.samlAttribute2SqlQuery[
-            TestUserDatabase.ATTRIBUTE_NAMES[0]] = (
-            self.__class__.SAML_ATTRIBUTES_SQLQUERY)
+                '"%s" "%s"' % (ESGFSamlNamespaces.LASTNAME_ATTRNAME,
+                               self.__class__.SAML_LASTNAME_SQLQUERY))
 
     def test02SetProperties(self):
         # test setProperties interface for instance attribute assignment
@@ -170,11 +170,11 @@ class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
                 ESGFSamlNamespaces.LASTNAME_ATTRNAME,
                 self.__class__.SAML_LASTNAME_SQLQUERY),
 
-            'samlAttribute2SqlQuery.3': '%s "%s"' % (
+            'samlAttribute2SqlQuery.3': '"%s" "%s"' % (
                 ESGFSamlNamespaces.EMAILADDRESS_ATTRNAME,
                 self.__class__.SAML_EMAILADDRESS_SQLQUERY),
 
-            'samlAttribute2SqlQuery_0': '%s %s' % (
+            'samlAttribute2SqlQuery_0': '"%s" "%s"' % (
                 TestUserDatabase.ATTRIBUTE_NAMES[0],
                 self.__class__.SAML_ATTRIBUTES_SQLQUERY),
 
@@ -186,10 +186,10 @@ class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
         attributeInterface = SQLAlchemyAttributeInterface()
         attributeInterface.setProperties(**properties)
 
-        self.assert_(
-            attributeInterface.samlAttribute2SqlQuery[
-                ESGFSamlNamespaces.FIRSTNAME_ATTRNAME] == \
-                    self.__class__.SAML_FIRSTNAME_SQLQUERY)
+        self.assert_(attributeInterface.\
+                     _SQLAlchemyAttributeInterface__samlAttribute2SqlQuery[
+                        ESGFSamlNamespaces.FIRSTNAME_ATTRNAME][0] == \
+                            self.__class__.SAML_FIRSTNAME_SQLQUERY)
 
         self.assert_(attributeInterface.connectionString == \
                      TestUserDatabase.DB_CONNECTION_STR)
@@ -210,10 +210,8 @@ class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
         attributeInterface = SQLAlchemyAttributeInterface()
         attributeInterface.setProperties(prefix='attributeInterface.', **cfg)
 
-        self.assert_(
-            attributeInterface.samlAttribute2SqlQuery[
-                ESGFSamlNamespaces.EMAILADDRESS_ATTRNAME] == \
-                     self.__class__.SAML_EMAILADDRESS_SQLQUERY)
+        self.assertEqual(attributeInterface.samlSubjectSqlQuery,
+                         self.__class__.SAML_SUBJECT_SQLQUERY)
 
     def test04SamlAttributeQuery(self):
         if self.skipTests:
@@ -298,7 +296,7 @@ class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
                 self.__class__.SAML_EMAILADDRESS_SQLQUERY,
 
             TestUserDatabase.ATTRIBUTE_NAMES[0]:
-                self.__class__.SAML_ATTRIBUTES_SQLQUERY
+                self.__class__.SAML_ATTRIBUTES_SQLQUERY,
         }
 
         attributeInterface = SQLAlchemyAttributeInterface(
@@ -329,8 +327,7 @@ class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
 
         self.assert_(
             len(samlResponse.assertions[0].attributeStatements[0].attributes[3
-                ].attributeValues) == \
-                    SQLAlchemyAttributeInterfaceTestCase.N_ATTRIBUTE_VALUES)
+                ].attributeValues) == TestUserDatabase.N_ATTRIBUTE_VALUES)
 
     def test05SamlAttributeQuery(self):
         if self.skipTests:
@@ -417,12 +414,8 @@ class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
             SQLAlchemyAttributeInterfaceTestCase.SAML_SUBJECT_SQLQUERY)
 
         # Make the query
-        try:
-            attributeInterface.getAttributes(attributeQuery, samlResponse)
-        except InvalidAttributeFormat:
-            print("PASSED: caught InvalidAttributeFormat exception")
-        else:
-            self.fail("Expecting InvalidAttributeFormat exception")
+        attributeInterface.getAttributes(attributeQuery, samlResponse)
+
 
 if __name__ == "__main__":
     unittest.main()

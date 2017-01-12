@@ -8,4 +8,5 @@ PasteScript
 SQLAlchemy
 WebOb
 python-openid
+crypto-cookie
 psycopg2

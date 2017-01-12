@@ -581,10 +581,6 @@ class InvalidUserId(AttributeInterfaceError):
     """User Id passed to getAttributes is invalid"""
 
 
-class InvalidAttributeFormat(AttributeInterfaceError):
-    """Format for Attribute requested is invalid or not supported"""
-
-
 class AttributeInterface(object):
     """An abstract base class to define the user roles interface to an
     Attribute Authority.
@@ -782,7 +778,27 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
         """
         cls = SQLAlchemyAttributeInterface
 
-        if name in cls.__slots__:
+        if name == cls.SAML_ATTRIBUTE2SQLQUERY_OPTNAME:
+            for attribute_name in value:
+                attribute_sql_query = value.get(attribute_name)
+                if not isinstance(attribute_name, basestring):
+                    raise TypeError('Expecting string type for \'{}\' attribute'
+                                    ' name; got {}'.format(
+                                        cls.SAML_ATTRIBUTE2SQLQUERY_OPTNAME,
+                                        type(attribute_name)))
+
+                if not isinstance(attribute_sql_query, basestring):
+                    raise TypeError('Expecting string type for \'{}\' attribute'
+                                    ' SQL query; got {}'.format(
+                                        cls.SAML_ATTRIBUTE2SQLQUERY_OPTNAME,
+                                        type(attribute_sql_query)))
+
+                self.__samlAttribute2SqlQuery[attribute_name] = (
+                    attribute_sql_query,
+                    self.xsstringAttributeValueParser
+                    )
+
+        elif name in cls.__slots__:
             object.__setattr__(self, name, value)
 
         elif (len(name) > cls.SAML_ATTRIBUTE2SQLQUERY_OPTNAME_LEN and
@@ -810,7 +826,14 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
             else:
                 # No attribute value conversion callback given - default to
                 # XS:String
-                samlAttributeName, samlAttributeSqlQuery = attr2sqlQueryOpts
+                try:
+                    samlAttributeName, samlAttributeSqlQuery = attr2sqlQueryOpts
+                except ValueError:
+                    raise AttributeAuthorityConfigError(
+                        'For \'samlAttribute2SqlQuery\' attribute, expecting '
+                        'string with format: \'"attribute name id" '
+                        '"SQL query to retrieve attribute"\'')
+
                 samlAttributeParser = self.xsstringAttributeValueParser
 
             # Set mapping of attribute name to SQL query + conversion routine
@@ -872,52 +895,6 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
                      type(value)))
 
         self.__samlSubjectSqlQuery = value
-
-    samlSubjectSqlQuery = property(_getSamlSubjectSqlQuery,
-                                   _setSamlSubjectSqlQuery,
-                                   doc="SAML Subject SQL Query")
-
-    def _getSamlAttribute2SqlQuery(self):
-        return self.__samlAttribute2SqlQuery
-
-    def _setSamlAttribute2SqlQuery(self, value):
-        if isinstance(value, dict):
-            # Validate string type for keys and values
-            invalidItems = [(k, v) for k, v in value.items()
-                            if (not isinstance(k, basestring) or
-                                not isinstance(v, basestring))]
-            if invalidItems:
-                raise TypeError('Expecting string type for "%s" dict items; '
-                                'got these/this invalid item(s) %r' %
-                (SQLAlchemyAttributeInterface.SAML_ATTRIBUTE2SQLQUERY_OPTNAME,
-                 invalidItems))
-
-            self.__samlAttribute2SqlQuery = value
-
-        elif isinstance(value, (tuple, list)):
-            for query in value:
-                if not isinstance(query, basestring):
-                    raise TypeError('Expecting string type for "%s" '
-                                    'attribute items; got %r' %
-                (SQLAlchemyAttributeInterface.SAML_ATTRIBUTE2SQLQUERY_OPTNAME,
-                 type(value)))
-
-            self.__samlAttribute2SqlQuery = value
-        else:
-            raise TypeError('Expecting dict type for "%s" attribute; got %r' %
-                (SQLAlchemyAttributeInterface.SAML_ATTRIBUTE2SQLQUERY_OPTNAME,
-                 type(value)))
-
-    samlAttribute2SqlQuery = property(_getSamlAttribute2SqlQuery,
-                                      _setSamlAttribute2SqlQuery,
-                                      doc="SQL Query or queries to obtain the "
-                                          "attribute information to respond "
-                                          "a SAML attribute query.  The "
-                                          "attributes returned from each "
-                                          "query concatenated together, must "
-                                          "exactly match the SAML attribute "
-                                          "names set in the samlAttributeNames "
-                                          "property")
 
     def _getSamlValidRequestorDNs(self):
         return self.__samlValidRequestorDNs
@@ -983,10 +960,10 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
         @rtype: list
         @return: list of roles for the given user
         """
-        queryInputs = {
+        query_inputs = {
             SQLAlchemyAttributeInterface.SQLQUERY_USERID_KEYNAME: userId
         }
-        query = Template(self.attributeSqlQuery).substitute(queryInputs)
+        query = Template(self.attributeSqlQuery).substitute(query_inputs)
 
         dbEngine = create_engine(self.connectionString)
         connection = dbEngine.connect()
@@ -1018,8 +995,8 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
 
         @type attributeQuery: saml.saml2.core.AttributeQuery
         @param userId: query containing requested attributes
-        @type: saml.saml2.core.Response
-        @param: Response - add an assertion with the list of attributes
+        @type response: saml.saml2.core.Response
+        @param response: add an assertion with the list of attributes
         for the given subject ID in the query or set an error Status code and
         message
         @raise AttributeInterfaceError: an error occured requesting
@@ -1045,7 +1022,7 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
                                      requestorDN)
 
         unknownAttrNames = [attrName for attrName in requestedAttributeNames
-                            if attrName not in self.samlAttribute2SqlQuery]
+                            if attrName not in self.__samlAttribute2SqlQuery]
 
         if len(unknownAttrNames) > 0:
             raise AttributeNotKnownError("Unknown attributes requested: %r" %
@@ -1097,9 +1074,9 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
             # Call specific conversion utility to convert the retrieved field
             # to the correct SAML attribute value type
             try:
-                field2SamlAttributeVal = self.samlAttribute2SqlQuery[
+                field2SamlAttributeVal = self.__samlAttribute2SqlQuery[
                                         requestedAttribute.name][-1]
-            except (IndexError, TypeError), e:
+            except (IndexError, TypeError) as e:
                 raise AttributeInterfaceConfigError('Bad format for SAML '
                                                     'attribute to SQL query '
                                                     'look-up for attribute '
@@ -1137,10 +1114,10 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
         dbEngine = create_engine(self.connectionString)
 
         try:
-            queryInputs = {
+            query_inputs = {
                 SQLAlchemyAttributeInterface.SQLQUERY_USERID_KEYNAME: userId
             }
-            query = Template(self.samlSubjectSqlQuery).substitute(queryInputs)
+            query = Template(self.samlSubjectSqlQuery).substitute(query_inputs)
 
         except KeyError:
             raise AttributeInterfaceConfigError("Invalid key for SAML subject "
@@ -1191,22 +1168,22 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
         dbEngine = create_engine(self.connectionString)
 
         try:
-            queryTmpl = self.samlAttribute2SqlQuery.get(attributeName)[0]
+            query_tmpl = self.__samlAttribute2SqlQuery.get(attributeName)[0]
 
         except (IndexError, TypeError), e:
             raise AttributeInterfaceConfigError('Bad format for SAML attribute '
                                                 'to SQL query look-up: %s' % e)
-        if queryTmpl is None:
+        if query_tmpl is None:
             raise AttributeInterfaceConfigError('No SQL query set for '
                                                 'attribute %r' % attributeName)
 
         try:
-            queryInputs = {
+            query_inputs = {
                 SQLAlchemyAttributeInterface.SQLQUERY_USERID_KEYNAME: userId
             }
-            query = Template(queryTmpl).substitute(queryInputs)
+            query = Template(query_tmpl).substitute(query_inputs)
 
-        except KeyError, e:
+        except KeyError as e:
             raise AttributeInterfaceConfigError("Invalid key %s for SAML "
                         "attribute query string.  The valid key is %r" %
                         (e,

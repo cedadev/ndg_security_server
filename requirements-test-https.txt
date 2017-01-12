@@ -9,4 +9,4 @@ SQLAlchemy
 WebOb
 pyOpenSSL
 python-openid
-
+crypto-cookie
