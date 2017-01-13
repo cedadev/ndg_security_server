@@ -4,3 +4,4 @@ service.log
 *.log*
 *.pyc
 dist
+/purge-tmp-files.sh

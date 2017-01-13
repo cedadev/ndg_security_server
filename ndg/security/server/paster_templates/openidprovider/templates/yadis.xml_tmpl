@@ -7,5 +7,5 @@
             <URI>$endpoint_url</URI>
             <LocalID>$user_url</LocalID>
         </Service>
-        %%{yadisExtraServiceEndpoints}</XRD>
+%%{yadisExtraServiceEndpoints}    </XRD>
 </xrds:XRDS>
