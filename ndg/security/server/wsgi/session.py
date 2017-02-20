@@ -172,6 +172,7 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
                       "path [%s]", self.signoutPath)
             
             _start_response = self._do_logout(environ, start_response, session)
+            del environ['REMOTE_USER']
         else:
             log.debug("SessionHandlerMiddleware.__call__: checking for "
                       "REMOTE_* environment variable settings set by OpenID "
