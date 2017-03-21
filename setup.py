@@ -20,12 +20,12 @@ except ImportError:
     from setuptools import setup
 
 _ENTRY_POINTS = """
-    [console_scripts] 
+    [console_scripts]
     myproxy-saml-assertion-cert-ext-app=ndg.security.server.myproxy.certificate_extapp.saml_attribute_assertion:CertExtConsoleApp.run
 
     [paste.app_factory]
     main=ndg.security.server.pylons.container.config.middleware:make_app
-    
+
     [paste.app_install]
     main=pylons.util:PylonsInstaller
     [paste.paster_create_template]
@@ -47,29 +47,29 @@ NDG Security Server-side components package
 ===========================================
 
 NDG Security is the security system for the UK Natural Environment Research
-Council funded NERC DataGrid.  NDG Security has been developed to 
-provide users with seamless federated access to secured resources across NDG 
-participating organisations whilst at the same time providing an underlying 
-system which is easy to deploy around organisation's pre-existing systems. 
+Council funded NERC DataGrid.  NDG Security has been developed to
+provide users with seamless federated access to secured resources across NDG
+participating organisations whilst at the same time providing an underlying
+system which is easy to deploy around organisation's pre-existing systems.
 
-More recently, the system has been developed in collaboration with the 
+More recently, the system has been developed in collaboration with the
 US DoE funded Earth System Grid project for the ESG Federation an infrastructure
-under development in support of CMIP5 (Coupled Model Intercomparison Project 
-Phase 5), a framework for a co-ordinated set of climate model experiments 
+under development in support of CMIP5 (Coupled Model Intercomparison Project
+Phase 5), a framework for a co-ordinated set of climate model experiments
 which will input into the forthcoming 5th IPCC Assessment Report.
 
-NDG and ESG use a common access control architecture.  OpenID and MyProxy are 
-used to support single sign on for browser based and HTTP rich client based 
+NDG and ESG use a common access control architecture.  OpenID and MyProxy are
+used to support single sign on for browser based and HTTP rich client based
 applications respectively.  SAML is used for attribute query and authorisation
-decision interfaces.  NDG Security uses a XACML based policy engine from the 
-package ndg_xacml.  NDG Security has been re-engineered to use a filter based 
-architecture based on WSGI enabling other Python WSGI based applications to be 
-protected in a flexible manner without the need to modify application code. 
+decision interfaces.  NDG Security uses a XACML based policy engine from the
+package ndg_xacml.  NDG Security has been re-engineered to use a filter based
+architecture based on WSGI enabling other Python WSGI based applications to be
+protected in a flexible manner without the need to modify application code.
 """
 
 setup(
     name =           		'ndg_security_server',
-    version =        		'2.7.0',
+    version =        		'2.7.1',
     description =    		'Server side components for running NERC DataGrid '
                                 'Security Services',
     long_description =      LONG_DESCR,
