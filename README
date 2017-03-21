@@ -24,6 +24,8 @@ protected in a flexible manner without the need to modify application code.
 
 Releases
 --------
+ * 2.7.1:
+  * Fix to Yadis to set additional OAuth access token and resource endpoints
  * 2.7.0:
   * Updated OpenID Provider Yadis Paster templates to allow inclusion of OAuth
     Authorisation server endpoint
