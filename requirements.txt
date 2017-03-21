@@ -9,3 +9,4 @@ SQLAlchemy
 WebOb
 python-openid
 crypto-cookie
+ndg_security_server
