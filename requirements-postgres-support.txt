@@ -10,3 +10,4 @@ WebOb
 python-openid
 crypto-cookie
 psycopg2
+ndg_security_server
