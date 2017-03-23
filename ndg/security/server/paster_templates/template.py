@@ -76,6 +76,44 @@ _MYPROXY_SERVER_LOCALID_XRD_ENTRY_TMPL = DoublePercentTemplate(
         </Service>
 """)
 
+"""@var _MYPROXY_SERVER_NONLOCALID_XRD_ENTRY_TMPL: Yadis XRDS entry for a
+MyProxy server endpoint.  No localID entry is included as this template is for
+use with the serveryadis.xml_tmpl which applies to requests where the specific
+identity is not provided.
+@type _MYPROXY_SERVER_NONLOCALID_XRD_ENTRY_TMPL: ndg.security.server.paster_templates.template.DoublePercentTemplate
+"""
+_MYPROXY_SERVER_NONLOCALID_XRD_ENTRY_TMPL = DoublePercentTemplate(
+"""        <Service priority="10">
+            <Type>urn:esg:security:myproxy-service</Type>
+            <URI>%%{myproxyServerURI}</URI>
+        </Service>
+""")
+
+"""@var _SLCS_LOCALID_XRD_ENTRY_TMPL: Yadis XRDS entry for a Short-Lived
+Credential Service endpoint.  This entry also include a localID $user_url which
+the OpenID Provider application code will fill out at runtime.
+@type _SLCS_LOCALID_XRD_ENTRY_TMPL: ndg.security.server.paster_templates.template.DoublePercentTemplate
+"""
+_SLCS_LOCALID_XRD_ENTRY_TMPL = DoublePercentTemplate(
+"""        <Service priority="10">
+            <Type>urn:esg:security:slcs</Type>
+            <URI>%%{slcsURI}</URI>
+            <LocalID>$user_url</LocalID>
+        </Service>
+""")
+
+"""@var _SLCS_NONLOCALID_XRD_ENTRY_TMPL: Yadis XRDS entry for a Short-Lived
+Credential Service endpoint.  This entry also include a localID $user_url which
+the OpenID Provider application code will fill out at runtime.
+@type _SLCS_NONLOCALID_XRD_ENTRY_TMPL: ndg.security.server.paster_templates.template.DoublePercentTemplate
+"""
+_SLCS_NONLOCALID_XRD_ENTRY_TMPL = DoublePercentTemplate(
+"""        <Service priority="10">
+            <Type>urn:esg:security:slcs</Type>
+            <URI>%%{slcsURI}</URI>
+        </Service>
+""")
+
 """@var _OAUTH_AUTHZ_SERVER_LOCALID_XRD_ENTRY_TMPL: Yadis XRDS entry for an
 OAuth authorisation server endpoint.  No localID entry is included as this
 template is for use with the serveryadis.xml_tmpl which applies to requests
@@ -127,19 +165,6 @@ _ATTRIBUTE_SERVICE_LOCALID_XRD_ENTRY_TMPL = DoublePercentTemplate(
             <Type>urn:esg:security:attribute-service</Type>
             <URI>%%{attributeServiceURI}</URI>
             <LocalID>$user_url</LocalID>
-        </Service>
-""")
-
-"""@var _MYPROXY_SERVER_NONLOCALID_XRD_ENTRY_TMPL: Yadis XRDS entry for a
-MyProxy server endpoint.  No localID entry is included as this template is for
-use with the serveryadis.xml_tmpl which applies to requests where the specific
-identity is not provided.
-@type _MYPROXY_SERVER_NONLOCALID_XRD_ENTRY_TMPL: ndg.security.server.paster_templates.template.DoublePercentTemplate
-"""
-_MYPROXY_SERVER_NONLOCALID_XRD_ENTRY_TMPL = DoublePercentTemplate(
-"""        <Service priority="10">
-            <Type>urn:esg:security:myproxy-service</Type>
-            <URI>%%{myproxyServerURI}</URI>
         </Service>
 """)
 
@@ -335,6 +360,11 @@ class OpenIDProviderTemplate(TemplateBase):
             'document - defaults to omit this entry',
             default=''),
 
+        var('slcsURI',
+            'Short-Lived Credential Service address to advertise in OpenID '
+            'Provider Yadis document - defaults to omit this entry',
+            default=''),
+
         var('oauthAuthorizationServerURI',
             'OAuth Authorisation Server address to advertise in OpenID '
             'Provider Yadis document - defaults to omit this entry',
@@ -405,14 +435,26 @@ class OpenIDProviderTemplate(TemplateBase):
 
         del vars_['myproxyServerURI']
 
+        if vars_['slcsURI']:
+            # yadis.xml_tmpl entry
+            vars_['yadisExtraServiceEndpoints'
+                 ] += _SLCS_LOCALID_XRD_ENTRY_TMPL.substitute(
+                        slcsURI=vars_['slcsURI'])
+
+            vars_['serveryadisExtraServiceEndpoints'
+                 ] += _SLCS_NONLOCALID_XRD_ENTRY_TMPL.substitute(
+                        slcsURI=vars_['slcsURI'])
+
+        del vars_['slcsURI']
+
         if vars_['oauthAccessTokenURI']:
             # yadis.xml_tmpl entry
             vars_['yadisExtraServiceEndpoints'
-                 ] += _OAUTH_AUTHZ_SERVER_LOCALID_XRD_ENTRY_TMPL.substitute(
+                 ] += _OAUTH_ACCESS_TOK_LOCALID_XRD_ENTRY_TMPL.substitute(
                      oauthAccessTokenURI=vars_['oauthAccessTokenURI'])
 
             vars_['serveryadisExtraServiceEndpoints'
-                 ] += _OAUTH_AUTHZ_SERVER_NONLOCALID_XRD_ENTRY_TMPL.substitute(
+                 ] += _OAUTH_ACCESS_TOK_NONLOCALID_XRD_ENTRY_TMPL.substitute(
                      oauthAccessTokenURI=vars_['oauthAccessTokenURI'])
 
         del vars_['oauthAccessTokenURI']
@@ -420,11 +462,11 @@ class OpenIDProviderTemplate(TemplateBase):
         if vars_['oauthResourceURI']:
             # yadis.xml_tmpl entry
             vars_['yadisExtraServiceEndpoints'
-                 ] += _OAUTH_AUTHZ_SERVER_LOCALID_XRD_ENTRY_TMPL.substitute(
+                 ] += _OAUTH_RESOURCE_LOCALID_XRD_ENTRY_TMPL.substitute(
                      oauthResourceURI=vars_['oauthResourceURI'])
 
             vars_['serveryadisExtraServiceEndpoints'
-                 ] += _OAUTH_AUTHZ_SERVER_NONLOCALID_XRD_ENTRY_TMPL.substitute(
+                 ] += _OAUTH_RESOURCE_NONLOCALID_XRD_ENTRY_TMPL.substitute(
                      oauthResourceURI=vars_['oauthResourceURI'])
 
         del vars_['oauthResourceURI']
