@@ -107,6 +107,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
 
         '''
         self.client = XACMLAuthzDecisionQuerySslSOAPBinding()
+        
         # Additional parameter required for XAML profile:
         for name in self.__class__.PARAM_NAMES:
             paramName = prefix + name
@@ -137,7 +138,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
         requestURI = request.url
         
         # Apply local PDP if set
-        if not self.isApplicableRequest(requestURI):
+        if not self.is_applicable_request(requestURI):
             # The local PDP has returned a decision that the requested URI is
             # not applicable and so the authorisation service need not be 
             # invoked.  This step is an efficiency measure to avoid multiple
@@ -173,7 +174,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
             # pickling of XACML requests fails (in Python 2.6.2)
             # Record the result in the user's session to enable later 
             # interrogation by any result handler Middleware
-            # self.saveResultCtx(self.client.query, samlAuthzResponse)
+            # self.save_result_ctx(self.client.query, samlAuthzResponse)
         
         (assertion,
          error_status,
@@ -220,6 +221,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
         """
         if actions is None:
             actions = []
+            
         if httpMethod == 'GET':
             ### TODO Should action be related to HTTP method?
             return cls._createXacmlProfileRequestCtx(subjectIdFormat,
@@ -264,19 +266,15 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
         xacmlAttributeValueFactory = XacmlAttributeValueClassFactory()
         
         openidSubjectAttribute = XacmlAttribute()
-        
-        openidSubjectAttribute.attributeId = \
-                                subjectNameIdFormat
+        openidSubjectAttribute.attributeId = subjectNameIdFormat
                                         
         XacmlAnyUriAttributeValue = xacmlAttributeValueFactory(
                                             XacmlAttributeValue.ANY_TYPE_URI)
         
-        openidSubjectAttribute.dataType = XacmlAnyUriAttributeValue.IDENTIFIER
-        
+        openidSubjectAttribute.dataType = XacmlAnyUriAttributeValue.IDENTIFIER        
         openidSubjectAttribute.attributeValues.append(
                                                     XacmlAnyUriAttributeValue())
-        openidSubjectAttribute.attributeValues[-1].value = \
-                                subjectNameId
+        openidSubjectAttribute.attributeValues[-1].value = subjectNameId
         
         xacmlSubject.attributes.append(openidSubjectAttribute)
 
@@ -295,8 +293,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
                             
         resourceAttribute.dataType = XacmlAnyUriAttributeValue.IDENTIFIER
         resourceAttribute.attributeValues.append(XacmlAnyUriAttributeValue())
-        resourceAttribute.attributeValues[-1].value = \
-                                                resourceUri
+        resourceAttribute.attributeValues[-1].value = resourceUri
 
         xacmlRequest.resources.append(resource)
         

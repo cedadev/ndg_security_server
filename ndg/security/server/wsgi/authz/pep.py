@@ -18,7 +18,8 @@ from time import time
 import webob
 
 from ndg.soap.client import UrlLib2SOAPClientError
-from ndg.saml.saml2.core import DecisionType
+from ndg.saml.saml2.core import DecisionType, SubjectQuery
+from ndg.saml.utils.factory import AuthzDecisionQueryFactory
 from ndg.saml.saml2.binding.soap.client.requestbase import \
                                                         RequestBaseSOAPBinding
 from ndg.saml.saml2.binding.soap.client.authzdecisionquery import \
@@ -38,7 +39,7 @@ from ndg.xacml.parsers.etree.factory import (
 from ndg.security.server.wsgi.session import (SessionMiddlewareBase, 
                                               SessionHandlerMiddleware)
 from ndg.security.common.credentialwallet import SAMLAssertionWallet
-from ndg.security.common.utils import str2Bool
+from ndg.security.common.utils import str2Bool, is_iterable
 
 
 class SamlPepFilterConfigError(Exception):
@@ -58,8 +59,8 @@ class SamlPepFilterBase(SessionMiddlewareBase):
     :cvar PARAM_NAMES: list of config option names
     :type PARAM_NAMES: tuple
     
-    :ivar __client: SAML authorisation decision query client 
-    :type __client: ndg.saml.saml2.binding.soap.client.authzdecisionquery.AuthzDecisionQuerySslSOAPBinding
+    :ivar _client_binding: SAML authorisation decision query client 
+    :type _client_binding: ndg.saml.saml2.binding.soap.client.authzdecisionquery.AuthzDecisionQuerySslSOAPBinding
 
     :ivar ignore_file_list_pat: a list of regular expressions for resource paths
     ignored by the authorisation policy. Resources matching these patterns 
@@ -68,10 +69,12 @@ class SamlPepFilterBase(SessionMiddlewareBase):
     :type ignore_file_list_pat: list
     '''
     AUTHZ_SERVICE_URI = 'authzServiceURI'
-    AUTHZ_DECISION_QUERY_PARAMS_PREFIX = 'authzDecisionQuery.'
+    AUTHZ_DECISION_QUERY_PARAMS_PREFIX = 'authz_decision_query.'
+    AUTHZ_DECISION_QUERY_BINDING_PARAMS_PREFIX = 'authz_decision_query_binding.'
     SESSION_KEY_PARAM_NAME = 'sessionKey'
     CACHE_DECISIONS_PARAM_NAME = 'cacheDecisions'   
     LOCAL_POLICY_FILEPATH_PARAM_NAME = 'localPolicyFilePath'
+    IGNORE_FILE_LIST_PARAM_NAME = 'ignore_file_list_pat'
     
     CREDENTIAL_WALLET_SESSION_KEYNAME = \
         SessionHandlerMiddleware.CREDENTIAL_WALLET_SESSION_KEYNAME
@@ -82,13 +85,19 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         AUTHZ_SERVICE_URI,
         SESSION_KEY_PARAM_NAME,
         CACHE_DECISIONS_PARAM_NAME,
-        LOCAL_POLICY_FILEPATH_PARAM_NAME
+        LOCAL_POLICY_FILEPATH_PARAM_NAME,
+        IGNORE_FILE_LIST_PARAM_NAME
+    )
+    
+    OPTIONAL_PARAM_NAMES = (
+        LOCAL_POLICY_FILEPATH_PARAM_NAME,
+        IGNORE_FILE_LIST_PARAM_NAME                            
     )
     
     XACML_ATTRIBUTEVALUE_CLASS_FACTORY = XacmlAttributeValueClassFactory()
     
     __slots__ = (
-        '_app', '__client', '__session', '__localPdp'
+        '_app', '_client_binding', '_client_query', '__session', '__localPdp'
     ) + tuple(('__' + '$__'.join(PARAM_NAMES)).split('$'))
             
     def __init__(self, app):
@@ -97,14 +106,15 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         authorisation decision query client interface
         '''
         self._app = app
-        self.__client = AuthzDecisionQuerySslSOAPBinding()
+        self._client_binding = AuthzDecisionQuerySslSOAPBinding()
+        self._client_query = AuthzDecisionQueryFactory.create()
         self.__session = None
         self.__authzServiceURI = None
         self.__sessionKey = None
         self.__cacheDecisions = False
         self.__localPdp = None
         self.__localPolicyFilePath = None
-        self.ignore_file_list_pat = None
+        self._ignore_file_list_pat = []
 
     def _getLocalPolicyFilePath(self):
         return self.__localPolicyFilePath
@@ -136,18 +146,44 @@ class SamlPepFilterBase(SessionMiddlewareBase):
                             "so avoiding the web service call performance "
                             "penalty")
 
-    def _getClient(self):
-        return self.__client
+    @property
+    def ignore_file_list_pat(self):
+        return self._ignore_file_list_pat[:]
+    
+    @ignore_file_list_pat.setter
+    def ignore_file_list_pat(self, value):
+        if isinstance(value, basestring):
+            # Assume split on line boundaries
+            self._ignore_file_list_pat = value.splitlines()
+        elif is_iterable(value):
+            self._ignore_file_list_pat = [i for i in value]
+        else:
+            raise TypeError('Expecting string or iterable type for '
+                            '"ignore_file_list_pat" got %r' % value)
+            
+    @property
+    def client_binding(self):
+        return self._client_binding
 
-    def _setClient(self, value):
+    @client_binding.setter
+    def client_binding(self, value):
         if not isinstance(value, RequestBaseSOAPBinding):
             raise TypeError('Expecting type %r for "client" attribute; '
                             'got %r' %
                             (type(RequestBaseSOAPBinding), type(value)))
-        self.__client = value
+        self._client_binding = value
+     
+    @property
+    def client_query(self):
+        return self._client_query
 
-    client = property(_getClient, _setClient, 
-                      doc="SAML authorisation decision query SOAP client")
+    @client_query.setter
+    def client_query(self, value):
+        if not isinstance(value, SubjectQuery):
+            raise TypeError('Expecting type %r for "client_query" attribute; '
+                            'got %r' %
+                            (type(SubjectQuery), type(value)))
+        self._client_query = value
 
     def _getSession(self):
         return self.__session
@@ -217,14 +253,24 @@ class SamlPepFilterBase(SessionMiddlewareBase):
             if value is not None:
                 setattr(self, name, value)
                 
-            elif name != self.__class__.LOCAL_POLICY_FILEPATH_PARAM_NAME:
-                # Policy file setting is optional
+            # All but the local policy settings are manadatory
+            elif name not in self.__class__.OPTIONAL_PARAM_NAMES:
                 raise SamlPepFilterConfigError('Missing option %r' % paramName)
-            
 
-        # Parse authorisation decision query options
-        queryPrefix = prefix + self.__class__.AUTHZ_DECISION_QUERY_PARAMS_PREFIX
-        self.client.parseKeywords(prefix=queryPrefix, **kw)
+        # Parse authorisation decision query options - first the bindings i.e.
+        # the connection specific settings
+        query_binding_prefix = prefix + \
+                    self.__class__.AUTHZ_DECISION_QUERY_BINDING_PARAMS_PREFIX
+        self.client_binding.parseKeywords(prefix=query_binding_prefix, **kw)
+        
+        # ... next set constants to do with the authorisation decision queries
+        # that will be made.  Settings such as the resource URI and principle
+        # (user being queried for) are set on a call by call basis
+        query_prefix = prefix + \
+                    self.__class__.AUTHZ_DECISION_QUERY_PARAMS_PREFIX
+        self.client_query = AuthzDecisionQueryFactory.from_kw(
+                                                        prefix=query_prefix,
+                                                        **kw)
 
         # Initialise the local PDP  
         if self.localPolicyFilePath:
@@ -321,13 +367,13 @@ class SamlPepFilterBase(SessionMiddlewareBase):
             
             # Fix: make wallet follow the same clock skew tolerance and as the 
             # SAML authz decision query settings
-            credWallet.clockSkewTolerance = self.client.clockSkewTolerance
+            credWallet.clockSkewTolerance = self.client_binding.clockSkewTolerance
         
         credWallet.addCredentials(resourceId, assertions)
         self.session[walletKeyName] = credWallet
         self.session.save()
         
-    def saveResultCtx(self, request, response, save=True):
+    def save_result_ctx(self, request, response, save=True):
         """Set PEP context information in the Beaker session using standard key
         names.  This is a snapshot of the last request and the response 
         received.  It can be used by downstream middleware to provide contextual
@@ -355,7 +401,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         XacmlDecision.DENY_STR, XacmlDecision.INDETERMINATE_STR
     )
     
-    def isApplicableRequest(self, resourceURI):
+    def is_applicable_request(self, resourceURI):
         """A local PDP can filter out some requests to avoid the need to call
         out to the authorisation service 
         
@@ -389,7 +435,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
 
     def _createXacmlRequestCtx(self, resourceURI):
         """Wrapper to create a request context for a local PDP - see 
-        isApplicableRequest
+        is_applicable_request
         
         :param resourceURI: URI of requested resource
         :type resourceURI: basestring
@@ -429,10 +475,10 @@ class SamlPepFilter(SamlPepFilterBase):
         request = webob.Request(environ)
         requestURI = request.url
         # Nb. user may not be logged in hence REMOTE_USER is not set
-        remoteUser = request.remote_user or ''
+        remote_user = request.remote_user or ''
         
         # Apply local PDP if set
-        if not self.isApplicableRequest(requestURI):
+        if not self.is_applicable_request(requestURI):
             # The local PDP has returned a decision that the requested URI is
             # not applicable and so the authorisation service need not be 
             # invoked.  This step is an efficiency measure to avoid multiple
@@ -448,13 +494,24 @@ class SamlPepFilter(SamlPepFilterBase):
              
         noCachedAssertion = assertions is None or len(assertions) == 0
         if noCachedAssertion:
-            # No stored decision in cache, invoke the authorisation service   
-            query = self.client.makeQuery()
+            # No stored decision in cache, invoke the authorisation service
+            
+            # Make a new query object   
+            query = AuthzDecisionQueryFactory.create()
+            
+            # Copy constant settings.  These constants were set at 
+            # initialisation
+            query.subject.nameID.format = \
+                                        self.client_query.subject.nameID.format
+            query.issuer.value = self.client_query.issuer.value
+            query.issuer.format = self.client_query.issuer.format
+           
+            # Set dynamic settings particular to this individual request 
+            query.subject.nameID.value = remote_user
             query.resource = request.url
-            self.client.setQuerySubjectId(query, remoteUser)
             
             try:
-                samlAuthzResponse = self.client.send(query,
+                samlAuthzResponse = self.client_binding.send(query,
                                                      uri=self.authzServiceURI)
                 
             except (UrlLib2SOAPClientError, URLError) as e:
@@ -478,7 +535,7 @@ class SamlPepFilter(SamlPepFilterBase):
                 response.status = httplib.FORBIDDEN
                 response.body = ('An error occurred retrieving an access '
                                  'decision for %r for user %r' % 
-                                 (requestURI, remoteUser))
+                                 (requestURI, remote_user))
                 response.content_type = 'text/plain'
                 return response(environ, start_response)
                          
@@ -486,7 +543,7 @@ class SamlPepFilter(SamlPepFilterBase):
             
             # Record the result in the user's session to enable later 
             # interrogation by any result handler Middleware
-            self.saveResultCtx(query, samlAuthzResponse)
+            self.save_result_ctx(query, samlAuthzResponse)
         
         
         # Set HTTP 403 Forbidden response if any of the decisions returned are
@@ -501,7 +558,7 @@ class SamlPepFilter(SamlPepFilterBase):
                 if authzDecisionStatement.decision.value in failDecisions:
                     response = webob.Response()
                     
-                    if not remoteUser:
+                    if not remote_user:
                         # Access failed and the user is not logged in
                         response.status = httplib.UNAUTHORIZED
                     else:
@@ -509,8 +566,8 @@ class SamlPepFilter(SamlPepFilterBase):
                         response.status = httplib.FORBIDDEN
                         
                     response.body = 'Access denied to %r for user %r' % (
-                                                                     requestURI,
-                                                                     remoteUser)
+                                                                 requestURI,
+                                                                 remote_user)
                     response.content_type = 'text/plain'
                     log.info(response.body)
                     return response(environ, start_response)
@@ -522,9 +579,7 @@ class SamlPepFilter(SamlPepFilterBase):
             response = webob.Response()
             response.status = httplib.FORBIDDEN
             response.body = ('An error occurred retrieving an access decision '
-                             'for %r for user %r' % (
-                                                                 requestURI,
-                                                                 remoteUser))
+                             'for %r for user %r' % (requestURI, remote_user))
             response.content_type = 'text/plain'
             log.info(response.body)
             return response(environ, start_response)     

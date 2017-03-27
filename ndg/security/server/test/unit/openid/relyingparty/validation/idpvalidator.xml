@@ -9,11 +9,11 @@
 -->
 <IdPValidators xmlns="urn:esg:security:authz:1.0:IdPValidator">
     <validator
-     name="ndg.security.test.unit.openid.relyingparty.validation.test_validation.ProviderWhitelistValidator">
+     name="ndg.security.server.test.unit.openid.relyingparty.validation.test_validation.ProviderWhitelistValidator">
         <parameter name="config-file" value="$NDGSEC_UNITTEST_IDPVALIDATION_DIR/providerWhitelist.cfg"/>
     </validator>
     <validator 
-     name="ndg.security.test.unit.openid.relyingparty.validation.test_validation.ProviderIdentifierTestValidator">
+     name="ndg.security.server.test.unit.openid.relyingparty.validation.test_validation.ProviderIdentifierTestValidator">
         <parameter name="config-file" value="$NDGSEC_UNITTEST_IDPVALIDATION_DIR/providerIdentifierWhitelist.cfg"/>
     </validator>
     <validator 

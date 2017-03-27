@@ -5,5 +5,5 @@
             <Type>$openid20type</Type>
             <URI>$endpoint_url</URI>
         </Service>
-        %%{serveryadisExtraServiceEndpoints}</XRD>
+%%{serveryadisExtraServiceEndpoints}   </XRD>
 </xrds:XRDS>

@@ -10,7 +10,7 @@ __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = '$Id:siteAUserRoles.py 4371 2008-10-29 09:44:51Z pjkersha $'
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from uuid import uuid4
 
 from ndg.saml.common.xml import SAMLConstants
@@ -20,19 +20,20 @@ from ndg.saml.saml2.core import (Assertion, Attribute, AttributeStatement,
 
 from ndg.security.common.saml_utils.esgf import (ESGFSamlNamespaces,
                                                  ESGFGroupRoleAttributeValue)
-from ndg.security.common.X509 import X500DN
+from ndg.security.common.openssl import X500DN
 from ndg.security.server.attributeauthority import (AttributeInterface, 
                                                     InvalidRequestorId, 
                                                     AttributeNotKnownError, 
                                                     AttributeReleaseDenied, 
                                                     UserIdNotKnown)
-from ndg.security.test.unit.base import BaseTestCase
+from ndg.security.server.test.base import BaseTestCase
+from ndg.security.server.test.test_util import TestUserDatabase
 
 
 class TestUserRoles(AttributeInterface):
     """Test User Roles class dynamic import for Attribute Authority"""
-    ATTRIBUTE_NAMES = BaseTestCase.ATTRIBUTE_NAMES
-    ATTRIBUTE_VALUES = BaseTestCase.ATTRIBUTE_VALUES
+    ATTRIBUTE_NAMES = ()
+    ATTRIBUTE_VALUES = ()
 
     SAML_ATTRIBUTE_NAMES = ATTRIBUTE_NAMES + (
         ESGFSamlNamespaces.EMAILADDRESS_ATTRNAME,
@@ -87,10 +88,10 @@ class TestUserRoles(AttributeInterface):
     SAML_ASSERTION_LIFETIME = 8*60*60
     
     VALID_USER_IDS = ("https://openid.localhost/philip.kershaw",
-                      BaseTestCase.OPENID_URI)
+                      TestUserDatabase.OPENID_URI)
     VALID_REQUESTOR_IDS = BaseTestCase.VALID_REQUESTOR_IDS
     
-    INSUFFICIENT_PRIVILEGES_REQUESTOR_ID = X500DN.fromString(
+    INSUFFICIENT_PRIVILEGES_REQUESTOR_ID = X500DN.from_string(
                                         "/O=Site B/CN=Authorisation Service")
     
     def __init__(self, propertiesFilePath=None):
@@ -170,4 +171,3 @@ class TestUserRoles(AttributeInterface):
  
         assertion.attributeStatements.append(attributeStatement)       
         response.assertions.append(assertion)
- 

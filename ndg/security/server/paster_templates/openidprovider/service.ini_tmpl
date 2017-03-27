@@ -31,13 +31,13 @@ use = egg:Paste#http
 host = 0.0.0.0
 port = %(portNum)s
 
-# Use composite cascade construct to enable Provider app to pick up static 
-# content  
+# Use composite cascade construct to enable Provider app to pick up static
+# content
 [filter-app:OpenIDProviderFilterApp]
 use = egg:Paste#httpexceptions
 next = cascade
 
-# Composite for OpenID Provider to enable settings for picking up static 
+# Composite for OpenID Provider to enable settings for picking up static
 # content
 [composit:cascade]
 use = egg:Paste#cascade
@@ -86,17 +86,17 @@ openid.provider.path.login=/OpenID/Provider/login
 openid.provider.path.loginsubmit=/OpenID/Provider/loginsubmit
 
 # Yadis based discovery only - the 'id' path is configured may be set to page
-# with <link rel="openid.server" href="..."> and Yadis 
-# <meta http-equiv="x-xrds-location" content="..."> links if required but in 
-# this implementation it set to return 404 not found - see 
-# ndg.security.server.wsgi.openid.provider.renderinginterface.genshi.GenshiRendering 
+# with <link rel="openid.server" href="..."> and Yadis
+# <meta http-equiv="x-xrds-location" content="..."> links if required but in
+# this implementation it set to return 404 not found - see
+# ndg.security.server.wsgi.openid.provider.renderinginterface.genshi.GenshiRendering
 # class
 openid.provider.path.id=/OpenID/Provider/id/${userIdentifier}
 openid.provider.path.yadis=%(openIDProviderIDBase)s/${userIdentifier}
 
 # Yadis based discovery for idselect mode - this is where the user has entered
 # a URI at the Relying Party which identifies their Provider only and not their
-# full ID URI.  e.g. https://badc.nerc.ac.uk instead of 
+# full ID URI.  e.g. https://badc.nerc.ac.uk instead of
 # https://badc.nerc.ac.uk/John
 openid.provider.path.serveryadis=%(openIDProviderIDBase)s
 openid.provider.path.allow=/OpenID/Provider/allow
@@ -131,8 +131,8 @@ openid.provider.rendering.rightAlt = Centre for Environmental Data Archival
 #openid.provider.authNInterface=ndg.security.server.wsgi.openid.provider.authninterface.basic.BasicAuthNInterface
 openid.provider.authNInterface=ndg.security.server.wsgi.openid.provider.authninterface.sqlalchemy_authn.SQLAlchemyAuthnInterface
 openid.provider.authN.connectionString=%(dbConnectionString)s
-openid.provider.authN.logonSqlQuery=select count(*) from users where username = '${username}' and md5password = '${password}'
-openid.provider.authN.username2UserIdentifierSqlQuery=select openid_identifier from users where username = '${username}'
+openid.provider.authN.logonSqlQuery=select count(*) from users where username = :username and md5password = :password
+openid.provider.authN.username2UserIdentifierSqlQuery=select openid_identifier from users where username = :username
 openid.provider.authN.isMD5EncodedPwd=True
 
 # user login details format is:
@@ -144,7 +144,7 @@ openid.provider.authN.isMD5EncodedPwd=True
 # alias at a time may be registered with a given Attribute Authority
 openid.provider.authN.userCreds=pjk:testpassword:PhilipKershaw,P.J.Kershaw another:testpassword:A.N.Other
 
-# Basic authentication for testing/admin - comma delimited list of 
+# Basic authentication for testing/admin - comma delimited list of
 # <username>:<password> pairs
 #openid.provider.usercreds=pjk:test
 
@@ -153,11 +153,11 @@ openid.provider.authN.userCreds=pjk:testpassword:PhilipKershaw,P.J.Kershaw anoth
 #openid.provider.axResponse.csvFilePath=%(here)s/attributeexchange.csv
 openid.provider.axResponse.class=ndg.security.server.wsgi.openid.provider.axinterface.sqlalchemy_ax.SQLAlchemyAXInterface
 openid.provider.axResponse.connectionString=%(dbConnectionString)s
-openid.provider.axResponse.sqlQuery = select firstname, lastname, emailaddress from users where username = '${username}'
+openid.provider.axResponse.sqlQuery = select firstname, lastname, emailaddress from users where username = :username
 openid.provider.axResponse.attributeNames=http://openid.net/schema/namePerson/first
     http://openid.net/schema/namePerson/last
     http://openid.net/schema/contact/internet/email
-    
+
 openid.provider.trustedRelyingParties=https://localhost:7443, https://ndg.somewhere.ac.uk,
 	https://badc.somewhere.ac.uk
 
@@ -190,7 +190,7 @@ formatter = console
 class = handlers.RotatingFileHandler
 level=NOTSET
 formatter=generic
-args=(os.path.join('%%{outputDir}', 'log', 'service.log'), 'a', 100000, 10)
+args=(os.path.join('%%{outputDir}', 'service.log'), 'a', 100000, 10)
 
 [formatter_generic]
 format = %(asctime)s.%(msecs)03d %(levelname)-7.7s [%(name)s:%(lineno)s] %(message)s

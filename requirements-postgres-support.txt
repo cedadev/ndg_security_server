@@ -1,4 +1,4 @@
-AuthKit==0.4.6-ceda
+AuthKit==0.5.0-ceda
 Beaker
 Genshi==0.6
 M2Crypto
@@ -8,4 +8,6 @@ PasteScript
 SQLAlchemy
 WebOb
 python-openid
+crypto-cookie
 psycopg2
+ndg_security_server

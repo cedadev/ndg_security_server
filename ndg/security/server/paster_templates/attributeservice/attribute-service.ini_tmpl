@@ -1,14 +1,14 @@
 #
 # Description: Paster ini file for SAML Attribute Service
-# 
+#
 # NERC Data Grid Project
-# 
+#
 # Author: P J Kershaw
 #
 # Date: 12/09/08
-# 
+#
 # Copyright (C) 2010 Science and Technology Facilities Council
-# 
+#
 # BSD - See LICENCE file for details
 
 [DEFAULT]
@@ -22,6 +22,7 @@ dbConnectionString = sqlite:///%(here)s/user.db
 use = egg:Paste#http
 host = 0.0.0.0
 port = %%{portNumber}
+ssl_pem = %(here)s/pki/localhost.pem
 
 [app:AttributeAuthorityStaticContent]
 use = egg:Paste#static
@@ -47,12 +48,12 @@ attributeAuthority.environKeyNameAttributeQueryInterface: %(attributeQueryInterf
 # Attribute Authority settings...
 
 # Lifetime is measured in seconds
-attributeAuthority.assertionLifetime: 28800 
+attributeAuthority.assertionLifetime: 28800
 
 # Attribute Interface - determines how a given attribute query interfaces with a
 # backend database or other persistent store.  The one here is an SQLAlchemy
-# based one.  The database connection string is the global setting - see the 
-# DEFAULT section. 
+# based one.  The database connection string is the global setting - see the
+# DEFAULT section.
 attributeAuthority.attributeInterface.className: ndg.security.server.attributeauthority.SQLAlchemyAttributeInterface
 attributeAuthority.attributeInterface.connectionString: %(dbConnectionString)s
 
@@ -60,15 +61,15 @@ attributeAuthority.attributeInterface.connectionString: %(dbConnectionString)s
 # authority.  The userId variable is substituted in by the code taken from the
 # SubjectID of the SAML query made to this service
 # COMMENTED OUT - See note next item . . .
-#attributeAuthority.attributeInterface.samlSubjectSqlQuery = select count(*) from users where openid = '${userId}'
+#attributeAuthority.attributeInterface.samlSubjectSqlQuery = select count(*) from users where openid = :userId
 
 # This is a convenient cheat for testing.  It enables a query with _ANY_ subject
-# ID to get a response by pretending to be the user, 
+# ID to get a response by pretending to be the user,
 # 'https://localhost:7443/openid/philip.kershaw' which is entered in the test
 # user.db.
 attributeAuthority.attributeInterface.samlSubjectSqlQuery = select count(*) from users where openid = 'https://localhost:7443/openid/philip.kershaw'
 
-# Map the given SAML attributes identifiers to the equivalent SQL query to 
+# Map the given SAML attributes identifiers to the equivalent SQL query to
 # retrieve them.  Any number can be set.  They should have the form,
 #
 # attributeAuthority.attributeInterface.samlAttribute2SqlQuery.<id>
@@ -76,42 +77,42 @@ attributeAuthority.attributeInterface.samlSubjectSqlQuery = select count(*) from
 # where <id> can be any unique string.  The userId string is the value passed
 # from the client subject NameID field.  Each value consists of double quoted
 # space delimited entries.  The first entry is the attribute type, the second
-# is the SQL query needed to retrieve the attributes for the given type and 
+# is the SQL query needed to retrieve the attributes for the given type and
 # used id.  A third entry may be added to specify a conversion routine which
 # converts the retrieved attribute value(s) into a SAML Attribute Value instance.
-# If this omitted, then the retrieved value is converted by default into an 
+# If this omitted, then the retrieved value is converted by default into an
 # xs:string type.  All the options below are set to do this apart from the last
 # which uses a special test routine to convert to the ESGF Group/Role Attribute
 # Value type
 # COMMENTED OUT - See note next item . . .
-#attributeAuthority.attributeInterface.samlAttribute2SqlQuery.1 = "urn:esg:first:name" "select firstname from users where openid = '${userId}'"
-#attributeAuthority.attributeInterface.samlAttribute2SqlQuery.lastName = "urn:esg:last:name" "select lastname from users where openid = '${userId}'"
-#attributeAuthority.attributeInterface.samlAttribute2SqlQuery.emailAddress = "urn:esg:email:address" "select emailaddress from users where openid = '${userId}'"
-#attributeAuthority.attributeInterface.samlAttribute2SqlQuery.4 = "urn:siteA:security:authz:1.0:attr" "select attributename from attributes where attributetype = 'urn:siteA:security:authz:1.0:attr' and openid = '${userId}'"
-#attributeAuthority.attributeInterface.samlAttribute2SqlQuery.esgGroupRole = 
-#	"urn:esg:sitea:grouprole" "select attributename from attributes where attributetype = 'urn:esg:sitea:grouprole' and openid = '${userId}'" "ndg.security.test.unit.dbAttr2ESGFGroupRole"
+attributeAuthority.attributeInterface.samlAttribute2SqlQuery.1 = "urn:esg:first:name" "select firstname from users where openid = :userId"
+attributeAuthority.attributeInterface.samlAttribute2SqlQuery.lastName = "urn:esg:last:name" "select lastname from users where openid = :userId"
+attributeAuthority.attributeInterface.samlAttribute2SqlQuery.emailAddress = "urn:esg:email:address" "select emailaddress from users where openid = :userId"
+attributeAuthority.attributeInterface.samlAttribute2SqlQuery.4 = "urn:siteA:security:authz:1.0:attr" "select attributename from attributes where attributetype = 'urn:siteA:security:authz:1.0:attr' and openid = :userId"
+attributeAuthority.attributeInterface.samlAttribute2SqlQuery.esgGroupRole =
+	"urn:esg:sitea:grouprole" "select attributename from attributes where attributetype = 'urn:esg:sitea:grouprole' and openid = :userId" "ndg.security.server.test.test_util.dbAttr2ESGFGroupRole"
 
 # This is a convenient cheat for testing.  It enables a query with _ANY_ subject
-# ID to get a response by pretending to be the user, 
+# ID to get a response by pretending to be the user,
 # 'https://localhost:7443/openid/philip.kershaw' which is entered in the test
 # user.db.
-attributeAuthority.attributeInterface.samlAttribute2SqlQuery.1 = "urn:esg:first:name" "select firstname from users where openid = 'https://localhost:7443/openid/philip.kershaw'"
-attributeAuthority.attributeInterface.samlAttribute2SqlQuery.lastName = "urn:esg:last:name" "select lastname from users where openid = 'https://localhost:7443/openid/philip.kershaw'"
-attributeAuthority.attributeInterface.samlAttribute2SqlQuery.emailAddress = "urn:esg:email:address" "select emailaddress from users where openid = 'https://localhost:7443/openid/philip.kershaw'"
-attributeAuthority.attributeInterface.samlAttribute2SqlQuery.4 = "urn:siteA:security:authz:1.0:attr" "select attributename from attributes where attributetype = 'urn:siteA:security:authz:1.0:attr' and openid = 'https://localhost:7443/openid/philip.kershaw'"
-attributeAuthority.attributeInterface.samlAttribute2SqlQuery.esgGroupRole = 
-    "urn:esg:sitea:grouprole" "select attributename from attributes where attributetype = 'urn:esg:sitea:grouprole' and openid = 'https://localhost:7443/openid/philip.kershaw'" "ndg.security.test.unit.dbAttr2ESGFGroupRole"
+#attributeAuthority.attributeInterface.samlAttribute2SqlQuery.1 = "urn:esg:first:name" "select firstname from users where openid = 'https://localhost:7443/openid/philip.kershaw'"
+#attributeAuthority.attributeInterface.samlAttribute2SqlQuery.lastName = "urn:esg:last:name" "select lastname from users where openid = 'https://localhost:7443/openid/philip.kershaw'"
+#attributeAuthority.attributeInterface.samlAttribute2SqlQuery.emailAddress = "urn:esg:email:address" "select emailaddress from users where openid = 'https://localhost:7443/openid/philip.kershaw'"
+#attributeAuthority.attributeInterface.samlAttribute2SqlQuery.4 = "urn:siteA:security:authz:1.0:attr" "select attributename from attributes where attributetype = 'urn:siteA:security:authz:1.0:attr' and openid = 'https://localhost:7443/openid/philip.kershaw'"
+#attributeAuthority.attributeInterface.samlAttribute2SqlQuery.esgGroupRole =
+#    "urn:esg:sitea:grouprole" "select attributename from attributes where attributetype = 'urn:esg:sitea:grouprole' and openid = 'https://localhost:7443/openid/philip.kershaw'" "ndg.security.server.test.test_util.dbAttr2ESGFGroupRole"
 
-# Set the permissible requester Distinguished Names as set in the SAML client 
+# Set the permissible requester Distinguished Names as set in the SAML client
 # query issuer field.  Comment out or remove if this is not required.  Nb.
 # filtering of clients can be more securely applied by white-listing at the SSL
 # level.
 attributeAuthority.attributeInterface.samlValidRequestorDNs = /O=Site A/CN=Authorisation Service,/O=Site A/CN=Attribute Authority,
-                           				   /O=Site B/CN=Authorisation Service, 
+                           				   /O=Site B/CN=Authorisation Service,
                            				   /CN=test/O=NDG/OU=BADC,
                            				   /O=NDG/OU=Security/CN=localhost
 
-# Alternative test AttributeInterface class.  This uses fixed parameter values 
+# Alternative test AttributeInterface class.  This uses fixed parameter values
 # instead of a database
 #attributeAuthority.attributeInterface.modFilePath: %(here)s
 #attributeAuthority.attributeInterface.className: sitea_attributeinterface.TestUserRoles
@@ -155,7 +156,7 @@ handlers = console, logfile
 
 [logger_ndg]
 level = DEBUG
-handlers = 
+handlers =
 qualname = ndg
 
 [handler_console]
@@ -172,4 +173,4 @@ datefmt = %Y/%m/%d %H:%M:%S
 class = handlers.RotatingFileHandler
 level=NOTSET
 formatter=generic
-args=(os.path.join('%%{outputDir}', 'log', 'service.log'), 'a', 10000, 2)
+args=(os.path.join('%%{outputDir}', 'service.log'), 'a', 10000, 2)

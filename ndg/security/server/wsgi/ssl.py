@@ -289,7 +289,7 @@ class AuthKitSSLAuthnMiddleware(ApacheSSLAuthnMiddleware):
                       "passing request to next middleware in the chain ...")
             
         else:
-            client_cert = self.__class__._parse_cert()
+            client_cert = self._parse_cert()
             if self.is_valid_client_cert(client_cert):
                 # Update session cookie with user ID
                 self._setUser(client_cert)

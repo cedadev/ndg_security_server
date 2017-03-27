@@ -21,8 +21,15 @@ import re
  
 # For SSL-based validation classes  
 import urllib2
-from M2Crypto import SSL
-from M2Crypto.m2urllib2 import build_opener
+try:
+    from M2Crypto import SSL
+    from M2Crypto.m2urllib2 import build_opener
+    _M2CRYPTO_NOT_INSTALLED = False
+except ImportError:
+    import warnings
+    warnings.warn(
+        "M2Crypto is not installed - IdP SSL-based validation is disabled")
+    _M2CRYPTO_NOT_INSTALLED = True
 
 try:
     from xml.etree import ElementTree
@@ -391,34 +398,35 @@ class SSLClientAuthNValidator(SSLIdPValidator):
             
             log.debug("iterating over cert. chain dn = %s", dn)
             
-            # Check for subject alternative names - this takes precedence over subject 
-            # common name check
+            # Check for subject alternative names - this takes precedence over  
+            # subject common name check
             cert_hostnames = m2_get_cert_ext_values(cert, 'subjectAltName', 
-                                                    field_prefix="DNS:", field_sep=",")
+                                                    field_prefix="DNS:", 
+                                                    field_sep=",")
             if cert_hostnames is not None:
-                log.debug("Found subject alt name hosts = %r for dn %r", cert_hostnames, dn)
+                log.debug("Found subject alt name hosts = %r for dn %r", 
+                          cert_hostnames, dn)
             else:       
                 # Check for subject common name if no subject alt name was found
                 cert_hostnames = m2_get_dn_field(dn, 'CN')
-                log.debug("No subject alt name found, using subject common name = %r"
-                          " for dn %r", cert_hostnames, dn)
+                log.debug("No subject alt name found, using subject common "
+                          "name = %r for dn %r", cert_hostnames, dn)
             
             if cert_hostnames is None:
-                log.warning("No hostname found in certificate subject alt name field or "
-                            "DN common name for subject %r", dn)
+                log.warning("No hostname found in certificate subject alt "
+                            "name field or DN common name for subject %r", dn)
             else:
                 for hostname in cert_hostnames:
                     if hostname in self.validIdPNames:
                         # Match found - return
-                        log.debug("Found peer certificate with CN matching list of "
-                                  "valid OpenID Provider peer certificates %r" %
-                                  self.validIdPNames)
+                        log.debug("Found peer certificate with CN matching "
+                                  "list of valid OpenID Provider peer "
+                                  "certificates %r", self.validIdPNames)
                         return
             
             dnList.append(dn)
             
-        log.debug("Certificate chain yield certificates with DNs = %s"
-                  % dnList)
+        log.debug("Certificate chain yield certificates with DNs = %s", dnList)
         
         # No matching peer certificate was found
         raise IdPInvalidException("Peer certificate is not in list of valid "
@@ -649,6 +657,10 @@ class SSLIdPValidationDriver(IdPValidationDriver):
     IDP_VALIDATOR_BASE_CLASS = SSLIdPValidator
     
     def __init__(self, idpConfigFilePath=None, installOpener=False):
+        if _M2CRYPTO_NOT_INSTALLED:
+            raise ImportError("M2Crypto is required for SSL-based IdP "
+                              "validation but it is not installed.")
+
         super(SSLIdPValidationDriver, self).__init__()
         
         # Context object determines what validation is applied against the

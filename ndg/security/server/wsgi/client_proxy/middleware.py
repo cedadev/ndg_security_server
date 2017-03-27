@@ -26,8 +26,14 @@ from webob.dec import wsgify
 from webob import Request, Response
 from OpenSSL import SSL, crypto
 
-from myproxy.client import MyProxyClient, MyProxyClientError
-from ndg.security.common.utils import pyopenssl, FakeUrllib2HTTPRequest
+try:
+    from myproxy.client import MyProxyClient, MyProxyClientError
+    myproxy_client_installed = True
+except ImportError:
+    myproxy_client_installed = False
+    
+from ndg.httpsclient.https import HTTPSConnection
+from ndg.security.common.utils import FakeUrllib2HTTPRequest
 from ndg.security.server.wsgi.utils import FileObjResponseIterator    
 
 
@@ -504,7 +510,7 @@ class NDGSecurityProxy(Proxy):
         if self.scheme == 'http':
             conn = httplib.HTTPConnection(self.host)
         elif self.scheme == 'https':
-            conn = pyopenssl.HTTPSConnection(self.host, ssl_context=sslCtx)
+            conn = HTTPSConnection(self.host, ssl_context=sslCtx)
         else:
             raise ValueError(
                 "Unknown scheme for %r: %r" % (self.address, self.scheme))
@@ -608,8 +614,7 @@ class NDGSecurityProxy(Proxy):
         authn_redirect_ip_hdrs = authn_redirect_req.get_headers()
         
         # Redirect to HTTPS authentication endpoint uses GET method
-        authn_conn = pyopenssl.HTTPSConnection(host, port=port, 
-                                               ssl_context=sslCtx)
+        authn_conn = HTTPSConnection(host, port=port, ssl_context=sslCtx)
         
         authn_conn.request('GET', authn_redirect_path, None, 
                            authn_redirect_ip_hdrs)
@@ -662,8 +667,6 @@ class NDGSecurityProxy(Proxy):
             return_conn.close()
             
             return return_uri_res
-        else:
-            return res
     
     @staticmethod
     def _make_uri_path(parsedUri):

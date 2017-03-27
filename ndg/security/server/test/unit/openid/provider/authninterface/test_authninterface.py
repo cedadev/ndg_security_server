@@ -2,23 +2,21 @@
 
 NERC DataGrid Project
 """
+from ndg.security.server.test.test_util import TestUserDatabase
 __author__ = "P J Kershaw"
 __date__ = "12/11/09"
 __copyright__ = "(C) 2009 Science and Technology Facilities Council"
 __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = '$Id$'
-from os import path
 import unittest
       
-from ndg.security.test.unit.base import BaseTestCase
-from ndg.security.server.wsgi.openid.provider.authninterface import (
-                                                    AuthNInterfaceConfigError)
+from ndg.security.server.test.test_util import TestUserDatabase
 from ndg.security.server.wsgi.openid.provider.authninterface.sqlalchemy_authn \
     import SQLAlchemyAuthnInterface
 
 
-class SQLAlchemyAuthnInterfaceTestCase(BaseTestCase):
+class SQLAlchemyAuthnInterfaceTestCase(TestUserDatabase):
     LOGON_SQLQUERY = ("select count(*) from users where username = "
                       "'${username}' and md5password = '${password}'")
     
@@ -29,7 +27,7 @@ class SQLAlchemyAuthnInterfaceTestCase(BaseTestCase):
         super(SQLAlchemyAuthnInterfaceTestCase, self).__init__(*arg, **kw)
         self.__interface = None
         
-        self.init_db()
+        self.__class__.init_db()
          
     def setUp(self):
         self.__interface = SQLAlchemyAuthnInterface(

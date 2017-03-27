@@ -1,0 +1,13 @@
+AuthKit==0.5.0-ceda
+Beaker
+Genshi==0.6
+M2Crypto
+Paste
+PasteDeploy
+PasteScript
+SQLAlchemy
+WebOb
+python-openid
+psycopg2
+crypto-cookie
+ndg_security_server

@@ -18,6 +18,6 @@
 # $Id: pip-mapping.txt 7822 2011-01-17 16:26:46Z pjkersha $
 
 # Entries are whitespace delimited <attribute id> <attribute authority>
-urn:siteA:security:authz:1.0:attr https://localhost:7443/AttributeAuthority
-myattributeid https://myattributeauthority.ac.uk/
-http://someotherattributeid.schema https://another.ac.uk/attributeservice/
+urn:siteA:security:authz:1.0:attr, https://localhost:7443/AttributeAuthority
+myattributeid, https://myattributeauthority.ac.uk/
+http://someotherattributeid.schema, https://another.ac.uk/attributeservice/
