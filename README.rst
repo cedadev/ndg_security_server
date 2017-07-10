@@ -24,6 +24,8 @@ protected in a flexible manner without the need to modify application code.
 
 Releases
 --------
+ * 2.7.3:
+  * Fix to OpenID Provider - bug in login submit for non-identity select mode
  * 2.7.2:
   * update CEDA logo
  * 2.7.1:
