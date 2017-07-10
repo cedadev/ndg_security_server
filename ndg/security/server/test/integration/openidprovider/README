@@ -10,8 +10,10 @@ In a second terminal, run:
 
 $ ./openidrelyingpartyapp.py
 
-Launch a browser and enter the address http://localhost:7080.  Follow the 
+Launch a browser and enter the address http://localhost:7080.  Follow the
 instructions to test it out.  When redirected to the OpenID Provider login page
-enter pjk/testpassword as the username/password combination.
+enter pjk/testpassword as the username/password combination.  OpenID can be
+left as the default or else fully-qualified as
+https://localhost:7443/philip.kershaw
 
 P J Kershaw 06/01/10

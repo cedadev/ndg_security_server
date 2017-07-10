@@ -928,9 +928,6 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                           success_to=self.urls['url_decide'])
                 return response
 
-            response = self._render.login(environ, start_response,
-                                  msg=msg,
-                                  success_to=self.urls['url_decide'])
         # Invoke custom authentication interface plugin
         try:
             self._authN.logon(environ,
