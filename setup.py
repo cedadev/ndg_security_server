@@ -97,7 +97,6 @@ setup(
     # Set ndg.security.common dependency
     dependency_links = ["http://dist.ceda.ac.uk/pip/"],
     packages = find_packages(),
-    namespace_packages = ['ndg', 'ndg.security'],
     package_data={
         'ndg.security.server.paster_templates': [
             'attributeservice/*.py',
