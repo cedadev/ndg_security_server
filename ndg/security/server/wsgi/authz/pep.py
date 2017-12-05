@@ -410,7 +410,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         """
         # Apply a list of regular expressions to filter out files which can be 
         # ignored
-        if self.ignore_file_list_pat is not None:
+        if self.ignore_file_list_pat:
             for pat in self.ignore_file_list_pat:
                 if re.match(pat, resourceURI):
                     return False
