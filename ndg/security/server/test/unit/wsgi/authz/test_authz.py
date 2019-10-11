@@ -14,10 +14,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 import unittest
 import os
-from urlparse import urlunsplit
+from urllib.parse import urlunsplit
 
 from os import path
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 from uuid import uuid4
 from datetime import datetime, timedelta
@@ -26,21 +26,15 @@ import paste.fixture
 from paste.deploy import loadapp
 
 from ndg.saml.saml2.core import (SAMLVersion, Subject, NameID, Issuer, 
-                                 AuthzDecisionQuery, AuthzDecisionStatement, 
-                                 Status, StatusCode, StatusMessage, 
-                                 DecisionType, Action, Conditions, Assertion)
-from ndg.saml.xml.etree import (AuthzDecisionQueryElementTree, 
-                                ResponseElementTree)
+                                 AuthzDecisionStatement, Status, StatusCode, 
+                                 StatusMessage, DecisionType, Action, 
+                                 Conditions, Assertion)
 
 from ndg.security.server.test.base import BaseTestCase
 from ndg.security.server.test.test_util import TestUserDatabase
-from ndg.security.server.test.service_testrunner import (
-                                                AttributeAuthorityTestRunner,
-                                                AuthorisationServiceTestRunner)
 from ndg.security.server.wsgi import NDGSecurityMiddlewareBase
 from ndg.security.server.wsgi.authz.result_handler.basic import \
     PEPResultHandlerMiddleware
-from ndg.security.server.wsgi.authz.pep import SamlPepFilterConfigError
 
 
 class TestAuthorisationServiceMiddleware(object):
@@ -151,7 +145,7 @@ class RedirectFollowingAccessDenied(PEPResultHandlerMiddleware):
 
 class TestAuthZMiddleware(object):
     '''Test Application for the Authentication handler to protect'''
-    RESPONSE = "Test Authorization application"
+    RESPONSE = b"Test Authorization application"
        
     def __init__(self, app_conf, **local_conf):
         pass
@@ -180,8 +174,8 @@ class TestAuthZMiddleware(object):
             
         elif environ['PATH_INFO'].startswith('/layout'):
             status = "200 OK"
-            response += ("\n\nAny calls to this path or sub-path should be "
-                         "publicly accessible")
+            response += (b"\n\nAny calls to this path or sub-path should be "
+                         b"publicly accessible")
         else:
             status = "404 Not found"
                 
@@ -190,7 +184,9 @@ class TestAuthZMiddleware(object):
                          str(len(response))),
                         ('Content-type', 'text/plain')])
         
-        return [TestAuthZMiddleware.RESPONSE + ' returned: ' + status]
+        return [
+            TestAuthZMiddleware.RESPONSE + b' returned: ' + \
+            status.encode('utf-8')]
 
 
 class BeakerSessionStub(dict):
@@ -222,269 +218,7 @@ class BaseAuthzFilterTestCase(BaseTestCase):
         wsgiapp = loadapp('config:'+self.__class__.INI_FILEPATH)
         
         self.app = paste.fixture.TestApp(wsgiapp)
-                        
-          
-class SamlPepFilterTestCase(BaseAuthzFilterTestCase):
-    """Test SAML based Policy Enforcement Filter.  This has a SAML authorisation
-    decision query interface to call to a remote authorisation service"""
 
-    def test01CatchNoBeakerSessionFound(self):
-        
-        # PEPFilterConfigError is raised if no beaker.session is set in 
-        # environ
-        self.assertRaises(SamlPepFilterConfigError, self.app.get, 
-                          '/test_200')
-       
-    def test02Ensure200WithNotLoggedInAndUnsecuredURI(self):
-        
-        # Check the authZ middleware leaves the response alone if the URI 
-        # is not matched in the policy
-        aa_srvc = AttributeAuthorityTestRunner()
-        authz_srvc = AuthorisationServiceTestRunner()
-        
-        aa_srvc.start_service()        
-        authz_srvc.start_service()  
-        
-        try:  
-            # Simulate a beaker.session in the environ
-            extra_environ={self.__class__.SESSION_KEYNAME:BeakerSessionStub()}
-            response = self.app.get('/test_200',
-                                    extra_environ=extra_environ)
-        finally:
-            aa_srvc.stop_service()
-            authz_srvc.stop_service()
-            
-        print(response)
-
-    def test03Catch401WithLoggedIn(self):
-        
-        # Check that the application being secured can raise a HTTP 401
-        # response and that this respected by the Authorization middleware
-        # even though a user is set in the session
-        aa_srvc = AttributeAuthorityTestRunner()
-        authz_srvc = AuthorisationServiceTestRunner()
-        
-        aa_srvc.start_service()        
-        authz_srvc.start_service()  
-        
-        try:    
-            extra_environ = {
-                self.__class__.SESSION_KEYNAME:
-                    BeakerSessionStub(username=self.__class__.OPENID_URI),
-                'REMOTE_USER': self.__class__.OPENID_URI
-            }
-            response = self.app.get('/test_401', 
-                                    extra_environ=extra_environ,
-                                    status=401)
-            print(response)
-        finally:
-            aa_srvc.stop_service()
-            authz_srvc.stop_service()
-
-    def test04Catch403WithLoggedIn(self):
-        # Check that the application being secured can raise a HTTP 403
-        # response and that this respected by the Authorization middleware
-        # even though a user is set in the session
-        
-        extra_environ = {
-            self.__class__.SESSION_KEYNAME:
-                BeakerSessionStub(username=SamlPepFilterTestCase.OPENID_URI),
-            'REMOTE_USER': self.__class__.OPENID_URI
-        }
-        response = self.app.get('/test_403', 
-                                extra_environ=extra_environ,
-                                status=403)
-        print response
-
-    def test05Catch401WithNotLoggedInAndSecuredURI(self):
-        # User is not logged in and a secured resource has been requested so 401
-        # response is returned
-
-        aa_srvc = AttributeAuthorityTestRunner()
-        authz_srvc = AuthorisationServiceTestRunner()
-        
-        aa_srvc.start_service()        
-        authz_srvc.start_service()  
-        
-        try:
-            # AuthZ middleware checks for username key in session set by AuthN
-            # handler
-            extra_environ = {self.__class__.SESSION_KEYNAME:BeakerSessionStub()}
-            response = self.app.get('/test_accessDeniedToSecuredURI',
-                                    extra_environ=extra_environ,
-                                    status=401)
-            print(response)
-        finally:
-            aa_srvc.stop_service()
-            authz_srvc.stop_service()
-        
-    def test06AccessDeniedForSecuredURI(self):
-        # User is logged in but doesn't have the required credentials for 
-        # access
-        extra_environ = {
-            self.__class__.SESSION_KEYNAME:
-                BeakerSessionStub(username=SamlPepFilterTestCase.OPENID_URI),
-            'REMOTE_USER': self.__class__.OPENID_URI
-        }
-        
-        response = self.app.get('/test_accessDeniedToSecuredURI',
-                                extra_environ=extra_environ,
-                                status=403)
-        print response
-
-    def test07AccessGrantedForSecuredURI(self):      
-        # User is logged in and has credentials for access to a URI secured
-        # by the policy file
-        aa_srvc = AttributeAuthorityTestRunner()
-        authz_srvc = AuthorisationServiceTestRunner()
-        
-        aa_srvc.start_service()        
-        authz_srvc.start_service()  
-        
-        try:
-            extra_environ = {
-                self.__class__.SESSION_KEYNAME:
-                    BeakerSessionStub(username=SamlPepFilterTestCase.OPENID_URI),
-                'REMOTE_USER': self.__class__.OPENID_URI
-            }
-            
-            response = self.app.get('/test_accessGrantedToSecuredURI',
-                                    extra_environ=extra_environ,
-                                    status=200)
-            self.assert_(TestAuthZMiddleware.RESPONSE in response)
-            print response
-        finally:
-            aa_srvc.stop_service()
-            authz_srvc.stop_service()
-        
-    def test08LocalPolicyFiltersOutRequest(self):
-        # The local PDP filters out the incoming request as not applicable so
-        # that the authorisation service is never invoked.
-        aa_srvc = AttributeAuthorityTestRunner()
-        authz_srvc = AuthorisationServiceTestRunner()
-        
-        aa_srvc.start_service()        
-        authz_srvc.start_service()  
-        
-        try:
-            extra_environ = {self.__class__.SESSION_KEYNAME:BeakerSessionStub()}
-            response = self.app.get('/layout/my.css', 
-                                    extra_environ=extra_environ,
-                                    status=200)
-            self.assert_(response.body)
-        finally:
-            aa_srvc.stop_service()
-            authz_srvc.stop_service()
-            
-    def test09ESGFGroupRoleAttributeValueProtectedResource(self):
-        # Test a rule in the policy which makes use of ESGF Group/Role
-        # Attribute Values
-        extra_environ = {
-            self.__class__.SESSION_KEYNAME:
-                BeakerSessionStub(username=SamlPepFilterTestCase.OPENID_URI),
-            'REMOTE_USER': self.__class__.OPENID_URI
-        }
-        aa_srvc = AttributeAuthorityTestRunner()
-        authz_srvc = AuthorisationServiceTestRunner()
-        
-        aa_srvc.start_service()        
-        authz_srvc.start_service()  
-        
-        try:  
-            response = self.app.get('/esgf-attribute-value-restricted',
-                                    extra_environ=extra_environ,
-                                    status=200)
-            self.assert_(TestAuthZMiddleware.RESPONSE in response)
-            print response        
-        finally:
-            aa_srvc.stop_service()
-            authz_srvc.stop_service()
-                
-
-class PEPResultHandlerTestCase(BaseAuthzFilterTestCase):
-    """Test Authorisation Filter - this contains the PEP filter and a result
-    handler which enables customisation of behaviour on 403 Forbidden responses
-    """
-    INI_FILE = 'pep-result-handler-test.ini'
-    AUTHZ_FILTER_SECTION = 'filter:AuthZFilter'
-    AUTHZ_RESULT_HANDLER_REDIRECT_URI_OPTNAME = \
-        'authz.resultHandler.redirectURI'
-    
-    def __init__(self, *arg, **kw):
-        BaseAuthzFilterTestCase.__init__(self, *arg, **kw)
-        
-        cfgParser = SafeConfigParser()
-        cfgParser.read(self.__class__.INI_FILEPATH)
-        
-        self.redirectURI = cfgParser.get(self.__class__.AUTHZ_FILTER_SECTION,
-                    self.__class__.AUTHZ_RESULT_HANDLER_REDIRECT_URI_OPTNAME)
-        
-    def test01RedirectPEPResultHandlerMiddleware(self):
-        # User is logged in but doesn't have the required credentials for 
-        extra_environ = {
-            self.__class__.SESSION_KEYNAME:
-                        BeakerSessionStub(username=self.__class__.OPENID_URI),
-            'REMOTE_USER': self.__class__.OPENID_URI
-        }
-        
-        # Expecting result handler to be invoked overriding the 403 response
-        response = self.app.get('/test_accessDeniedToSecuredURI',
-                                extra_environ=extra_environ,
-                                status=302)
-        print("Result handler has intercepted the 403 Forbidden response "
-              "from the PEP and set this redirect response instead: %s" %
-              response)
-        self.assert_(response.header_dict.get('location') == self.redirectURI)
-
-    @unittest.skip("Test fails with 200 response instead of 302 - suspect "
-                   " custom middleware class is not configured correctly.  "
-                   "This test is not critical to the core system and so can "
-                   "skipped.")
-    def test02RedirectFollowingAccessDeniedForAdminQueryArg(self):
-        
-        # User is logged in but doesn't have the required credentials for 
-        # access
-        extra_environ = {
-            self.__class__.SESSION_KEYNAME:
-                BeakerSessionStub(username=SamlPepFilterTestCase.OPENID_URI),
-            'REMOTE_USER': self.__class__.OPENID_URI
-        }
-        
-        self.app 
-        
-        aa_srvc = AttributeAuthorityTestRunner()
-        authz_srvc = AuthorisationServiceTestRunner()
-        
-        aa_srvc.start_service()        
-        authz_srvc.start_service()         
-            
-        # Try this URI with the query arg admin=1.  This will be picked up
-        # by the policy as a request requiring admin rights.  The request is
-        # denied as the user doesn't have these rights but this then calls
-        # into play the PEP result handler defined in this module,
-        # RedirectFollowingAccessDenied.  This class reinvokes the request
-        # but without the admin query argument (see the ini file for what this
-        # location is.  Access is then granted because the user has access
-        # rights for the new location.
-        try:  
-            response = self.app.get('/test_accessGrantedToSecuredURI',
-                                    params={'admin': 1},
-                                    extra_environ=extra_environ,
-                                    status=302)
-    
-            print("Redirect Handler has interrupted the 403 Denied response "
-                  "and added this redirect response instead: %s" % response)
-            
-            # Follow the redirect - the policy should allow access to the new 
-            # location 
-            redirectResponse = response.follow(extra_environ=extra_environ,
-                                               status=200)
-            print("Following the redirect to location %r gives this response: "
-                  "%s" % (response.header_dict.get('location'), 
-                          redirectResponse))
-        finally:
-            aa_srvc.stop_service()
-            authz_srvc.stop_service()
         
         
 if __name__ == "__main__":

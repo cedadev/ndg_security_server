@@ -77,7 +77,7 @@ class ESGFGroupRoleAttributeValue(AttributeValue):
         """@param value: new group value to set
         @type value: basestring
         """
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "group" attribute; got '
                             '%r' % type(value))
             
@@ -95,7 +95,7 @@ class ESGFGroupRoleAttributeValue(AttributeValue):
         """@param value: new role value to set
         @type value: basestring
         """
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "role" attribute; got '
                             '%r' % type(value))
         

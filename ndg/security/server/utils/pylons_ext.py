@@ -11,7 +11,7 @@ __revision__ = '$Id$'
 import logging
 log = logging.getLogger(__name__)
 
-import httplib
+import http.client
 
 from pylons import request
 from pylons.controllers.util import abort, redirect
@@ -57,7 +57,7 @@ class AuthenticationDecorators(object):
             @rtype: list/iterator/string
             '''
             if cls.USER_ENVIRON_KEYNAME not in request.environ:
-                abort(httplib.UNAUTHORIZED)
+                abort(http.client.UNAUTHORIZED)
                 
             return action(obj)
     

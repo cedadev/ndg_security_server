@@ -13,10 +13,10 @@ log = logging.getLogger(__name__)
 
 import traceback
 import socket
-import httplib
-from cookielib import CookieJar
-import urllib
-from urlparse import urlparse, urljoin
+import http.client
+from http.cookiejar import CookieJar
+import urllib.request, urllib.parse, urllib.error
+from urllib.parse import urlparse, urljoin
 import os
 from datetime import datetime, timedelta
 
@@ -50,7 +50,7 @@ class SSLCtxSessionMiddleware(object):
     )
     
     __slots__ += tuple(['__' + i for i in PARAM_NAMES])
-    del i
+
     DEFAULT_ENVIRON_SESSION_KEYNAME = "ndg.security.session"
     DEFAULT_CTX_SESSION_KEYNAME = "ssl_ctx"
     DEFAULT_PARAM_PREFIX = 'ssl_ctx.'
@@ -116,7 +116,7 @@ class SSLCtxSessionMiddleware(object):
     
     @environSessionKeyName.setter
     def environSessionKeyName(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "environSessionKeyName" '
                             'attribute; got %r' % type(val))
     
@@ -126,7 +126,7 @@ class SSLCtxSessionMiddleware(object):
     
     @ctxSessionKeyName.setter
     def ctxSessionKeyName(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "ctxSessionKeyName" '
                             'attribute; got %r' % type(val))
         
@@ -138,7 +138,7 @@ class SSLCtxSessionMiddleware(object):
     
     @caCertFilePath.setter
     def caCertFilePath(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "caCertFilePath" '
                             'attribute; got %r' % type(val))
             
@@ -150,7 +150,7 @@ class SSLCtxSessionMiddleware(object):
     
     @caCertDir.setter
     def caCertDir(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "caCertDir" '
                             'attribute; got %r' % type(val))
             
@@ -220,7 +220,7 @@ class MyProxyProvisionedSessionMiddleware(SSLCtxSessionMiddleware):
         '__myProxyClientSSLKeyFilePassphrase'
     )
     PARAM_NAMES = tuple([i[2:] for i in __slots__])
-    del i
+
     DEFAULT_ENVIRON_SESSION_KEYNAME = "ndg.security.session"
     DEFAULT_PARAM_PREFIX = 'myproxy_provision_session.'
     MYPROXY_CLIENT_PARAM_PREFIX = 'myproxy_client.'
@@ -262,10 +262,10 @@ class MyProxyProvisionedSessionMiddleware(SSLCtxSessionMiddleware):
     def certExpiryOffset(self, val):
         '''Certificate expiry offset measured in seconds before current time
         '''
-        if isinstance(val, basestring):
+        if isinstance(val, str):
             self.__certExpiryOffset = timedelta(seconds=float(val))
             
-        elif isinstance(val, (float, int, long)):
+        elif isinstance(val, (float, int)):
             self.__certExpiryOffset = timedelta(seconds=val)
             
         elif isinstance(val, timedelta):
@@ -281,7 +281,7 @@ class MyProxyProvisionedSessionMiddleware(SSLCtxSessionMiddleware):
     
     @myProxyClientSSLCertFile.setter
     def myProxyClientSSLCertFile(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for '
                             '"myProxyClientSSLCertFile"; got %r' % type(val))
             
@@ -297,7 +297,7 @@ class MyProxyProvisionedSessionMiddleware(SSLCtxSessionMiddleware):
     
     @myProxyClientSSLKeyFile.setter
     def myProxyClientSSLKeyFile(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for '
                             'myProxyClientSSLKeyFile"; got %r' % type(val))
             
@@ -313,7 +313,7 @@ class MyProxyProvisionedSessionMiddleware(SSLCtxSessionMiddleware):
     
     @myProxyClientSSLKeyFilePassphrase.setter
     def myProxyClientSSLKeyFilePassphrase(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for '
                             'myProxyClientSSLKeyFilePassphrase"; got %r' %
                             type(val))
@@ -341,14 +341,14 @@ class MyProxyProvisionedSessionMiddleware(SSLCtxSessionMiddleware):
                                                                 **local_conf)
         
         # Sanity check
-        if not isinstance(prefix, basestring):
+        if not isinstance(prefix, str):
             prefix = ''
             
         # Get MyProxyClient initialisation parameters
         myProxyClientFullPrefix = prefix + myProxyClientPrefix
                             
         myProxyClientKw = dict([(k.replace(myProxyClientFullPrefix, ''), v) 
-                                 for k,v in app_conf.items() 
+                                 for k,v in list(app_conf.items()) 
                                  if k.startswith(myProxyClientFullPrefix)])
         
         self.myProxyClient = MyProxyClient(**myProxyClientKw)
@@ -409,10 +409,10 @@ class MyProxyProvisionedSessionMiddleware(SSLCtxSessionMiddleware):
                                      sslCertFile=self.myProxyClientSSLCertFile,
                                      sslKeyFile=self.myProxyClientSSLKeyFile)
                    
-        except MyProxyClientError, e:
+        except MyProxyClientError as e:
             raise httpexceptions.HTTPUnauthorized(str(e))
         
-        except socket.error, e:
+        except socket.error as e:
             raise MyProxyRetrievalSocketError("Socket error with MyProxy "
                                               "server %r: %s" % 
                                               (self.__myProxyClient.hostname,e))
@@ -508,7 +508,7 @@ class NDGSecurityProxy(Proxy):
             sslCtx = session[self.__ctxSessionKeyName]
 
         if self.scheme == 'http':
-            conn = httplib.HTTPConnection(self.host)
+            conn = http.client.HTTPConnection(self.host)
         elif self.scheme == 'https':
             conn = HTTPSConnection(self.host, ssl_context=sslCtx)
         else:
@@ -516,7 +516,7 @@ class NDGSecurityProxy(Proxy):
                 "Unknown scheme for %r: %r" % (self.address, self.scheme))
         
         headers = {}
-        for key, value in environ.items():
+        for key, value in list(environ.items()):
             if key.startswith('HTTP_'):
                 key = key[5:].lower().replace('_', '-')
                 if key == 'host' or key in self.suppress_http_headers:
@@ -534,7 +534,7 @@ class NDGSecurityProxy(Proxy):
             if environ['CONTENT_LENGTH'] != '-1':
                 headers['content-length'] = environ['CONTENT_LENGTH'] 
             
-        path_info = urllib.quote(environ['PATH_INFO'])
+        path_info = urllib.parse.quote(environ['PATH_INFO'])
         if self.path:            
             request_path = path_info
             if request_path and request_path[0] == '/':
@@ -577,7 +577,7 @@ class NDGSecurityProxy(Proxy):
         302 response with a location header requesting a HTTPS endpoint
         '''
         
-        if response.status != httplib.FOUND:
+        if response.status != http.client.FOUND:
             log.debug('_handleSecuredRedirect: No HTTP redirect found in '
                       'response - passing back to caller')
             return
@@ -586,7 +586,7 @@ class NDGSecurityProxy(Proxy):
         authn_redirect_uri = response.getheader('Location')
         if authn_redirect_uri is None:
             log.error('_handleSecuredRedirect: no redirect location set for %r '
-                      'response- returning', httplib.FOUND)
+                      'response- returning', http.client.FOUND)
             # Let client decide what to do with this response
             return 
         
@@ -594,7 +594,7 @@ class NDGSecurityProxy(Proxy):
         parsed_authn_redirect_uri = urlparse(authn_redirect_uri)
         if parsed_authn_redirect_uri.scheme != 'https':
             log.info('_handleSecuredRedirect: Non-HTTPS redirect location set '
-                     'for %r response - returning', httplib.FOUND)
+                     'for %r response - returning', http.client.FOUND)
             return
         
         # Prepare request authentication redirect location
@@ -626,12 +626,12 @@ class NDGSecurityProxy(Proxy):
         authn_response.info = lambda : authn_response.msg
         cookie_jar.extract_cookies(authn_response, authn_redirect_req)
         
-        if authn_response.status == httplib.FOUND:
+        if authn_response.status == http.client.FOUND:
             # Get redirect location
             return_uri = authn_response.getheader('Location')
             if return_uri is None:
                 log.error('_handleSecuredRedirect: no redirect location set '
-                          'for %r response from %r', httplib.FOUND, 
+                          'for %r response from %r', http.client.FOUND, 
                           authn_redirect_uri)
                 # Return the response and let the client decide what to do with
                 # it
@@ -659,7 +659,7 @@ class NDGSecurityProxy(Proxy):
             return_headers = return_req.get_headers()
             
             # Invoke return URI passing headers            
-            return_conn = httplib.HTTPConnection(return_uri_host, 
+            return_conn = http.client.HTTPConnection(return_uri_host, 
                                                  port=return_uri_port)
             
             return_conn.request('GET', return_uri_path, None, return_headers)

@@ -41,7 +41,7 @@ class SecurityProxyTestCase(BaseTestCase):
         app = paste.fixture.TestApp(app, extra_environ=extra_environ)
         
         response = app.get('/')
-        self.assert_(response)
+        self.assertTrue(response)
         print(response)
     
     

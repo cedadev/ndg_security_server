@@ -13,7 +13,7 @@ __revision__ = "$Id$"
 import logging
 log = logging.getLogger(__name__)
 
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from paste.request import parse_querystring
 
 from ndg.security.server.wsgi import (NDGSecurityMiddlewareBase,
@@ -208,7 +208,7 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
             # Store the return URI query argument in a beaker session
             quotedReferrer = params.get(
                                 self.__class__.LOGOUT_RETURN2URI_ARGNAME, '')
-            referrer = urllib.unquote(quotedReferrer)
+            referrer = urllib.parse.unquote(quotedReferrer)
             
             log.debug('Set redirect URI following logout based on %r URI query '
                       'string = %r', 
@@ -349,7 +349,7 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
         """
         
         # Copy Attributes into session
-        outputKeys = [k.replace('type.', '') for k in ax.keys()
+        outputKeys = [k.replace('type.', '') for k in list(ax.keys())
                       if k.startswith('type.')]
         
         output = {}
@@ -358,7 +358,7 @@ class SessionHandlerMiddleware(SessionMiddlewareBase):
             axCount = int(ax[axCountKeyName])
             
             axValueKeyPrefix = 'value.%s.' % outputKey
-            output[outputKey] = tuple([v for k, v in ax.items() 
+            output[outputKey] = tuple([v for k, v in list(ax.items()) 
                                        if k.startswith(axValueKeyPrefix)])
             
             nVals = len(output[outputKey])

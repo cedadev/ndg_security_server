@@ -47,8 +47,8 @@ class AttributeAuthorityTestCase(BaseTestCase):
     def test01ParsePropertiesFile(self):
         cls = AttributeAuthorityTestCase
         aa = AttributeAuthority.fromPropertyFile(cls.PROPERTIES_FILEPATH)
-        self.assert_(aa)
-        self.assert_(aa.assertionLifetime == 3600)
+        self.assertTrue(aa)
+        self.assertTrue(aa.assertionLifetime == 3600)
 
     def _createAttributeAuthorityHelper(self):
         """Helper method to creat an Attribute Authority instance for use with
@@ -71,11 +71,11 @@ class AttributeAuthorityTestCase(BaseTestCase):
         cls = AttributeAuthorityTestCase
         aa = self._createAttributeAuthorityHelper()
 
-        self.assert_(aa)
+        self.assertTrue(aa)
 
         # Check lifetime property converted from string input to float
-        self.assert_(aa.assertionLifetime == float(cls.ASSERTION_LIFETIME))
-        self.assert_(isinstance(aa.attributeInterface, AttributeInterface))
+        self.assertTrue(aa.assertionLifetime == float(cls.ASSERTION_LIFETIME))
+        self.assertTrue(isinstance(aa.attributeInterface, AttributeInterface))
 
     def test03Pickle(self):
         # Test pickling with __slots__
@@ -83,9 +83,9 @@ class AttributeAuthorityTestCase(BaseTestCase):
         jar = pickle.dumps(aa)
         aa2 = pickle.loads(jar)
 
-        self.assert_(aa2)
-        self.assert_(aa2.assertionLifetime == aa.assertionLifetime)
-        self.assert_(isinstance(aa2.attributeInterface, AttributeInterface))
+        self.assertTrue(aa2)
+        self.assertTrue(aa2.assertionLifetime == aa.assertionLifetime)
+        self.assertTrue(isinstance(aa2.attributeInterface, AttributeInterface))
 
 
 class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
@@ -186,17 +186,17 @@ class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
         attributeInterface = SQLAlchemyAttributeInterface()
         attributeInterface.setProperties(**properties)
 
-        self.assert_(attributeInterface.\
+        self.assertTrue(attributeInterface.\
                      _SQLAlchemyAttributeInterface__samlAttribute2SqlQuery[
                         ESGFSamlNamespaces.FIRSTNAME_ATTRNAME][0] == \
                             self.__class__.SAML_FIRSTNAME_SQLQUERY)
 
-        self.assert_(attributeInterface.connectionString == \
+        self.assertTrue(attributeInterface.connectionString == \
                      TestUserDatabase.DB_CONNECTION_STR)
 
         # Test constructor setting properties
         attributeInterface2 = SQLAlchemyAttributeInterface(**properties)
-        self.assert_(attributeInterface2.samlAssertionLifetime.days == 1)
+        self.assertTrue(attributeInterface2.samlAssertionLifetime.days == 1)
 
     def test03FromConfigFile(self):
         if self.skipTests:
@@ -316,16 +316,16 @@ class SQLAlchemyAttributeInterfaceTestCase(BaseTestCase):
         # Make the query
         attributeInterface.getAttributes(attributeQuery, samlResponse)
 
-        self.assert_(
+        self.assertTrue(
                 samlResponse.status.statusCode.value == StatusCode.SUCCESS_URI)
-        self.assert_(samlResponse.inResponseTo == attributeQuery.id)
-        self.assert_(samlResponse.assertions[0].subject.nameID.value == \
+        self.assertTrue(samlResponse.inResponseTo == attributeQuery.id)
+        self.assertTrue(samlResponse.assertions[0].subject.nameID.value == \
                      attributeQuery.subject.nameID.value)
-        self.assert_(
+        self.assertTrue(
             samlResponse.assertions[0].attributeStatements[0].attributes[1
                 ].attributeValues[0].value == 'Kershaw')
 
-        self.assert_(
+        self.assertTrue(
             len(samlResponse.assertions[0].attributeStatements[0].attributes[3
                 ].attributeValues) == TestUserDatabase.N_ATTRIBUTE_VALUES)
 

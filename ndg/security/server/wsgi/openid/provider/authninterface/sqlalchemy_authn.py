@@ -71,7 +71,7 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
 
             self.isMD5EncodedPwd = prop[
                             SQLAlchemyAuthnInterface.IS_MD5_ENCODED_PWD]
-        except KeyError, e:
+        except KeyError as e:
             raise AuthNInterfaceConfigError("Initialisation from keywords: %s"%
                                             e)
 
@@ -79,7 +79,7 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
         return self.__connectionString
 
     def _setConnectionString(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "%s" attribute; got %r'%
                             (SQLAlchemyAuthnInterface.CONNECTION_STRING_OPTNAME,
                              type(value)))
@@ -93,7 +93,7 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
         return self.__logonSqlQuery
 
     def _setLogonSqlQuery(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "%s" '
                             'attribute; got %r' %
                             (SQLAlchemyAuthnInterface.LOGON_SQLQUERY_OPTNAME,
@@ -108,7 +108,7 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
         return self.__username2UserIdentifierSqlQuery
 
     def _setUsername2UserIdentifierSqlQuery(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "%s" attribute; got %r'%
                             (SQLAlchemyAuthnInterface.
                              USERNAME2USERIDENTIFIER_SQLQUERY_OPTNAME,
@@ -127,7 +127,7 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
     def _setIsMD5EncodedPwd(self, value):
         if isinstance(value, bool):
             self.__isMD5EncodedPwd = value
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             self.__isMD5EncodedPwd = SQLAlchemyAuthnInterface.str2Bool(value)
         else:
             raise TypeError('Expecting bool type for "isMD5EncodedPwd" '
@@ -163,7 +163,7 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
         if self.isMD5EncodedPwd:
             try:
                 _password = md5(password).hexdigest()
-            except Exception, e:
+            except Exception as e:
                 raise AuthNInterfaceConfigError("%s exception raised making a "
                                                 "digest of the input "
                                                 "password: %s" %
@@ -174,7 +174,7 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
 
         try:
             dbEngine = create_engine(self.connectionString)
-        except ImportError, e:
+        except ImportError as e:
             raise AuthNInterfaceConfigError("Missing database engine for "
                                             "SQLAlchemy: %s" % e)
         connection = dbEngine.connect()
@@ -186,7 +186,7 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
             }
             query = Template(self.logonSqlQuery).substitute(queryInputs)
 
-        except KeyError, e:
+        except KeyError as e:
             raise AuthNInterfaceConfigError("Invalid key %r for logon SQL "
                 "query string.  Valid keys are %r and %r" %
                 (e,
@@ -203,7 +203,7 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
         except (exc.ProgrammingError, exc.OperationalError):
             raise AuthNInterfaceRetrieveError("Error with SQL: %s" %
                                               traceback.format_exc())
-        except (ValueError, TypeError), e:
+        except (ValueError, TypeError) as e:
             raise AuthNInterfaceRetrieveError("Expecting integer count result "
                                               "from login SQL query: %s" %
                                               traceback.format_exc())
@@ -252,7 +252,7 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
 
         try:
             dbEngine = create_engine(self.connectionString)
-        except ImportError, e:
+        except ImportError as e:
             raise AuthNInterfaceConfigError("Missing database engine for "
                                             "SQLAlchemy: %s" % e)
         connection = dbEngine.connect()
@@ -264,7 +264,7 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
             queryTmpl = Template(self.username2UserIdentifierSqlQuery)
             query = queryTmpl.substitute(queryInputs)
 
-        except KeyError, e:
+        except KeyError as e:
             raise AuthNInterfaceConfigError("Invalid key %r for username to "
                                             "user identifier SQL query string. "
                                             " The valid key is %r" % (e,
@@ -308,5 +308,5 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
 
     def __setstate__(self, attrDict):
         '''Enable pickling for use with beaker.session'''
-        for attr, val in attrDict.items():
+        for attr, val in list(attrDict.items()):
             setattr(self, attr, val)

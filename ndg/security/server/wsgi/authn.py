@@ -17,10 +17,11 @@ log = logging.getLogger(__name__)
 
 import re
 import webob
-import urllib
+import urllib.parse
+import base64
 
 from paste.request import construct_url, parse_querystring
-from paste.auth.auth_tkt import AuthTicket, parse_ticket, BadTicket
+from authkit.authenticate.auth_tkt import AuthTicket, parse_ticket, BadTicket
 import authkit.authenticate
 from authkit.authenticate.multi import MultiHandler
 from crypto_cookie.auth_tkt import SecureCookie
@@ -67,7 +68,7 @@ class AuthenticationEnforcementFilter(object):
 
     @interceptUriPat.setter
     def interceptUriPat(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self.__interceptUriPat = re.compile(value)
 
         elif isinstance(value, self.__class__.RE_PAT_TYPE):
@@ -181,7 +182,7 @@ class AuthnRedirectInitiatorMiddleware(AuthnRedirectMiddleware):
             return self._setRedirectResponse()
 
     def _setRedirectURI(self, uri):
-        if not isinstance(uri, basestring):
+        if not isinstance(uri, str):
             raise TypeError("Redirect URI must be set to string type")
 
         self.__redirectURI = uri
@@ -202,7 +203,7 @@ class AuthnRedirectInitiatorMiddleware(AuthnRedirectMiddleware):
         @return: redirect response
         """
         return2URI = construct_url(self.environ)
-        return2URIQueryArg = urllib.urlencode(
+        return2URIQueryArg = urllib.parse.urlencode(
                                         {self.return2uri_argname: return2URI})
 
         redirectURI = self.redirectURI
@@ -277,7 +278,7 @@ class AuthnRedirectResponseMiddleware(AuthnRedirectMiddleware):
 
         # Store the return URI query argument in a beaker session
         quotedReferrer = params.get(self.return2uri_argname, '')
-        referrerURI = urllib.unquote(quotedReferrer)
+        referrerURI = urllib.parse.unquote(quotedReferrer)
         if referrerURI:
             session[self.return2uri_argname] = referrerURI
             session.save()
@@ -349,7 +350,7 @@ class AuthenticationMiddleware(MultiHandler, NDGSecurityMiddlewareBase):
                                        **app_conf)
 
         # Remove session handler middleware specific parameters
-        for k in app_conf.keys():
+        for k in list(app_conf.keys()):
             if k.startswith(sessionHandlerPrefix):
                 del app_conf[k]
 
@@ -370,8 +371,8 @@ class AuthenticationMiddleware(MultiHandler, NDGSecurityMiddlewareBase):
                                    'is missing.  It must be set as a base 64 '
                                    'encoded string')
 
-        app_conf['authkit.cookie.secret'] = encoded_cookie_secret.decode(
-                                                                    'base64')
+        app_conf['authkit.cookie.secret'] = base64.b64decode(
+            encoded_cookie_secret.encode('ascii'))
 
         app = authkit.authenticate.middleware(app, app_conf)
 

@@ -13,10 +13,9 @@ __revision__ = "$Id$"
 import logging
 log = logging.getLogger(__name__)
 
-import httplib # to get official status code messages
-import urllib # decode quoted URI in query arg
-import urllib2 # SSL based whitelisting 
-from urlparse import urlsplit, urlunsplit
+import http.client # to get official status code messages
+import urllib.request, urllib.parse, urllib.error # decode quoted URI in query arg
+from urllib.parse import urlsplit, urlunsplit
 
 from paste.request import parse_querystring, parse_formvars
 import authkit.authenticate
@@ -136,7 +135,7 @@ class OpenIDRelyingPartyMiddleware(NDGSecurityMiddlewareBase):
             
             # Delete sign in interface middleware settings
             for conf in app_conf, global_conf or {}:
-                for k in conf.keys():
+                for k in list(conf.keys()):
                     if k.startswith(signinInterfacePrefix):
                         del conf[k]
         
@@ -218,7 +217,7 @@ class OpenIDRelyingPartyMiddleware(NDGSecurityMiddlewareBase):
         quotedReferrer = params.get(AuthnRedirectMiddleware.RETURN2URI_ARGNAME,
                                     '')
         
-        referrer = urllib.unquote(quotedReferrer)
+        referrer = urllib.parse.unquote(quotedReferrer)
         referrerPathInfo = urlsplit(referrer)[2]
 
         if (referrer and 
@@ -298,18 +297,18 @@ class OpenIDRelyingPartyMiddleware(NDGSecurityMiddlewareBase):
         
         log.debug("Setting the M2Crypto SSL handler ...")
         
-        opener = urllib2.OpenerDirector()            
+        opener = urllib.request.OpenerDirector()            
         opener.add_handler(FlagHttpsOnlyHandler())
         opener.add_handler(HTTPSHandler(idPValidationDriver.ctx))
         
-        urllib2.install_opener(opener)
+        urllib.request.install_opener(opener)
 
     
-class FlagHttpsOnlyHandler(urllib2.AbstractHTTPHandler):
+class FlagHttpsOnlyHandler(urllib.request.AbstractHTTPHandler):
     '''Raise an exception for any other protocol than https'''
     def unknown_open(self, req):
         """Signal to caller that default handler is not supported"""
-        raise urllib2.URLError("Only HTTPS based OpenID Providers "
+        raise urllib.error.URLError("Only HTTPS based OpenID Providers "
                                "are supported")
 
 

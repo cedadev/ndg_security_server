@@ -22,7 +22,7 @@ from ndg.security.server.wsgi.ssl import AuthKitSSLAuthnMiddleware
 
 class TestAuthnApp(object):
     '''Test Application for the Authentication handler to protect'''
-    response = "Test Authentication redirect application"
+    response = b"Test Authentication redirect application"
     
     loggedIn = lambda self, environ: 'username' in environ.get(
                                                 self.beakerSessionKeyName, {})
@@ -77,17 +77,17 @@ class WSGIAuthNTestController(unittest.TestCase):
         response = self.app.get('/test_200WithLoggedIn',
                                 extra_environ={'REMOTE_USER': 'testuser'},
                                 status=200)
-        print(response.body)
+        print((response.body))
 
     def test03Catch401WithLoggedIn(self):
         response = self.app.get('/test_401WithLoggedIn', 
                                 extra_environ={'REMOTE_USER': 'testuser'},
                                 status=401)
-        print(response.body)
+        print((response.body))
         
     def test04Catch200WithNotLoggedIn(self):
         response = self.app.get('/test_200WithNotLoggedIn', status=200)
-        self.assert_(response, 'Expecting response for not logged in')
+        self.assertTrue(response, 'Expecting response for not logged in')
 
 
 class WsgiSSLClientAuthnTestController(BaseTestCase):
@@ -117,7 +117,7 @@ class WsgiSSLClientAuthnTestController(BaseTestCase):
         # session cookie method
         extra_environ = {
             'HTTPS':'1', 
-            'SSL_CLIENT_CERT': pem_cert,
+            'SSL_CLIENT_CERT': pem_cert.decode('UTF-8'),
             AuthKitSSLAuthnMiddleware.SET_USER_ENVIRON_KEYNAME: lambda id_: None
             }
 
@@ -126,19 +126,19 @@ class WsgiSSLClientAuthnTestController(BaseTestCase):
                                 extra_environ=extra_environ,
                                 status=302)
         
-        print("Redirect to SSL Client Authentication endpoint %r ..." %
-              response.header_dict['location'])
+        print(("Redirect to SSL Client Authentication endpoint %r ..." %
+              response.header_dict['location']))
         
         # Redirect to SSL Client Authentication endpoint
         redirectResponse = response.follow(extra_environ=extra_environ,
                                            status=302)
 
-        print("Redirect back to secured URI with authenticated session %r ..." %
-              redirectResponse.header_dict['location'])
+        print(("Redirect back to secured URI with authenticated session %r ..." %
+              redirectResponse.header_dict['location']))
         
         finalResponse = redirectResponse.follow(extra_environ=extra_environ,
                                                 status=200)
-        print finalResponse
+        print(finalResponse)
         
     
 if __name__ == "__main__":

@@ -68,8 +68,8 @@ class TestUserDatabase(object):
     DB_FILEPATH = os.path.join(NDGSEC_TEST_CONFIG_DIR, DB_FILENAME)
     DB_CONNECTION_STR = 'sqlite:///%s' % DB_FILEPATH
     
-    USERNAME = 'pjk'
-    PASSWORD = 'testpassword'
+    USERNAME = b'pjk'
+    PASSWORD = b'testpassword'
     MD5_PASSWORD = md5(PASSWORD).hexdigest()
     
     OPENID_URI_STEM = 'https://localhost:7443/openid/'

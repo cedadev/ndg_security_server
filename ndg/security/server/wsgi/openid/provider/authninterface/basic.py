@@ -69,8 +69,8 @@ class BasicAuthNInterface(AbstractAuthNInterface):
             
             # Convert into a dictionary indexed by username
             userCredsKeys = BasicAuthNInterface.USERCREDS_KEYNAMES
-            self._userCreds[userCreds[0]] = dict(zip(userCredsKeys, 
-                                                     userCreds[1:]))  
+            self._userCreds[userCreds[0]] = dict(list(zip(userCredsKeys, 
+                                                     userCreds[1:])))  
     
     def logon(self, environ, identityURI, username, password):
         """Interface login method
@@ -194,7 +194,7 @@ class BasicSessionManagerOpenIDAuthNInterface(BasicAuthNInterface):
             log.debug("Connected to Session Manager with session ID: %s", 
                       self.sessionId)
 
-        except AuthNServiceInvalidCredentials, e:
+        except AuthNServiceInvalidCredentials as e:
             log.exception(e)
             raise AuthNInterfaceInvalidCredentials()
 
@@ -204,6 +204,6 @@ class BasicSessionManagerOpenIDAuthNInterface(BasicAuthNInterface):
         try:
             self._client.disconnect(sessID=self.sessionId)
             
-        except Exception, e:
+        except Exception as e:
             log.exception(e)
             raise AuthNInterfaceInvalidCredentials()

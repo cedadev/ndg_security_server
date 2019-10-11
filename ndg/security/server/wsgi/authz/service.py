@@ -75,7 +75,7 @@ class AuthorisationServiceMiddleware(object):
         cls = AuthorisationServiceMiddleware
         
         # Loop based assignment where possible
-        for optName, default in cls.AUTHZ_SRVC_OPTION_DEFAULTS.items():
+        for optName, default in list(cls.AUTHZ_SRVC_OPTION_DEFAULTS.items()):
             value = app_conf.get(prefix + optName, default)
             setattr(self, optName, value)
         
@@ -127,9 +127,9 @@ class AuthorisationServiceMiddleware(object):
         return self.__queryInterfaceKeyName
 
     def _set_queryInterfaceKeyName(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting %r for "getAuthzDecisionKeyName" '
-                            'attribute; got %r' % (basestring, type(val)))
+                            'attribute; got %r' % (str, type(val)))
         self.__queryInterfaceKeyName = val
         
     queryInterfaceKeyName = property(fget=_get_queryInterfaceKeyName, 
@@ -143,7 +143,7 @@ class AuthorisationServiceMiddleware(object):
         return self.__queryInterface
     
     def _set_queryInterface(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self.__queryInterface = importModuleObject(value)
             
         elif callable(value):

@@ -76,7 +76,7 @@ class AuthZTestApp(object):
 </html>
 """ % (AuthZTestApp.header,
        '\n'.join(['<li><a href="%s">%s</a></li>' % (link, name) 
-                  for link, name in links.items()]),
+                  for link, name in list(links.items())]),
        environ[self.beakerSessionKeyName]['username'])
         
             start_response('200 OK', 
@@ -93,7 +93,7 @@ class AuthZTestApp(object):
 </html>
 """ % (AuthZTestApp.header,
        '\n'.join(['<li><a href="%s">%s</a></li>' % (link, name) 
-                 for link,name in links.items()])
+                 for link,name in list(links.items())])
        )
 
             start_response('200 OK', 

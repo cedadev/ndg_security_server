@@ -11,7 +11,7 @@ __revision__ = '$Id: pep.py 7897 2011-04-27 11:02:23Z pjkersha $'
 import logging
 log = logging.getLogger(__name__)
 
-import httplib
+import http.client
 import webob
 
 from ndg.security.common.config import importElementTree
@@ -71,7 +71,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
         return self.__subjectIdFormat
 
     def _setSubjectIdFormat(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "subjectIdFormat" '
                             'attribute; got %r' % type(value))
         self.__subjectIdFormat = value
@@ -84,7 +84,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
         """Override method from SamlPepFilterBase to prevent decision caching
         from being enabled since it doesn't work with the XACML profile request.
         """
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             newValue = str2Bool(value)
         elif isinstance(value, bool):
             newValue = value
@@ -364,10 +364,10 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
                 if results[0].decision in xacmlFailDecisions:
                     if not subjectID:
                         # Access failed and the user is not logged in
-                        error_status = httplib.UNAUTHORIZED
+                        error_status = http.client.UNAUTHORIZED
                     else:
                         # The user is logged in but not authorised
-                        error_status = httplib.FORBIDDEN
+                        error_status = http.client.FORBIDDEN
 
                     error_message = 'Access denied to %r for user %r' % (
                                                                      requestURI,
@@ -379,10 +379,10 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
                 if authzDecisionStatement.decision.value in failDecisions:
                     if not subjectID:
                         # Access failed and the user is not logged in
-                        error_status = httplib.UNAUTHORIZED
+                        error_status = http.client.UNAUTHORIZED
                     else:
                         # The user is logged in but not authorised
-                        error_status = httplib.FORBIDDEN
+                        error_status = http.client.FORBIDDEN
                         
                     error_message = 'Access denied to %r for user %r' % (
                                                      requestURI,
@@ -390,7 +390,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
                     return (None, error_status, error_message)
 
             if invalid_response:
-                error_status = httplib.INTERNAL_SERVER_ERROR
+                error_status = http.client.INTERNAL_SERVER_ERROR
                 error_message = 'Unexpected response from security service'
                 return (None, error_status, error_message)
 
@@ -398,7 +398,7 @@ class XacmlSamlPepFilter(SamlPepFilterBase):
             log.error("No assertions set in authorisation decision response "
                       "from %r", authzServiceURI)
 
-            error_status = httplib.FORBIDDEN
+            error_status = http.client.FORBIDDEN
             error_message = ('An error occurred retrieving an access decision '
                              'for %r for user %r' % (
                                              requestURI,

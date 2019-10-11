@@ -11,7 +11,7 @@ __revision__ = '$Id$'
 
 import hashlib
 import logging
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from ndg.xacml.core.attributevalue import AttributeValueClassFactory
 from ndg.xacml.core.context.exceptions import XacmlContextTypeError
@@ -85,7 +85,7 @@ class UrlencodeBase(AbstractFunction):
                                         'argument; got %r' %
                                         (self.__class__.TYPE,
                                          type(arg)))
-        result = urllib.quote_plus(arg.value)
+        result = urllib.parse.quote_plus(arg.value)
         return self.__class__.RETURN_TYPE(result)
 
 

@@ -77,7 +77,7 @@ class OpenIdRelyingPartyTestHarnessApp(object):
 </html>
 """ % (self.__class__.header,
        '\n'.join(['<li><a href="%s">%s</a></li>' % (link, name) 
-                 for link,name in self.method.items() if name != 'default']),
+                 for link,name in list(self.method.items()) if name != 'default']),
        environ['REMOTE_USER'])
         
             start_response('200 OK', 
@@ -93,7 +93,7 @@ class OpenIdRelyingPartyTestHarnessApp(object):
 </html>
 """ % (self.__class__.header,
        '\n'.join(['<li><a href="%s">%s</a></li>' % (link, name) 
-                 for link,name in self.method.items() if name != 'default'])
+                 for link,name in list(self.method.items()) if name != 'default'])
        )
 
             start_response('200 OK', 
@@ -112,7 +112,7 @@ class OpenIdRelyingPartyTestHarnessApp(object):
     </body>
 </html>
 """ % '\n'.join(['<li><a href="%s">%s</a></li>' % (link, name) 
-                 for link,name in self.method.items() if name != 'default'])
+                 for link,name in list(self.method.items()) if name != 'default'])
 
             start_response('200 OK', 
                            [('Content-type', 'text/html'),
@@ -139,7 +139,7 @@ class OpenIdRelyingPartyTestHarnessApp(object):
 </html>
 """ % (environ['PATH_INFO'],
        '\n'.join(['<li><a href="%s">%s</a></li>' % (link, name) 
-                 for link,name in self.method.items() if name != 'default']),
+                 for link,name in list(self.method.items()) if name != 'default']),
        environ['REMOTE_USER'])
 
 

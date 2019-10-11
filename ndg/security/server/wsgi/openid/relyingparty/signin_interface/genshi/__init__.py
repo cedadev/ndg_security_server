@@ -13,10 +13,10 @@ log = logging.getLogger(__name__)
 
 from os import path
 
-from paste.cascade import Cascade
 from paste.urlparser import StaticURLParser     
 from genshi.template import TemplateLoader
 
+from ndg.security.server.utils.paste_port import Cascade
 from ndg.security.server.wsgi.openid.relyingparty import (SigninInterface, 
     SigninInterfaceConfigError)
 
@@ -90,7 +90,7 @@ class GenshiSigninTemplate(SigninInterface):
         return self.__staticContentRootDir
 
     def _setStaticContentRootDir(self, value):
-        if not isinstance(value, (basestring, type(None))):
+        if not isinstance(value, (str, type(None))):
             raise TypeError('Expecting string or None type for '
                             "'staticContentRootDir'; got %r" % type(value))
         

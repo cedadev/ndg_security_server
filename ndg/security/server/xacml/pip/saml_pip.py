@@ -195,7 +195,7 @@ class PIP(PIPInterface):
         self.__mappingFilePath = None
 
         # Force mapping dict to have string type keys and items
-        _typeCheckers = (lambda val: isinstance(val, basestring),)*2
+        _typeCheckers = (lambda val: isinstance(val, str),)*2
         self.__attributeId2AttributeAuthorityMap = VettedDict(*_typeCheckers)
 
         self.__attribute_query = AttributeQueryFactory.create()
@@ -210,10 +210,10 @@ class PIP(PIPInterface):
         if value is None:
             self.__sessionCacheTimeout = value
 
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             self.__sessionCacheTimeout = float(value)
 
-        elif isinstance(value, (int, float, long)):
+        elif isinstance(value, (int, float)):
             self.__sessionCacheTimeout = value
 
         else:
@@ -239,10 +239,10 @@ class PIP(PIPInterface):
         if value is None:
             self.__sessionCacheAssertionClockSkewTol = value
 
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             self.__sessionCacheAssertionClockSkewTol = float(value)
 
-        elif isinstance(value, (int, float, long)):
+        elif isinstance(value, (int, float)):
             self.__sessionCacheAssertionClockSkewTol = value
 
         else:
@@ -253,7 +253,7 @@ class PIP(PIPInterface):
         return self.__cacheSessions
 
     def _setCacheSessions(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self.__cacheSessions = str2Bool(value)
         elif isinstance(value, bool):
             self.__cacheSessions = value
@@ -271,7 +271,7 @@ class PIP(PIPInterface):
         return self.__sessionCacheDataDir
 
     def _setSessionCacheDataDir(self, value):
-        if not isinstance(value, (basestring, type(None))):
+        if not isinstance(value, (str, type(None))):
             raise TypeError('Expecting string/None type for '
                             '"sessionCacheDataDir"; got %r' % type(value))
 
@@ -287,7 +287,7 @@ class PIP(PIPInterface):
         return self.__mappingFilePath
 
     def _setMappingFilePath(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "mappingFilePath"; got '
                             '%r' % type(value))
         self.__mappingFilePath = path.expandvars(value)

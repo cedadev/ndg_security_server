@@ -33,7 +33,7 @@ class TestAttributeAuthorityApp(object):
         start_response("200 OK",
                        [('Content-length', strReponseLen),
                         ('Content-type', 'text/plain')])
-        return [response]
+        return [response.encode('UTF-8')]
 
 
 class AttributeAuthorityMiddlewareTestCase(unittest.TestCase):
@@ -44,7 +44,7 @@ class AttributeAuthorityMiddlewareTestCase(unittest.TestCase):
         self.app = paste.fixture.TestApp(app)
         
         response = self.app.get('/')
-        self.assert_(response) 
+        self.assertTrue(response) 
         print(response)      
         
 
