@@ -542,10 +542,14 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                     log.debug('Output for %s:\n%s', self.method[pathMatch],
                                                     response)
 
-            return response
+            if isinstance(response, str):
+                return [response.encode('utf-8')]
+            else:
+                return [r.encode('utf-8') for r in response]
         else:
             log.debug("No match for path %s" % self.path)
-            return self._setResponse(environ, start_response)
+            return [r.encode('utf-8')
+                    for r in self._setResponse(environ, start_response)]
 
     def do_id(self, environ, start_response):
         '''URL based discovery with an ID provided

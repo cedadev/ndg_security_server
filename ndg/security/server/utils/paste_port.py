@@ -1,12 +1,42 @@
-'''ndg.security.common.utils.paste_port
+'''ndg.security.server.utils.paste_port - Python 3 patch for Paste Cascade implementation
 '''
 __author__ = "Philip Kershaw"
 __date__ = "8 Oct 2019"
-__copyright__ = "(C) 2019 organization_name"
-__license__ = "license"
+__copyright__ = "(C) 2019 UKRI"
+__license__ = "license file in top-level package directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __all__ = []
 from io import StringIO 
+
+from paste import httpexceptions
+from paste.util import converters
+
+
+def make_cascade(loader, global_conf, catch='404', **local_conf):
+    """
+    Entry point for Paste Deploy configuration
+    Expects configuration like::
+        [composit:cascade]
+        use = egg:ndg_security_server#cascade_
+        # all start with 'app' and are sorted alphabetically
+        app1 = foo
+        app2 = bar
+        ...
+        catch = 404 500 ...
+    """
+    catch = map(int, converters.aslist(catch))
+    apps = []
+    for name, value in local_conf.items():
+        if not name.startswith('app'):
+            raise ValueError(
+                "Bad configuration key %r (=%r); all configuration keys "
+                "must start with 'app'"
+                % (name, value))
+        app = loader.get_app(value, global_conf=global_conf)
+        apps.append((name, app))
+    apps.sort()
+    apps = [app for name, app in apps]
+    return Cascade(apps, catch=catch)
 
 
 class Cascade(object):
@@ -98,3 +128,6 @@ class Cascade(object):
             environ['wsgi.input'].seek(0)
         return self.apps[-1](environ, start_response)
 
+
+def _consuming_writer(s):
+    pass

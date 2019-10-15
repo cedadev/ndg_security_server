@@ -34,6 +34,9 @@ _ENTRY_POINTS = """
     ndgsecurity_attribute_service=ndg.security.server.paster_templates.template:AttributeServiceTemplate
     ndgsecurity_authorisation_service=ndg.security.server.paster_templates.template:AuthorisationServiceTemplate
     ndgsecurity_openidprovider=ndg.security.server.paster_templates.template:OpenIDProviderTemplate
+
+    [paste.composite_factory]
+    cascade_ = ndg.security.server.utils.paste_port:make_cascade
 """
 
 # Read succeeds for sdist creation but fails for build with pip install.  Added

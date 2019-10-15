@@ -8,66 +8,6 @@ __copyright__ = "(C) 2011 Science and Technology Facilities Council"
 __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = '$Id:$'
-import select
-from os import path
-from threading import Thread
-
-import paste.httpserver
-from paste.deploy import loadapp
-from paste.script.util.logging_config import fileConfig
-
-
-class PasteDeployAppServer(object):
-    """Wrapper to paste.httpserver to enable background threading"""
-    
-    def __init__(self, app=None, cfgFilePath=None, port=7443, host='0.0.0.0',
-                 ssl_context=None):
-        """Load an application configuration from cfgFilePath ini file and 
-        instantiate Paste server object
-        """       
-        self.__thread = None
-        
-        if cfgFilePath:
-            if app:
-                raise KeyError('Set either the "cfgFilePath" or "app" keyword '
-                               'but not both')
-            
-            fileConfig(cfgFilePath, defaults={'here':path.dirname(cfgFilePath)})
-            app = loadapp('config:%s' % cfgFilePath)
-            
-        elif app is None:
-            raise KeyError('Either the "cfgFilePath" or "app" keyword must be '
-                           'set')
-                       
-        self.__pasteServer = paste.httpserver.serve(app, host=host, port=port, 
-                                                    start_loop=False, 
-                                                    ssl_context=ssl_context)
-    
-    @property
-    def pasteServer(self):
-        return self.__pasteServer
-    
-    @property
-    def thread(self):
-        return self.__thread
-    
-    def start(self):
-        """Start server"""
-        try:
-            self.pasteServer.serve_forever()
-        except select.error:
-            # File descriptor error can be raised if a test fails - no need to
-            # take any further action
-            pass
-        
-    def startThread(self):
-        """Start server in a separate thread"""
-        self.__thread = Thread(target=PasteDeployAppServer.start, args=(self,))
-        self.thread.start()
-        
-    def terminateThread(self):
-        self.pasteServer.server_close()
-
 from os import path
 import sys
 
@@ -80,9 +20,6 @@ import gunicorn.app.base
 import gunicorn.arbiter
 
 from ndg.security.server.test.base import BaseTestCase
-
-def number_of_workers():
-    return (multiprocessing.cpu_count() * 2) + 1
 
 
 class GunicornServerApp(gunicorn.app.base.BaseApplication):
@@ -107,9 +44,17 @@ class GunicornServerApp(gunicorn.app.base.BaseApplication):
         app._app._app.gunicorn_server_app = obj
         
         return obj
-        
+
+    @property
+    def number_of_workers(self):
+        return (multiprocessing.cpu_count() * 2) + 1
+            
     def __init__(self, app, options=None):
         self.options = options or {}
+        
+        if not 'workers' in options:
+            self.options['workers'] = self.number_of_workers
+            
         self.application = app
         self.arbiter = None
         super().__init__()
@@ -142,7 +87,6 @@ if __name__ == '__main__':
     dir_name = path.dirname(__file__)
     options = {
         'bind': '%s:%s' % ('127.0.0.1', '5443'),
-        'workers': number_of_workers(),
         'keyfile': path.join(dir_name, 'localhost.key'),
         'certfile': path.join(dir_name, 'localhost.crt')
     }
