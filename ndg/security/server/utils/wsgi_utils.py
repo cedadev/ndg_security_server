@@ -31,7 +31,6 @@ class GunicornServerApp(gunicorn.app.base.BaseApplication):
         """Load an application configuration from cfgFilePath ini file"""
         options = {
             'bind': '%s:%s' % (host, str(port)),
-            'workers': number_of_workers(),
             'keyfile': keyfile,
             'certfile': certfile
             }
@@ -82,18 +81,3 @@ class GunicornServerApp(gunicorn.app.base.BaseApplication):
     def kill_workers(self, sig):
         self.arbiter.kill_workers(sig)
 
-
-if __name__ == '__main__':
-    dir_name = path.dirname(__file__)
-    options = {
-        'bind': '%s:%s' % ('127.0.0.1', '5443'),
-        'keyfile': path.join(dir_name, 'localhost.key'),
-        'certfile': path.join(dir_name, 'localhost.crt')
-    }
-    cfgFilePath = path.join(dir_name, "attribute-interface.ini")
-    fileConfig(cfgFilePath)
-    app = loadapp('config:%s' % cfgFilePath)
-    
-    gunicorn_server_app = GunicornServerApp(app, options)
-    app._app._app.gunicorn_server_app = gunicorn_server_app
-    gunicorn_server_app.run()
