@@ -10,8 +10,6 @@ __copyright__ = "(C) 2009 Science and Technology Facilities Council"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = "$Id$"
 from os import path 
-      
-from OpenSSL import SSL
 
 from paste.script.util.logging_config import fileConfig    
 from paste.deploy import loadapp

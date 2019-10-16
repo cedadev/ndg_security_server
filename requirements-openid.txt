@@ -1,0 +1,24 @@
+asn1crypto==1.0.1
+AuthKit===0.5.1-ceda
+Beaker==1.11.0
+certifi==2018.8.24
+cffi==1.12.3
+cryptography==2.7
+decorator==4.4.0
+Genshi==0.7.3
+ndg-httpsclient==0.5.1
+ndg-saml==0.8.3
+ndg-security-common==2.5.0
+-e git+git@github.com:cedadev/ndg_security_server.git@406441fbe0649fdd9385798cf1cbda07d697d417#egg=ndg_security_server
+ndg-xacml==0.5.1
+nose==1.3.7
+Paste==3.2.1
+PasteDeploy==2.0.1
+PasteScript==3.2.0
+pyasn1==0.4.7
+pycparser==2.19
+pyOpenSSL==19.0.0
+python-openid==2.2.5
+six==1.12.0
+SQLAlchemy==1.3.9
+WebOb==1.8.5
