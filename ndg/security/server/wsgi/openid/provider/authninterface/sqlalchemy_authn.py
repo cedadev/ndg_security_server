@@ -162,7 +162,7 @@ class SQLAlchemyAuthnInterface(AbstractAuthNInterface):
         """
         if self.isMD5EncodedPwd:
             try:
-                _password = md5(password).hexdigest()
+                _password = md5(password.encode('utf-8')).hexdigest()
             except Exception as e:
                 raise AuthNInterfaceConfigError("%s exception raised making a "
                                                 "digest of the input "

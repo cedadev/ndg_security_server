@@ -189,7 +189,7 @@ class NDGSecurityMiddlewareBase(object):
         start_response(status,
                        [('Content-type', contentType),
                         ('Content-Length', str(len(response)))])
-        return [response]
+        return [response.encode('utf-8')]
         
     @staticmethod
     def getStatusMessage(statusCode):

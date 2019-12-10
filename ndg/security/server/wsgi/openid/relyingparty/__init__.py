@@ -4,6 +4,7 @@ Wrapper to AuthKit OpenID Middleware
 
 NERC DataGrid Project
 """
+from pdb import line_prefix
 __author__ = "P J Kershaw"
 __date__ = "20/01/2009"
 __copyright__ = "(C) 2009 Science and Technology Facilities Council"
@@ -17,30 +18,24 @@ import http.client # to get official status code messages
 import urllib.request, urllib.parse, urllib.error # decode quoted URI in query arg
 from urllib.parse import urlsplit, urlunsplit
 
+from OpenSSL import SSL
+
 from paste.request import parse_querystring, parse_formvars
 import authkit.authenticate
 from authkit.authenticate.open_id import AuthOpenIDHandler
 from beaker.middleware import SessionMiddleware
 
-# SSL based whitelisting
-try:
-    from M2Crypto import SSL
-    from M2Crypto.m2urllib2 import build_opener, HTTPSHandler
-    _M2CRYPTO_NOT_INSTALLED = False
-except ImportError:
-    import warnings
-    warnings.warn(
-        "M2Crypto is not installed - IdP SSL-based validation is disabled")
-    _M2CRYPTO_NOT_INSTALLED = True
-    
 from openid.fetchers import setDefaultFetcher, Urllib2Fetcher
 
+from crypto_cookie.auth_tkt import SecureCookie
+
+from ndg.httpsclient.urllib2_build_opener import build_opener
 from ndg.security.common.utils.classfactory import instantiateClass
 from ndg.security.server.wsgi import NDGSecurityMiddlewareBase
 from ndg.security.server.wsgi.authn import AuthnRedirectMiddleware
 from ndg.security.server.wsgi.openid.relyingparty.validation import (
                                                         SSLIdPValidationDriver)
-
+    
 
 class OpenIDRelyingPartyMiddlewareError(Exception):
     """OpenID Relying Party WSGI Middleware Error"""
@@ -62,6 +57,7 @@ class OpenIDRelyingPartyMiddleware(NDGSecurityMiddlewareBase):
     '''
     OPENID_RP_PREFIX = 'openid.relyingparty.'
     IDP_WHITELIST_CONFIG_FILEPATH_OPTNAME = 'idpWhitelistConfigFilePath'
+    CA_CERT_DIR = 'ca_cert_dir'
     SIGNIN_INTERFACE_MIDDLEWARE_CLASS_OPTNAME = 'signinInterfaceMiddlewareClass'
     SIGNIN_INTERFACE_PREFIX = 'signinInterface.'
     
@@ -74,11 +70,12 @@ class OpenIDRelyingPartyMiddleware(NDGSecurityMiddlewareBase):
         'file'
     
     sslPropertyDefaults = {
-        IDP_WHITELIST_CONFIG_FILEPATH_OPTNAME: None
+        IDP_WHITELIST_CONFIG_FILEPATH_OPTNAME: None,
+        CA_CERT_DIR: ''
     }
     propertyDefaults = {
         SIGNIN_INTERFACE_MIDDLEWARE_CLASS_OPTNAME: None,
-        'baseURL': ''
+        'baseURL': '',
     }
     propertyDefaults.update(sslPropertyDefaults)
     propertyDefaults.update(NDGSecurityMiddlewareBase.propertyDefaults)
@@ -102,7 +99,30 @@ class OpenIDRelyingPartyMiddleware(NDGSecurityMiddlewareBase):
 
         # Whitelisting of IDPs.  If no config file is set, no validation is
         # executed
-        cls = OpenIDRelyingPartyMiddleware
+        cls = OpenIDRelyingPartyMiddleware      
+    
+        ca_cert_dir = app_conf.get(prefix + cls.CA_CERT_DIR)
+        
+        # Force Python OpenID library to use Urllib2 fetcher instead of the 
+        # Curl based one otherwise the NDG HTTPS handler will be ignored.
+        if ca_cert_dir:
+            _ctx = SSL.Context(SSL.TLSv1_2_METHOD)
+            verify_callback = (lambda conn, x509, errnum, errdepth, 
+                                      preverify_ok: preverify_ok)
+            
+            _ctx.set_verify(SSL.VERIFY_PEER, verify_callback)
+            _ctx.load_verify_locations(None, ca_cert_dir)
+            opener = build_opener(ssl_context=_ctx)
+        else:
+            opener = build_opener()
+                
+        class HTTPSFetcher(Urllib2Fetcher):
+            """Use NDG HTTPS Client to allow custom SSL verification
+            """
+            # Override to use NDG HTTPS Handler
+            urlopen = staticmethod(opener.open)
+            
+        setDefaultFetcher(HTTPSFetcher())
         
         idpWhitelistConfigFilePath = app_conf.get(
                             prefix + cls.IDP_WHITELIST_CONFIG_FILEPATH_OPTNAME)
@@ -147,7 +167,15 @@ class OpenIDRelyingPartyMiddleware(NDGSecurityMiddlewareBase):
         # Set AuthKit customisations
         app_conf['authkit.openid.force_redirect'] = True
         app_conf['authkit.openid.openid_form_fieldname'] = 'openid_identifier'
-         
+
+        # Override AuthKit cookie handling to use version compatible with
+        # CEDA site services dj_security
+        app_conf['authkit.cookie.ticket_class'] = SecureCookie
+
+        # Hack to force authkit to use SecureCookie's parse_ticket function
+        import authkit.authenticate.cookie
+        authkit.authenticate.cookie.parse_ticket = SecureCookie.parse_ticket
+                 
         app = authkit.authenticate.middleware(app, app_conf)
         _app = app
         while True:
@@ -203,8 +231,17 @@ class OpenIDRelyingPartyMiddleware(NDGSecurityMiddlewareBase):
                       "based authentication has taken place in other "
                       "middleware, skipping OpenID Relying Party interface" %
                       environ['REMOTE_USER'])
-            return self._app(environ, start_response)
-
+            response = []
+            for line in self._app(environ, start_response):
+                if isinstance(line, str):
+                    line_ = line.encode('utf-8')
+                else:
+                    line_ = line
+                    
+                response.append(line_)
+                
+            return response
+    
         session = environ.get(self.sessionKey)
         if session is None:
             raise OpenIDRelyingPartyConfigError('No beaker session key "%s" '
@@ -276,24 +313,27 @@ class OpenIDRelyingPartyMiddleware(NDGSecurityMiddlewareBase):
         else:
             _start_response = start_response
 
-        return self._app(environ, _start_response)
+        # Ensure byte encoding for Python 3 and WSGI spec
+        response = []
+        for line in self._app(environ, _start_response):
+            if isinstance(line, str):
+                line_ = line.encode('utf-8')
+            else:
+                line_ = line
+                
+            response.append(line_)
+            
+        return response
 
     def _initIdPValidation(self, idpWhitelistConfigFilePath):
         """Initialise M2Crypto based urllib2 HTTPS handler to enable SSL 
         authentication of OpenID Providers"""
-        if _M2CRYPTO_NOT_INSTALLED:
-            raise ImportError("M2Crypto is required for SSL-based IdP "
-                              "validation but it is not installed.")
         
         log.info("Setting parameters for SSL Authentication of OpenID "
                  "Provider ...")
         
         idPValidationDriver = SSLIdPValidationDriver(
                                 idpConfigFilePath=idpWhitelistConfigFilePath)
-            
-        # Force Python OpenID library to use Urllib2 fetcher instead of the 
-        # Curl based one otherwise the M2Crypto SSL handler will be ignored.
-        setDefaultFetcher(Urllib2Fetcher())
         
         log.debug("Setting the M2Crypto SSL handler ...")
         

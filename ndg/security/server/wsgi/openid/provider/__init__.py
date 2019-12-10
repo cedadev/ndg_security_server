@@ -548,7 +548,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                 return [r.encode('utf-8') for r in response]
         else:
             log.debug("No match for path %s" % self.path)
-            return [r.encode('utf-8')
+            return [isinstance(r, str) and r.encode('utf-8') or r
                     for r in self._setResponse(environ, start_response)]
 
     def do_id(self, environ, start_response):

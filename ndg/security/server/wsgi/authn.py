@@ -365,14 +365,12 @@ class AuthenticationMiddleware(MultiHandler, NDGSecurityMiddlewareBase):
         # This also requires special handling of cookie secret - the secret is
         # include in the ini file base 64 encoded but for actual use, needs to
         # be in decoded form
-        encoded_cookie_secret = app_conf.get('authkit.cookie.secret')
-        if not encoded_cookie_secret:
+        cookie_secret = app_conf.get('authkit.cookie.secret')
+        if not cookie_secret:
             raise AuthnConfigError('Error, "authkit.cookie.secret" setting '
-                                   'is missing.  It must be set as a base 64 '
-                                   'encoded string')
+                                   'is missing.')
 
-        app_conf['authkit.cookie.secret'] = base64.b64decode(
-            encoded_cookie_secret.encode('ascii'))
+        app_conf['authkit.cookie.secret'] = cookie_secret.encode('utf-8')
 
         app = authkit.authenticate.middleware(app, app_conf)
 

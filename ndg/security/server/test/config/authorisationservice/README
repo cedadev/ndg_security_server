@@ -1,0 +1,20 @@
+SAML Authorisation Service
+==========================
+This directory contains the configuration information for an authorisation 
+test service used by the unit tests:
+
+ - authorisation-service.ini: main configuration file for the service 
+   
+ - authorisationserviceapp.py: script to invoke the service:
+ 
+   $ python ./authorisationserviceapp.py
+   
+   This script can be used to test the service but the unit tests start up and
+   close down attribute authority instances automatically.  See: 
+   ndg.security.test.unit.BaseTestCase
+      
+ - Testing - using ndg_saml_client CLI tool from ndg_saml package:
+ 
+   $ ndg_saml_client authz -u https://localhost:9443/authorisation-service \
+      -s https://localhost:7443/openid/philip.kershaw -S urn:esg:openid \
+      -C ../pki/ca -r http://localhost/test_accessGrantedToSecuredURI -p

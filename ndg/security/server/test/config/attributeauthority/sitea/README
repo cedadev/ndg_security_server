@@ -3,9 +3,7 @@ Site A Test Attribute Authority Service
 This directory contains the configuration information for an Attribute 
 Authority test service used by the unit tests:
 
- - site-aa.ini: main configuration file for the service which also contains
-   Paste config to enable running the service with paster (make sure to replace
-   %(here)s settings with the specific file path):
+ - site-aa.ini: main configuration file for the service
    
  - attributeauthorityapp.py: script to invoke the service:
  

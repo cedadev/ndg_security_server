@@ -20,16 +20,16 @@ import traceback
 import re
  
 # For SSL-based validation classes  
-import urllib.request, urllib.error, urllib.parse
+import urllib.request
 try:
-    from M2Crypto import SSL
-    from M2Crypto.m2urllib2 import build_opener
-    _M2CRYPTO_NOT_INSTALLED = False
+    from OpenSSL import SSL
+    from ndg.httpsclient.urllib2_build_opener import build_opener
+    _NDG_HTTPSCLIENT_NOT_INSTALLED = False
 except ImportError:
     import warnings
     warnings.warn(
-        "M2Crypto is not installed - IdP SSL-based validation is disabled")
-    _M2CRYPTO_NOT_INSTALLED = True
+    "ndh_httpsclient is not installed - IdP SSL-based validation is disabled")
+    _NDG_HTTPSCLIENT_NOT_INSTALLED = True
 
 try:
     from xml.etree import ElementTree
@@ -657,7 +657,7 @@ class SSLIdPValidationDriver(IdPValidationDriver):
     IDP_VALIDATOR_BASE_CLASS = SSLIdPValidator
     
     def __init__(self, idpConfigFilePath=None, installOpener=False):
-        if _M2CRYPTO_NOT_INSTALLED:
+        if _NDG_HTTPSCLIENT_NOT_INSTALLED:
             raise ImportError("M2Crypto is required for SSL-based IdP "
                               "validation but it is not installed.")
 

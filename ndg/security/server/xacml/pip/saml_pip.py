@@ -61,7 +61,7 @@ class SessionCache(object):
         @type timeout: float/int/long or None type
         """
         # Expecting URIs for Ids, make them safe for storage by encoding first
-        encodedId = base64.b64encode(_id)
+        encodedId = base64.b64encode(_id.encode('utf-8'))
 
         # The first argument is the request object, a dictionary-like object
         # from which and to which cookie settings are made.  This can be ignored

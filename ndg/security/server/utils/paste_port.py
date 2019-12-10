@@ -6,7 +6,7 @@ __copyright__ = "(C) 2019 UKRI"
 __license__ = "license file in top-level package directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __all__ = []
-from io import StringIO 
+from io import BytesIO 
 
 from paste import httpexceptions
 from paste.util import converters
@@ -103,7 +103,7 @@ class Cascade(object):
                         copy_len -= len(chunk)
                 f.seek(0)
             else:
-                f = StringIO(environ['wsgi.input'].read(length))
+                f = BytesIO(environ['wsgi.input'].read(length))
             environ['wsgi.input'] = f
         else:
             copy_wsgi_input = False

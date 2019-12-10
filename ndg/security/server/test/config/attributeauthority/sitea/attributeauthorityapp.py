@@ -22,8 +22,7 @@ INI_FILENAME = 'attribute-service.ini'
 CFG_FILEPATH = path.join(path.dirname(path.abspath(__file__)), INI_FILENAME)
 
 
-if __name__ == '__main__':  
-        
+if __name__ == '__main__':    
     def_cert_filepath = path.join(NDGSEC_TEST_CONFIG_DIR, 
                                   'pki', 
                                   'localhost.crt')
