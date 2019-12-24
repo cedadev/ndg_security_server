@@ -94,7 +94,7 @@ setup(
         'xacml':  ["ndg_xacml"],
         'myproxy-saml-assertion-cert-ext-app': ['MyProxyClient'],
         'integration-tests': ['pyOpenSSL'],
-        'openid-services': ['Genshi==0.6'],
+        'openid-services': ['Genshi>=0.6'],
         'openid-relyingparty': ['ndg_httpsclient'],
         'ceda-site-services': ['crypto-cookie']
     },
