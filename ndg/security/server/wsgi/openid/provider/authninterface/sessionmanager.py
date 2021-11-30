@@ -55,7 +55,7 @@ class SessionManagerOpenIDAuthNInterface(AbstractAuthNInterface):
             for name in SessionManagerOpenIDAuthNInterface.dbParamNames:
                 setattr(self, name, prop.pop(name))
                 
-        except KeyError, e:
+        except KeyError as e:
             raise AuthNInterfaceConfigError("Missing property setting for "
                                             "database connection: %s" % e)
 
@@ -91,7 +91,7 @@ class SessionManagerOpenIDAuthNInterface(AbstractAuthNInterface):
             try:
                 dbEngine = create_engine(self.connectionString)
                 connection = dbEngine.connect()
-            except Exception, e:
+            except Exception as e:
                 log.error('Connecting database for user logon query : %s' % e)
                 raise
             
@@ -101,7 +101,7 @@ class SessionManagerOpenIDAuthNInterface(AbstractAuthNInterface):
                                        userIdentifier=userIdentifier)
                     query=Template(self.logonSQLQuery).substitute(queryInputs)
                     result = connection.execute(query)
-                except Exception, e:
+                except Exception as e:
                     log.error('Connecting database for user logon query : %s'%
                               e)
                     raise
@@ -116,7 +116,7 @@ class SessionManagerOpenIDAuthNInterface(AbstractAuthNInterface):
             self.sessionId = self._client.connect(username, 
                                                   passphrase=password)[-1]
             
-        except AuthNServiceInvalidCredentials, e:
+        except AuthNServiceInvalidCredentials as e:
             log.exception(e)
             raise AuthNInterfaceInvalidCredentials()
         
@@ -145,7 +145,7 @@ class SessionManagerOpenIDAuthNInterface(AbstractAuthNInterface):
         try:
             dbEngine = create_engine(self.connectionString)
             connection = dbEngine.connect()
-        except Exception, e:
+        except Exception as e:
             log.error('Connecting database for user identifiers query : %s'%e)
             raise
             
@@ -157,8 +157,8 @@ class SessionManagerOpenIDAuthNInterface(AbstractAuthNInterface):
                 if not result.rowcount:
                     raise AuthNInterfaceRetrieveError()
                 
-                userIdentifiers = tuple([row.values()[0] for row in result])
-            except Exception, e:
+                userIdentifiers = tuple([list(row.values())[0] for row in result])
+            except Exception as e:
                 log.error('Querying database for user identifiers for user '
                           '"%s": %s' (username, e))
                 raise
@@ -173,6 +173,6 @@ class SessionManagerOpenIDAuthNInterface(AbstractAuthNInterface):
         try:
             self._client.disconnect(sessID=self.sessionId)
             
-        except Exception, e:
+        except Exception as e:
             log.exception(e)
             raise AuthNInterfaceInvalidCredentials()

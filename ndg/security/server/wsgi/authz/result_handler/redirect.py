@@ -14,7 +14,7 @@ __license__ = "BSD - see LICENSE file in top-level directory"
 import logging
 log = logging.getLogger(__name__)
 
-from httplib import UNAUTHORIZED
+from http.client import UNAUTHORIZED
 
 from ndg.security.server.wsgi.authz.result_handler import (
     PEPResultHandlerMiddlewareBase, PEPResultHandlerMiddlewareConfigError)
@@ -93,7 +93,7 @@ class HTTPRedirectPEPResultHandlerMiddleware(PEPResultHandlerMiddlewareBase):
                                                             self.redirectURI)
         
     def _setRedirectURI(self, uri):
-        if not isinstance(uri, basestring):
+        if not isinstance(uri, str):
             raise TypeError("Redirect URI must be set to string type")   
          
         self.__redirectURI = uri

@@ -12,7 +12,7 @@ __license__ = "BSD - see LICENSE file in top-level directory"
 import logging
 log = logging.getLogger(__name__)
 
-import httplib
+import http.client
 from os import path
 
 from genshi.template import TemplateLoader
@@ -70,7 +70,7 @@ class GenshiRendering(RenderingInterface):
         'oidResponse'
     )
     __slots__ = tuple(["__%s" % name for name in ATTR_NAMES])
-    del name
+
     __slots__ += PROPERTY_NAMES
         
     LOGIN_TMPL_NAME = 'login.html'
@@ -148,7 +148,7 @@ class GenshiRendering(RenderingInterface):
         return self.__oidResponse
 
     def setTrust_root(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for trust_root attribute; '
                             'got %r' % type(value))
         self.__trust_root = value
@@ -172,13 +172,13 @@ class GenshiRendering(RenderingInterface):
         return self.__fail_to
 
     def setSuccess_to(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for success_to attribute; '
                             'got %r' % type(value))
         self.__success_to = value
 
     def setFail_to(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for fail_to attribute; '
                             'got %r' % type(value))
         self.__fail_to = value
@@ -202,25 +202,25 @@ class GenshiRendering(RenderingInterface):
         return self.__session
     
     def setTitle(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for title attribute; '
                             'got %r' % type(value))
         self.__title = value
     
     def setHeading(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for heading attribute; '
                             'got %r' % type(value))
         self.__heading = value
 
     def setXml(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for xml attribute; '
                             'got %r' % type(value))
         self.__xml = value
 
     def setHeadExtras(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for headExtras attribute; '
                             'got %r' % type(value))
         self.__headExtras = value
@@ -258,7 +258,7 @@ class GenshiRendering(RenderingInterface):
     def __setattr__(self, name, value):
         """Apply some generic type checking"""
         if name in GenshiRendering.PROPERTY_NAMES:
-            if not isinstance(value, basestring):
+            if not isinstance(value, str):
                 raise TypeError('Expecting string type for %r attribute; got '
                                 '%r' % (name, type(value)))
             
@@ -463,7 +463,7 @@ class GenshiRendering(RenderingInterface):
         self.heading = 'Error'
         self.xml = msg
         response = self._render(GenshiRendering.ERROR_PAGE_TMPL_NAME)
-        start_response('%d %s' % (code, httplib.responses[code]), 
+        start_response('%d %s' % (code, http.client.responses[code]), 
                        [('Content-type', 'text/html'+self.charset),
                         ('Content-length', str(len(response)))])
         self.xml = ''

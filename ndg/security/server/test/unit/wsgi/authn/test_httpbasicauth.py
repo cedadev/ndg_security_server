@@ -13,19 +13,18 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 import unittest
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import base64
 import paste.fixture
 from paste.httpexceptions import HTTPUnauthorized
 
 from ndg.security.server.test.base import BaseTestCase
-from ndg.security.server.utils.paste_utils import PasteDeployAppServer
 from ndg.security.server.wsgi.httpbasicauth import HttpBasicAuthMiddleware
     
 
 class TestAuthnApp(object):
     '''Test Application for the Authentication handler to protect'''
-    response = "Test HTTP Basic Authentication application"
+    response = b"Test HTTP Basic Authentication application"
     
     def __init__(self, app_conf, **local_conf):
         pass
@@ -45,8 +44,8 @@ class TestAuthnApp(object):
 
 
 class HttpBasicAuthPluginMiddleware(object):
-    USERNAME = 'testuser'
-    PASSWORD = 'password'
+    USERNAME = b'testuser'
+    PASSWORD = b'password'
     
     def __init__(self, app):
         self._app = app
@@ -80,38 +79,14 @@ class HttpBasicAuthMiddlewareTestCase(BaseTestCase):
         username = HttpBasicAuthPluginMiddleware.USERNAME
         password = HttpBasicAuthPluginMiddleware.PASSWORD
         
-        base64String = base64.encodestring('%s:%s' % (username, password))[:-1]
+        base64String = base64.encodestring(b'%s:%s' % (username, password))[:-1]
         authHeader =  "Basic %s" % base64String
         headers = {'Authorization': authHeader}
 
         url = '/test_200'
         
         response = self.app.get(url, headers=headers, status=200)
-        print response
-        
-    def test02Urllib2Client(self):
-        # Thread separate Paster based service 
-        srvc = PasteDeployAppServer(app=self.wsgiapp, 
-                                    port=self.__class__.SERVICE_PORTNUM)
-        srvc.startThread()
-        try:
-            username = HttpBasicAuthPluginMiddleware.USERNAME
-            password = HttpBasicAuthPluginMiddleware.PASSWORD
-            url = 'http://localhost:%d/test_200' % \
-                self.__class__.SERVICE_PORTNUM
-                
-            req = urllib2.Request(url)
-            base64String = base64.encodestring('%s:%s' % 
-                                               (username, password))[:-1]
-            authHeader =  "Basic %s" % base64String
-            req.add_header("Authorization", authHeader)
-            
-            handle = urllib2.urlopen(req)
-            
-            response = handle.read()
-            print (response)
-        finally:
-            srvc.terminateThread()
+        print(response)
             
 
 if __name__ == "__main__":

@@ -25,7 +25,7 @@ __revision__ = '$Id$'
 from datetime import datetime
 import logging
 import os.path
-from StringIO import StringIO
+from io import StringIO
 import unittest
 from uuid import uuid4
 
@@ -135,14 +135,14 @@ class AuthServiceWithXacmlProfileTestCase(unittest.TestCase):
 
         # Send the SOAP request to the authorisation service.
         httpResponse = self.app.post(self.AUTHZ_SERVICE_URI, 
-                                          params=request,
-                                          headers=header,
-                                          status=200)
+                                     params=request,
+                                     headers=header,
+                                     status=200)
         log.debug("Response status=%d", httpResponse.status)
 
         # Parse the SOAP response.
         envelope = SOAPEnvelope()
-        respFile = StringIO(httpResponse.body)
+        respFile = StringIO(httpResponse.body.decode('UTF-8'))
         envelope.parse(respFile)
 
         # Extract the SAML response.

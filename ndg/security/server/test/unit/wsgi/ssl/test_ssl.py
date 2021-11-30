@@ -21,7 +21,7 @@ from ndg.security.server.test.base import CONFIG_DIR_ENVVARNAME, BaseTestCase
 
 class TestSSLClientAuthnApp(BaseTestCase):
     '''Test Application for the Authentication handler to protect'''
-    response = "Test Authentication redirect application"
+    response = b"Test Authentication redirect application"
        
     def __init__(self, app_conf, **local_conf):
         pass
@@ -82,7 +82,8 @@ class SSLClientAuthNTestCase(BaseTestCase):
                                                       ssl_cert_file.read())
             
         pem_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, ssl_client_cert)
-        extra_environ = {'HTTPS':'1', 'SSL_CLIENT_CERT': pem_cert}
+        extra_environ = {'HTTPS':'1', 
+                         'SSL_CLIENT_CERT': pem_cert.decode('UTF-8')}
         response = self.app.get('/secured/uri',
                                 extra_environ=extra_environ,
                                 status=200)

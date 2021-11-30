@@ -10,7 +10,7 @@ __copyright__ = "(C) 2009 Science and Technology Facilities Council"
 __license__ = "BSD - see top-level directory for LICENSE file"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = "$Id$"
-import httplib
+import http.client
 import sys
 import os
 import traceback
@@ -180,7 +180,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         authNInterface=AbstractAuthNInterface,
         trustedRelyingParties=())
 
-    defPaths = dict([(k, v) for k, v in defOpt.items()
+    defPaths = dict([(k, v) for k, v in list(defOpt.items())
                      if k.startswith('path_')])
 
     userIdentifierPat = '([^/]*)'
@@ -273,12 +273,12 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
 
         # Extract Authentication interface specific properties
         authNInterfaceProperties = dict([(k.replace('authN_', ''), v)
-                                         for k, v in opt.items()
+                                         for k, v in list(opt.items())
                                          if k.startswith('authN_')])
 
         try:
             self._authN = authNInterfaceClass(**authNInterfaceProperties)
-        except Exception, e:
+        except Exception as e:
             log.error("Error instantiating authentication interface: %s" % e)
             raise
 
@@ -300,10 +300,10 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
 
         # Full Paths
         self.urls = dict([(k.replace('path_', 'url_'), self.base_url + v)
-                          for k, v in self.paths.items()])
+                          for k, v in list(self.paths.items())])
 
         self.method = dict([(v, k.replace('path_', 'do_'))
-                            for k, v in self.paths.items()])
+                            for k, v in list(self.paths.items())])
 
         self.session_mware_environ_keyname = opt['session_middleware']
 
@@ -321,7 +321,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
 
         # Extract rendering interface specific properties
         renderingProperties = dict([(k.replace('rendering_', ''), v)
-                                         for k, v in opt.items()
+                                         for k, v in list(opt.items())
                                          if k.startswith('rendering_')])
 
         try:
@@ -329,7 +329,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                           self.base_url,
                                           self.urls,
                                           **renderingProperties)
-        except Exception, e:
+        except Exception as e:
             log.error("Error instantiating rendering interface: %s" % e)
             raise
 
@@ -350,7 +350,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                                None)
             axResponseProperties = dict(
                 [(k.replace('axResponse_', ''), v)
-                 for k,v in opt.items() if k.startswith('axResponse_')])
+                 for k,v in list(opt.items()) if k.startswith('axResponse_')])
 
             try:
                 self.__axResponse = instantiateClass(
@@ -359,7 +359,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                         moduleFilePath=axResponseModuleFilePath,
                                         objectType=AXInterface,
                                         classProperties=axResponseProperties)
-            except Exception, e:
+            except Exception as e:
                 log.error("Error instantiating AX interface: %s" % e)
                 raise
 
@@ -398,7 +398,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                not optName.startswith('axResponse_')
 
         badOptNames = []
-        for optName, optVal in newOpt.items():
+        for optName, optVal in list(newOpt.items()):
             if prefix:
                 if optName.startswith(prefix):
                     optName = optName.replace(prefix, '')
@@ -512,7 +512,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         @rtype: basestring
         @return: WSGI response
         """
-        if not environ.has_key(self.session_mware_environ_keyname):
+        if self.session_mware_environ_keyname not in environ:
             raise OpenIDProviderConfigError('The session middleware %r is not '
                                             'present. Have you set up the '
                                             'session middleware?' %
@@ -542,10 +542,14 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                     log.debug('Output for %s:\n%s', self.method[pathMatch],
                                                     response)
 
-            return response
+            if isinstance(response, str):
+                return [response.encode('utf-8')]
+            else:
+                return [r.encode('utf-8') for r in response]
         else:
             log.debug("No match for path %s" % self.path)
-            return self._setResponse(environ, start_response)
+            return [isinstance(r, str) and r.encode('utf-8') or r
+                    for r in self._setResponse(environ, start_response)]
 
     def do_id(self, environ, start_response):
         '''URL based discovery with an ID provided
@@ -603,7 +607,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         try:
             oid_request = self.oidserver.decodeRequest(self.query)
 
-        except server.ProtocolError, why:
+        except server.ProtocolError as why:
             response = self._displayResponse(why)
 
         else:
@@ -726,7 +730,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         if userAXSettings:
             # Get all the content namespaced as AX type
             axArgs = self.oid_response.fields.getArgs(ax.AXMessage.ns_uri)
-            for i in axArgs.keys():
+            for i in list(axArgs.keys()):
                 # Parse alias name but note not all keys are alias and so will
                 # not use the '.' delimiter
                 keyParts = i.split('.')
@@ -935,12 +939,12 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                               self.query['username'],
                               self.query.get('password', ''))
 
-        except AuthNInterfaceError, e:
+        except AuthNInterfaceError as e:
             return self._render.login(environ,
                                       start_response,
                                       msg=e.userMsg,
                                       success_to=self.urls['url_decide'])
-        except Exception, e:
+        except Exception as e:
             log.error("Unexpected %s type exception raised during "
                       "authentication: %s", type(e),
                       traceback.format_exc())
@@ -1066,7 +1070,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                                       identifier=identityURI)
 
         except (OpenIDProviderMissingRequiredAXAttrs,
-                OpenIDProviderMissingAXResponseHandler), e:
+                OpenIDProviderMissingAXResponseHandler) as e:
             log.error("%s type exception raised setting response following ID "
                       "Approval: %s", e.__class__.__name__,
                       traceback.format_exc())
@@ -1078,7 +1082,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                 'your site administrator.')
             return response
 
-        except OpenIDProviderReloginRequired, e:
+        except OpenIDProviderReloginRequired as e:
             log.error("%s type exception raised setting response following ID "
                       "Approval: %s", e.__class__.__name__,
                       traceback.format_exc())
@@ -1088,7 +1092,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                 'the site requesting your ID.  Please try logging in again.')
             return response
 
-        except Exception, e:
+        except Exception as e:
             log.error("%s type exception raised setting response following ID "
                       "Approval: %s", e.__class__.__name__,
                       traceback.format_exc())
@@ -1104,7 +1108,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                                            start_response,
                                            oid_request,
                                            self.oid_response)
-        except AuthNInterfaceError, e:
+        except AuthNInterfaceError as e:
             log.error("%s type exception raised calling decide page "
                       "rendering - an OpenID identifier look-up error? "
                       "message is: %s", e.__class__.__name__,
@@ -1257,16 +1261,16 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         try:
             self.axResponse(ax_req, ax_resp, self._authN, self.session)
 
-        except OpenIDProviderMissingRequiredAXAttrs, e:
+        except OpenIDProviderMissingRequiredAXAttrs as e:
             log.error("OpenID Provider is unable to set the AX attributes "
                       "required by the Relying Party's request: %s" % e)
             raise
 
-        except OpenIDProviderReloginRequired, e:
+        except OpenIDProviderReloginRequired as e:
             log.exception(e)
             raise
 
-        except Exception, e:
+        except Exception as e:
             log.error("%s exception raised setting requested Attribute "
                       "Exchange values: %s",
                       e.__class__.__name__,
@@ -1362,7 +1366,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                         'your site administrator.')
                     return response
 
-                except OpenIDProviderReloginRequired, e:
+                except OpenIDProviderReloginRequired as e:
                     response = self._render.errorPage(self.environ,
                                                       self.start_response,
                         'An error occurred setting additional parameters '
@@ -1370,7 +1374,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                         'try logging in again.')
                     return response
 
-                except Exception, e:
+                except Exception as e:
                     log.error("%s type exception raised setting response "
                               "following ID Approval: %s",
                               e.__class__.__name__,
@@ -1427,13 +1431,13 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
 
         try:
             webresponse = self.oidserver.encodeResponse(oid_response)
-        except server.EncodingError, why:
+        except server.EncodingError as why:
             text = why.response.encodeToKVForm()
             response = self._render.errorPage(self.environ, self.start_response,
                                               text)
             return response
 
-        hdr = webresponse.headers.items()
+        hdr = list(webresponse.headers.items())
 
         # If the content length exceeds the maximum to represent on a URL, it's
         # rendered as a form instead
@@ -1460,7 +1464,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                   hdr, response)
 
         self.start_response('%d %s' % (webresponse.code,
-                                       httplib.responses[webresponse.code]),
+                                       http.client.responses[webresponse.code]),
                             hdr)
         return response
 
@@ -1474,7 +1478,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         @rtype: list
         @return: empty HTML body
         """
-        start_response('302 %s' % httplib.responses[302],
+        start_response('302 %s' % http.client.responses[302],
                        [('Content-type', 'text/html' + self.charset),
                         ('Location', url)])
         return []
@@ -1501,7 +1505,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         # Convert from string type where required
         if not value:
             self.__charset = ''
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             self.__charset = '; charset=' + value
         else:
             raise TypeError('Expecting string type for "charset" attribute; '
@@ -1523,7 +1527,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
                      "Dictionary of Paths for the app")
 
     def setBase_url(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for '
                             '"base_url" attribute; got %r' %
                             type(value))
@@ -1550,7 +1554,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
 
     @session_mware_environ_keyname.setter
     def session_mware_environ_keyname(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for '
                             '"session_mware_environ_keyname" attribute; '
                             'got %r' %
@@ -1641,7 +1645,7 @@ class OpenIDProviderMiddleware(NDGSecurityMiddlewareBase):
         return self.__trustedRelyingParties
 
     def setTrustedRelyingParties(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             pat = OpenIDProviderMiddleware.TRUSTED_RELYINGPARTIES_SEP_PAT
             self.__trustedRelyingParties = tuple([i for i in pat.split(value)])
 
@@ -1831,7 +1835,7 @@ class RenderingInterface(object):
         @return: WSGI response
         """
         response = "Page is not implemented"
-        start_response('%d %s' % (404, httplib.responses[404]),
+        start_response('%d %s' % (404, http.client.responses[404]),
                        [('Content-type', 'text/html' + self.charset),
                         ('Content-length', str(len(response)))])
         return response
@@ -1861,7 +1865,7 @@ class RenderingInterface(object):
         """
 
         response = "Page is not implemented"
-        start_response('%d %s' % (404, httplib.responses[404]),
+        start_response('%d %s' % (404, http.client.responses[404]),
                        [('Content-type', 'text/html' + self.charset),
                         ('Content-length', str(len(response)))])
         return response
@@ -1878,7 +1882,7 @@ class RenderingInterface(object):
         @return: WSGI response
         """
         response = "Page is not implemented"
-        start_response('%d %s' % (404, httplib.responses[404]),
+        start_response('%d %s' % (404, http.client.responses[404]),
                        [('Content-type', 'text/html' + self.charset),
                         ('Content-length', str(len(response)))])
         return response
@@ -1917,7 +1921,7 @@ class RenderingInterface(object):
         @return: WSGI response
         """
         response = "Page is not implemented"
-        start_response('%d %s' % (404, httplib.responses[404]),
+        start_response('%d %s' % (404, http.client.responses[404]),
                        [('Content-type', 'text/html' + self.charset),
                         ('Content-length', str(len(response)))])
         return response
@@ -1938,7 +1942,7 @@ class RenderingInterface(object):
         @return: WSGI response
         """
         response = "Page is not implemented"
-        start_response('%d %s' % (404, httplib.responses[code]),
+        start_response('%d %s' % (404, http.client.responses[code]),
                        [('Content-type', 'text/html' + self.charset),
                         ('Content-length', str(len(response)))])
         return response

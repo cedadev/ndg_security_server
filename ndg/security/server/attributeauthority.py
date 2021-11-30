@@ -145,7 +145,7 @@ class AttributeAuthority(object):
 
     def __setstate__(self, attrDict):
         '''Enable pickling with __slots__'''
-        for attrName, val in attrDict.items():
+        for attrName, val in list(attrDict.items()):
             setattr(self, attrName, val)
 
     def _getAssertionLifetime(self):
@@ -155,7 +155,7 @@ class AttributeAuthority(object):
         if isinstance(value, float):
             self.__assertionLifetime = value
 
-        elif isinstance(value, (basestring, int, long)):
+        elif isinstance(value, (str, int)):
             self.__assertionLifetime = float(value)
         else:
             raise TypeError('Expecting float, int, long or string type for '
@@ -200,7 +200,7 @@ class AttributeAuthority(object):
                                      '"NDGSEC_AA_PROPFILEPATH" or "NDGSEC_DIR"'
                                      ' environment variables are set')
 
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise AttributeError("Input Properties file path "
                                  "must be a valid string.")
 
@@ -232,7 +232,7 @@ class AttributeAuthority(object):
         if not val:
             val = os.environ.get('NDGSEC_AA_PROPFILESECTION', 'DEFAULT')
 
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise AttributeError("Input Properties file section name "
                                  "must be a valid string.")
 
@@ -266,7 +266,7 @@ class AttributeAuthority(object):
         if val is None:
             val = os.environ.get('NDGSEC_AA_PROPFILEPREFIX', 'DEFAULT')
 
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise AttributeError("Input Properties file section name "
                                  "must be a valid string.")
 
@@ -372,7 +372,7 @@ class AttributeAuthority(object):
         lenAttributeInterfacePrefix = len(
                         AttributeAuthority.ATTRIBUTE_INTERFACE_OPTPREFIX) + 1
 
-        for name, val in prop.items():
+        for name, val in list(prop.items()):
             if name.startswith(self.propPrefix):
                 name = name[lenPropPrefix:]
 
@@ -385,7 +385,7 @@ class AttributeAuthority(object):
             if name not in AttributeAuthority.PROPERTY_DEFAULTS:
                 raise AttributeError('Invalid attribute name "%s"' % name)
 
-            if isinstance(val, basestring):
+            if isinstance(val, str):
                 val = os.path.expandvars(val)
 
             if isinstance(AttributeAuthority.PROPERTY_DEFAULTS[name], list):
@@ -484,40 +484,40 @@ class AttributeAuthority(object):
             # Return a dictionary of name, value pairs
             self.attributeInterface.getAttributes(attributeQuery, samlResponse)
 
-        except InvalidUserId, e:
+        except InvalidUserId as e:
             log.exception(e)
             samlResponse.status.statusCode.value = \
                                         StatusCode.UNKNOWN_PRINCIPAL_URI
             return samlResponse
 
-        except UserIdNotKnown, e:
+        except UserIdNotKnown as e:
             log.exception(e)
             samlResponse.status.statusCode.value = \
                                         StatusCode.UNKNOWN_PRINCIPAL_URI
             samlResponse.status.statusMessage.value = str(e)
             return samlResponse
 
-        except InvalidRequestorId, e:
+        except InvalidRequestorId as e:
             log.exception(e)
             samlResponse.status.statusCode.value = StatusCode.REQUEST_DENIED_URI
             samlResponse.status.statusMessage.value = str(e)
             return samlResponse
 
-        except AttributeReleaseDenied, e:
+        except AttributeReleaseDenied as e:
             log.exception(e)
             samlResponse.status.statusCode.value = \
                                         StatusCode.INVALID_ATTR_NAME_VALUE_URI
             samlResponse.status.statusMessage.value = str(e)
             return samlResponse
 
-        except AttributeNotKnownError, e:
+        except AttributeNotKnownError as e:
             log.exception(e)
             samlResponse.status.statusCode.value = \
                                         StatusCode.INVALID_ATTR_NAME_VALUE_URI
             samlResponse.status.statusMessage.value = str(e)
             return samlResponse
 
-        except Exception, e:
+        except Exception as e:
             log.exception("Unexpected error calling Attribute Interface "
                           "for subject [%s] and query issuer [%s]" %
                           (attributeQuery.subject.nameID.value,
@@ -590,9 +590,6 @@ class AttributeInterface(object):
 
     Roles are expected to indexed by user Distinguished Name (DN).  They
     could be stored in a database or file."""
-
-    # Enable derived classes to use slots if desired
-    __slots__ = ()
 
     # User defined class may wish to specify a URI for a database interface or
     # path for a user roles configuration file
@@ -676,7 +673,7 @@ class CSVFileAttributeInterface(AttributeInterface):
 
 
 # Properties file
-from ConfigParser import SafeConfigParser, NoOptionError
+from configparser import SafeConfigParser, NoOptionError
 
 try:
     # PostgreSQL interface
@@ -720,22 +717,19 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
     SAML_VALID_REQUESTOR_DNS_OPTNAME = 'samlValidRequestorDNs'
     SAML_ASSERTION_LIFETIME_OPTNAME = 'samlAssertionLifetime'
     SAML_ATTRIBUTE2SQLQUERY_OPTNAME = 'samlAttribute2SqlQuery'
-    SAML_ATTRIBUTE2SQLQUERY_OPTNAME_LEN = len(SAML_ATTRIBUTE2SQLQUERY_OPTNAME)
-
-    SAML_ATTRIBUTE2SQLQUERY_ATTRNAME_DELIMITERS = ('.', '_')
-    SAML_ATTRIBUTE2SQLQUERY_ATTRVAL_PAT = re.compile('\"\W+\"')
-
-    __slots__ = (
+    
+    OPTNAMES = (
         CONNECTION_STRING_OPTNAME,
         ATTRIBUTE_SQLQUERY_OPTNAME,
         SAML_SUBJECT_SQLQUERY_OPTNAME,
         SAML_VALID_REQUESTOR_DNS_OPTNAME,
         SAML_ASSERTION_LIFETIME_OPTNAME,
-        SAML_ATTRIBUTE2SQLQUERY_OPTNAME,
-    )
-    __PRIVATE_ATTR_PREFIX = '_SQLAlchemyAttributeInterface__'
-    __slots__ += tuple([__PRIVATE_ATTR_PREFIX + i for i in __slots__])
-    del i
+        SAML_ATTRIBUTE2SQLQUERY_OPTNAME        
+        )
+    SAML_ATTRIBUTE2SQLQUERY_OPTNAME_LEN = len(SAML_ATTRIBUTE2SQLQUERY_OPTNAME)
+
+    SAML_ATTRIBUTE2SQLQUERY_ATTRNAME_DELIMITERS = ('.', '_')
+    SAML_ATTRIBUTE2SQLQUERY_ATTRVAL_PAT = re.compile('\"\W+\"')
 
 #    For Reference - split based on space separated ' or " quoted items
 #    SAML_VALID_REQUESTOR_DNS_PAT = re.compile("['\"]?\s*['\"]")
@@ -781,13 +775,13 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
         if name == cls.SAML_ATTRIBUTE2SQLQUERY_OPTNAME:
             for attribute_name in value:
                 attribute_sql_query = value.get(attribute_name)
-                if not isinstance(attribute_name, basestring):
+                if not isinstance(attribute_name, str):
                     raise TypeError('Expecting string type for \'{}\' attribute'
                                     ' name; got {}'.format(
                                         cls.SAML_ATTRIBUTE2SQLQUERY_OPTNAME,
                                         type(attribute_name)))
 
-                if not isinstance(attribute_sql_query, basestring):
+                if not isinstance(attribute_sql_query, str):
                     raise TypeError('Expecting string type for \'{}\' attribute'
                                     ' SQL query; got {}'.format(
                                         cls.SAML_ATTRIBUTE2SQLQUERY_OPTNAME,
@@ -798,7 +792,7 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
                     self.xsstringAttributeValueParser
                     )
 
-        elif name in cls.__slots__:
+        elif max([name.endswith(opt_name) for opt_name in cls.OPTNAMES]):
             object.__setattr__(self, name, value)
 
         elif (len(name) > cls.SAML_ATTRIBUTE2SQLQUERY_OPTNAME_LEN and
@@ -853,7 +847,7 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
         return xsstringAttrVal
 
     def setProperties(self, prefix='', **properties):
-        for name, val in properties.items():
+        for name, val in list(properties.items()):
             if prefix:
                 if name.startswith(prefix):
                     name = name.replace(prefix, '', 1)
@@ -868,10 +862,10 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
         if isinstance(value, timedelta):
             self.__samlAssertionLifetime = value
 
-        if isinstance(value, (float, int, long)):
+        if isinstance(value, (float, int)):
             self.__samlAssertionLifetime = timedelta(seconds=value)
 
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             self.__samlAssertionLifetime = timedelta(seconds=float(value))
         else:
             raise TypeError('Expecting float, int, long, string or timedelta '
@@ -889,7 +883,7 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
         return self.__samlSubjectSqlQuery
 
     def _setSamlSubjectSqlQuery(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "%s" attribute; got %r'%
                     (SQLAlchemyAttributeInterface.SAML_SUBJECT_SQLQUERY_OPTNAME,
                      type(value)))
@@ -900,7 +894,7 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
         return self.__samlValidRequestorDNs
 
     def _setSamlValidRequestorDNs(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
 
             pat = SQLAlchemyAttributeInterface.SAML_VALID_REQUESTOR_DNS_PAT
             self.__samlValidRequestorDNs = [
@@ -928,7 +922,7 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
         return self.__connectionString
 
     def _setConnectionString(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "%s" attribute; got %r'%
                         (SQLAlchemyAttributeInterface.CONNECTION_STRING_OPTNAME,
                          type(value)))
@@ -942,7 +936,7 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
         return self.__attributeSqlQuery
 
     def _setAttributeSqlQuery(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "%s" attribute; got %r'%
                     (SQLAlchemyAttributeInterface.ATTRIBUTE_SQLQUERY_OPTNAME,
                      type(value)))
@@ -1170,7 +1164,7 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
         try:
             query_tmpl = self.__samlAttribute2SqlQuery.get(attributeName)[0]
 
-        except (IndexError, TypeError), e:
+        except (IndexError, TypeError) as e:
             raise AttributeInterfaceConfigError('Bad format for SAML attribute '
                                                 'to SQL query look-up: %s' % e)
         if query_tmpl is None:
@@ -1222,7 +1216,7 @@ class SQLAlchemyAttributeInterface(AttributeInterface):
 
     def __setstate__(self, attrDict):
         '''Enable pickling for use with beaker.session'''
-        for attr, val in attrDict.items():
+        for attr, val in list(attrDict.items()):
             setattr(self, attr, val)
 
 

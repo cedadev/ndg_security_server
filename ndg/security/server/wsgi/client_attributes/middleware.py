@@ -8,7 +8,7 @@ __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = "$Id$"
 
 import logging
-import urlparse
+import urllib.parse
 
 import ndg.httpsclient.utils as httpsclient_utils
 import ndg.httpsclient.ssl_context_util as  ssl_context_util
@@ -148,7 +148,7 @@ class AttributeRequestMiddleware(NDGSecurityMiddlewareBase):
         @return: True if string can be parsed as a URL with a scheme that is
         HTTP or HTTPS and at least a net location, otherwise False
         """
-        parts = urlparse.urlsplit(string)
+        parts = urllib.parse.urlsplit(string)
         return (parts.scheme in ['http', 'https']) and bool(parts.netloc)
 
     def _getAttributeService(self, subject):
@@ -167,7 +167,7 @@ class AttributeRequestMiddleware(NDGSecurityMiddlewareBase):
                       " subject %s", subject)
             xrdsStr = httpsclient_utils.fetch_from_url(subject,
                                                        self._httpsClientConfig)
-        except Exception, exc:
+        except Exception as exc:
             log.error(
                     "Unable to determine attribute service for subject %s: %s",
                     subject, exc.__str__())
@@ -239,7 +239,7 @@ class AttributeRequestMiddleware(NDGSecurityMiddlewareBase):
 
     @attributeServiceUrl.setter
     def attributeServiceUrl(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "attributeServiceUrl" '
                             'attribute; got %r' % type(val))
 
@@ -251,7 +251,7 @@ class AttributeRequestMiddleware(NDGSecurityMiddlewareBase):
 
     @sslCACertDir.setter
     def sslCACertDir(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "sslCACertDir" '
                             'attribute; got %r' % type(val))
 
@@ -263,7 +263,7 @@ class AttributeRequestMiddleware(NDGSecurityMiddlewareBase):
 
     @sslCertFilePath.setter
     def sslCertFilePath(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "sslCertFilePath" '
                             'attribute; got %r' % type(val))
 
@@ -275,7 +275,7 @@ class AttributeRequestMiddleware(NDGSecurityMiddlewareBase):
 
     @sslPriKeyFilePath.setter
     def sslPriKeyFilePath(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "sslPriKeyFilePath" '
                             'attribute; got %r' % type(val))
 
@@ -287,7 +287,7 @@ class AttributeRequestMiddleware(NDGSecurityMiddlewareBase):
 
     @sessionAttributeKey.setter
     def sessionAttributeKey(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "sessionAttributeKey" '
                             'attribute; got %r' % type(val))
 
@@ -299,7 +299,7 @@ class AttributeRequestMiddleware(NDGSecurityMiddlewareBase):
 
     @sessionKey.setter
     def sessionKey(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "sessionKey" '
                             'attribute; got %r' % type(val))
 

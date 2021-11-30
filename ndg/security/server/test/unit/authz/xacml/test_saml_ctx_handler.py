@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 from os import path
 import unittest
 
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 from ndg.security.server.test.base import BaseTestCase
 from ndg.security.server.xacml.ctx_handler.saml_ctx_handler import SamlCtxHandler
 
@@ -31,13 +31,13 @@ class SamlCtxHandlerTestCase(BaseTestCase):
         
     def test01Init(self):
         handler = SamlCtxHandler()
-        self.assert_(handler)
+        self.assertTrue(handler)
         
     def test02InitFromConfigFile(self):
         # Initialise from settings in a config file
         handler = SamlCtxHandler.fromConfig(self.__class__.CONFIG_FILEPATH)
-        self.assert_(handler)
-        self.assert_(handler.policyFilePath)
+        self.assertTrue(handler)
+        self.assertTrue(handler.policyFilePath)
         
     def test03InitFromKeywords(self):
         # Initialise from a dictionary
@@ -49,13 +49,13 @@ class SamlCtxHandlerTestCase(BaseTestCase):
         kw = dict(cfg.items('DEFAULT'))
         
         handler = SamlCtxHandler.fromKeywords(**kw)
-        self.assert_(handler)
-        self.assert_(handler.pip.attributeQuery)
-        self.assert_(handler.policyFilePath)
-        self.assert_(handler.issuerName)
-        self.assert_(handler.issuerFormat)
-        self.assert_(handler.assertionLifetime)
-        self.assert_(handler.xacmlExtFunc)
+        self.assertTrue(handler)
+        self.assertTrue(handler.pip.attributeQuery)
+        self.assertTrue(handler.policyFilePath)
+        self.assertTrue(handler.issuerName)
+        self.assertTrue(handler.issuerFormat)
+        self.assertTrue(handler.assertionLifetime)
+        self.assertTrue(handler.xacmlExtFunc)
         
         
 if __name__ == "__main__":

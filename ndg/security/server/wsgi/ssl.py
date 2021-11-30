@@ -107,9 +107,9 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
         return self.__sslClientCertKeyName
 
     def _setSslClientCertKeyName(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting %r type for "sslClientCertKeyName"; '
-                            'got %r' % (basestring, type(value)))
+                            'got %r' % (str, type(value)))
         self.__sslClientCertKeyName = value
 
     sslClientCertKeyName = property(_getSslClientCertKeyName, 
@@ -121,9 +121,9 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
         return self.__sslKeyName
 
     def _setSslKeyName(self, value):       
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting %r type for "sslKeyName"; got %r' %
-                            (basestring, type(value)))
+                            (str, type(value)))
         self.__sslKeyName = value
 
     sslKeyName = property(_getSslKeyName, 
@@ -165,7 +165,7 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
                       "for request to [%s]; setting HTTP 401 Unauthorized", 
                       self.pathInfo)
             return self._setErrorResponse(code=401,
-                                          msg='No client SSL Certificate set')
+                                          msg=b'No client SSL Certificate set')
             
         # Parse cert from environ keyword
         client_cert = self._parse_cert()
@@ -177,13 +177,13 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
             return self._setErrorResponse(code=401)
 
     def _setResponse(self, 
-                     notFoundMsg='No application set for '
-                                 'ApacheSSLAuthnMiddleware',
+                     notFoundMsg=b'No application set for '
+                                 b'ApacheSSLAuthnMiddleware',
                      **kw):
         return super(ApacheSSLAuthnMiddleware, 
                      self)._setResponse(notFoundMsg=notFoundMsg, **kw)
 
-    def _setErrorResponse(self, msg='Invalid SSL client certificate', **kw):
+    def _setErrorResponse(self, msg=b'Invalid SSL client certificate', **kw):
         return super(ApacheSSLAuthnMiddleware, self)._setErrorResponse(msg=msg,
                                                                        **kw)
 
@@ -226,7 +226,8 @@ class ApacheSSLAuthnMiddleware(NDGSecurityMiddlewareBase):
         @rtype: bool
         '''
         notAfter = cert.get_notAfter()
-        dtNotAfter = datetime.strptime(notAfter, '%Y%m%d%H%M%S%fZ')       
+        dtNotAfter = datetime.strptime(notAfter.decode('UTF-8'), 
+                                       '%Y%m%d%H%M%S%fZ')       
         dtNow = datetime.utcnow()
         
         return dtNotAfter < dtNow

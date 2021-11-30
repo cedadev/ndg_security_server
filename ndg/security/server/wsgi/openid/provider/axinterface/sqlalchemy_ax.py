@@ -38,7 +38,6 @@ class SQLAlchemyAXInterface(AXInterface):
         ATTRIBUTE_NAMES_OPTNAME,
     )
     __slots__ = tuple(["__%s" % name for name in ATTR_NAMES])
-    del name
 
     def __init__(self, **properties):
         '''Instantiate object taking in settings from the input
@@ -60,7 +59,7 @@ class SQLAlchemyAXInterface(AXInterface):
         return self.__connectionString
 
     def _setConnectionString(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "%s" '
                             'attribute; got %r' %
                             (SQLAlchemyAXInterface.CONNECTION_STRING_OPTNAME,
@@ -75,7 +74,7 @@ class SQLAlchemyAXInterface(AXInterface):
         return self.__sqlQuery
 
     def _setSqlQuery(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "sqlQuery" '
                             'attribute; got %r' % type(value))
         self.__sqlQuery = value
@@ -95,7 +94,7 @@ class SQLAlchemyAXInterface(AXInterface):
         if isinstance(value, (list, tuple)):
             self.__attributeNames = list(value)
 
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             self.__attributeNames = value.split()
         else:
             raise TypeError('Expecting string, list or tuple type for '
@@ -113,7 +112,7 @@ class SQLAlchemyAXInterface(AXInterface):
         """Set object attributes by keyword argument to this method.  Keywords
         are restricted by the entries in __slots__
         """
-        for name, val in properties.items():
+        for name, val in list(properties.items()):
             setattr(self, name, val)
 
     def __call__(self, ax_req, ax_resp, authnInterface, authnCtx):
@@ -163,7 +162,7 @@ class SQLAlchemyAXInterface(AXInterface):
         userAttributeMap = self._attributeQuery(username)
 
         # Add the requested attribute if available
-        for requestedAttributeURI in ax_req.requested_attributes.keys():
+        for requestedAttributeURI in list(ax_req.requested_attributes.keys()):
             if requestedAttributeURI in self.attributeNames:
                 log.info("Adding requested AX parameter %s=%s ...",
                          requestedAttributeURI,
@@ -193,7 +192,7 @@ class SQLAlchemyAXInterface(AXInterface):
             }
             query = Template(self.sqlQuery).substitute(queryInputs)
 
-        except KeyError, e:
+        except KeyError as e:
             raise AXInterfaceConfigError("Invalid key %r for attribute query "
                                          "string.  The valid key is %r" % (e,
                                 SQLAlchemyAXInterface.SQLQUERY_USERID_KEYNAME))
@@ -220,7 +219,7 @@ class SQLAlchemyAXInterface(AXInterface):
                                          "in the configuration file: %r" %
                                          (attributeValues, self.attributeNames))
 
-        attributes = dict(zip(self.attributeNames, attributeValues))
+        attributes = dict(list(zip(self.attributeNames, attributeValues)))
 
         log.debug("Retrieved user AX attributes %r" % attributes)
 

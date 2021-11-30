@@ -7,7 +7,7 @@ __copyright__ = "(C) 2014 Science and Technology Facilities Council"
 __license__ = "BSD - see top-level directory for LICENSE file"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = "$Id$"
-import httplib
+import http.client
 import traceback
 import logging
 log = logging.getLogger(__name__)
@@ -145,12 +145,12 @@ class OpenIDProviderWithHttpBasicAuthMiddleware(OpenIDProviderMiddleware):
         try:
             self._authN.logon(environ, identity_uri, username, password)
             
-        except AuthNInterfaceError, e:
+        except AuthNInterfaceError as e:
             log.error("Authentication error: %s", traceback.format_exc())
 
             raise HTTPUnauthorized()
                            
-        except Exception, e:
+        except Exception as e:
             log.error("Unexpected %s type exception raised during "
                       "authentication: %s", type(e),
                       traceback.format_exc())
@@ -187,12 +187,12 @@ class OpenIDProviderWithHttpBasicAuthMiddleware(OpenIDProviderMiddleware):
                       'provide.')
             raise HTTPUnauthorized()
             
-        except OpenIDProviderReloginRequired, e:
+        except OpenIDProviderReloginRequired as e:
             log.error('An error occurred setting return attribute parameters '
                 'required by the Relying Party requesting your ID.')
             raise HTTPUnauthorized()
             
-        except Exception, e:
+        except Exception as e:
             log.error("%s type exception raised setting additional attributes "
                       " in the response: %s", 
                       e.__class__.__name__, 
@@ -200,7 +200,7 @@ class OpenIDProviderWithHttpBasicAuthMiddleware(OpenIDProviderMiddleware):
             raise HTTPUnauthorized()
     
         webresponse = self.oidserver.encodeResponse(oid_response)
-        hdr = webresponse.headers.items()
+        hdr = list(webresponse.headers.items())
         
         # If the content length exceeds the maximum to represent on a URL,
         # it's rendered as a form instead
@@ -227,6 +227,6 @@ class OpenIDProviderWithHttpBasicAuthMiddleware(OpenIDProviderMiddleware):
                   hdr, response)
             
         start_response('%d %s' % (webresponse.code,
-                                  httplib.responses[webresponse.code]),
+                                  http.client.responses[webresponse.code]),
                        hdr)
         return [response]        

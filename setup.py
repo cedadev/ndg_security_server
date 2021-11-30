@@ -34,6 +34,9 @@ _ENTRY_POINTS = """
     ndgsecurity_attribute_service=ndg.security.server.paster_templates.template:AttributeServiceTemplate
     ndgsecurity_authorisation_service=ndg.security.server.paster_templates.template:AuthorisationServiceTemplate
     ndgsecurity_openidprovider=ndg.security.server.paster_templates.template:OpenIDProviderTemplate
+
+    [paste.composite_factory]
+    cascade_ = ndg.security.server.utils.paste_port:make_cascade
 """
 
 # Read succeeds for sdist creation but fails for build with pip install.  Added
@@ -91,13 +94,13 @@ setup(
         'xacml':  ["ndg_xacml"],
         'myproxy-saml-assertion-cert-ext-app': ['MyProxyClient'],
         'integration-tests': ['pyOpenSSL'],
-        'openid-services': ['Genshi==0.6'],
+        'openid-services': ['Genshi>=0.6'],
+        'openid-relyingparty': ['ndg_httpsclient'],
         'ceda-site-services': ['crypto-cookie']
     },
     # Set ndg.security.common dependency
     dependency_links = ["http://dist.ceda.ac.uk/pip/"],
     packages = find_packages(),
-    namespace_packages = ['ndg', 'ndg.security'],
     package_data={
         'ndg.security.server.paster_templates': [
             'attributeservice/*.py',

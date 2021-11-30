@@ -7,7 +7,7 @@ def keyword_parser(obj, prefix='', **kw):
     '''Parse config items delimited by dots into corresponding objects and 
     members variables
     '''
-    for param_name, val in kw.items():
+    for param_name, val in list(kw.items()):
         if prefix:
             _param_name = param_name.rsplit(prefix)[-1]
         else:

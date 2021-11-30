@@ -11,7 +11,7 @@ __revision__ = "$Id$"
 import logging
 log = logging.getLogger(__name__)
 import re
-import httplib
+import http.client
 import base64
     
 from paste.httpexceptions import HTTPException, HTTPUnauthorized
@@ -40,7 +40,7 @@ class HttpBasicAuthResponseException(HttpBasicAuthMiddlewareError):
             self.code = argList.pop()
             arg = tuple(argList)
         else:
-            self.code = httplib.UNAUTHORIZED
+            self.code = http.client.UNAUTHORIZED
                 
         HttpBasicAuthMiddlewareError.__init__(self, *arg, **kw)
     
@@ -198,7 +198,7 @@ class HttpBasicAuthMiddleware(object):
 
     @authn_func_environ_keyname.setter
     def authn_func_environ_keyname(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for '
                             '"authn_func_environ_keyname"; got %r type' % 
                             type(value))
@@ -221,7 +221,7 @@ class HttpBasicAuthMiddleware(object):
 
     @http_hdr_field_match.setter
     def http_hdr_field_match(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "http_hdr_field_match"; '
                             'got %r type' % type(value))
             
@@ -248,7 +248,7 @@ class HttpBasicAuthMiddleware(object):
         @type value: basestring
         @param value: HTTP Authentication realm to set in responses
         """
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for '
                             '"realm"; got %r' % type(value))
         
@@ -356,7 +356,7 @@ class HttpBasicAuthMiddleware(object):
         def start_response_wrapper(status, headers, exec_info=None): 
             """Ensure Authentication realm is included with 401 responses"""
             status_code = int(status.split()[0])
-            if status_code == httplib.UNAUTHORIZED:
+            if status_code == http.client.UNAUTHORIZED:
                 authn_realm_hdrFound = False
                 for name, val in headers:
                     if (name.lower() == 
@@ -394,7 +394,7 @@ class HttpBasicAuthMiddleware(object):
                 # Credentials were set it's just they were invalid
                 raise
 
-        except HTTPException, e:
+        except HTTPException as e:
             return e(environ, start_response)
         
         # If no response is set, the next middleware is called in the chain

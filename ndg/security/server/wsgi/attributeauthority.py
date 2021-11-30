@@ -132,9 +132,9 @@ class AttributeAuthorityMiddleware(NDGSecurityMiddlewareBase):
         return self.__keyName
 
     def _setKeyName(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting %r for "keyName" attribute; got %r' %
-                            (basestring, type(val)))
+                            (str, type(val)))
         self.__keyName = val
         
     keyName = property(fget=_getKeyName, 
@@ -146,9 +146,9 @@ class AttributeAuthorityMiddleware(NDGSecurityMiddlewareBase):
         return self.__attributeQueryKeyName
 
     def _set_attributeQueryKeyName(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting %r for "attributeQueryKeyName" '
-                            'attribute; got %r' % (basestring, type(val)))
+                            'attribute; got %r' % (str, type(val)))
         self.__attributeQueryKeyName = val
         
     attributeQueryKeyName = property(fget=_get_attributeQueryKeyName, 

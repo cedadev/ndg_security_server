@@ -12,7 +12,7 @@ import logging
 log = logging.getLogger(__name__)
 
 from os import path
-from ConfigParser import SafeConfigParser, ConfigParser
+from configparser import SafeConfigParser, ConfigParser
 from datetime import datetime, timedelta
 from uuid import uuid4
 
@@ -107,7 +107,7 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
     def _setXacmlExtFunc(self, value):
         """Set XACML extensions functions"""
         self.__xacmlExtFunc = []
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             for fnspec in value.split():
                 log.debug("XACML extension function: %s", fnspec)
                 self.__xacmlExtFunc.append(importModuleObject(fnspec))
@@ -179,7 +179,7 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
         @param section: configuration file section from which to extract
         parameters.
         '''  
-        if isinstance(cfg, basestring):
+        if isinstance(cfg, str):
             cfgFilePath = path.expandvars(cfg)
             
             # Add a 'here' helper option for setting dir paths in the config
@@ -196,7 +196,7 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
             items = cfg.items(section)
          
         elif isinstance(cfg, dict):
-            items = cfg.items()     
+            items = list(cfg.items())     
         else:
             raise AttributeError('Expecting basestring, ConfigParser or dict '
                                  'type for "cfg" attribute; got %r type' % 
@@ -246,7 +246,7 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
         update.  Keyword names must match their equivalent class instance 
         variable names.  However, they may prefixed with <prefix>
         """
-        self.__parseFromItems(kw.items(), prefix=prefix)
+        self.__parseFromItems(list(kw.items()), prefix=prefix)
                 
     @classmethod
     def fromKeywords(cls, prefix=DEFAULT_OPT_PREFIX, **kw):
@@ -274,7 +274,7 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
         return self.__policyFilePath
 
     def _setPolicyFilePath(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "policyFilePath"; got '
                             '%r' % type(value))
         self.__policyFilePath = path.expandvars(value)
@@ -318,7 +318,7 @@ class SamlCtxHandler(_xacmlContext.handler.CtxHandlerBase):
     _getAssertionLifetime = lambda self: self.__assertionLifetime
     
     def _setAssertionLifetime(self, value):
-        if isinstance(value, (int, float, long, basestring)):
+        if isinstance(value, (int, float, str)):
             self.__assertionLifetime = float(value)
         else:
             raise TypeError('Expecting int, long, float or string type for '

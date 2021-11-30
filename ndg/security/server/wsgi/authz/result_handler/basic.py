@@ -14,7 +14,7 @@ __license__ = "BSD - see LICENSE file in top-level directory"
 import logging
 log = logging.getLogger(__name__)
 
-from httplib import UNAUTHORIZED, FORBIDDEN
+from http.client import UNAUTHORIZED, FORBIDDEN
 
 from ndg.security.server.wsgi import NDGSecurityMiddlewareBase
 from ndg.security.server.wsgi.authz.result_handler import (

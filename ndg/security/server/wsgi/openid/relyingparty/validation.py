@@ -20,20 +20,20 @@ import traceback
 import re
  
 # For SSL-based validation classes  
-import urllib2
+import urllib.request
 try:
-    from M2Crypto import SSL
-    from M2Crypto.m2urllib2 import build_opener
-    _M2CRYPTO_NOT_INSTALLED = False
+    from OpenSSL import SSL
+    from ndg.httpsclient.urllib2_build_opener import build_opener
+    _NDG_HTTPSCLIENT_NOT_INSTALLED = False
 except ImportError:
     import warnings
     warnings.warn(
-        "M2Crypto is not installed - IdP SSL-based validation is disabled")
-    _M2CRYPTO_NOT_INSTALLED = True
+    "ndh_httpsclient is not installed - IdP SSL-based validation is disabled")
+    _NDG_HTTPSCLIENT_NOT_INSTALLED = True
 
 try:
     from xml.etree import ElementTree
-except ImportError, e:
+except ImportError as e:
     import warnings
     warnings.warn('xml.etree import failed with message %s, trying import from '
                   'elementtree site package instead...' % e)
@@ -55,7 +55,7 @@ class _ConfigBase(object):
         self.__parameters = {}
     
     def _set_className(self, className):
-        if not isinstance(className, basestring):
+        if not isinstance(className, str):
             raise TypeError('Expecting string type for className; got %r' %
                             type(className))
         self.__className = className
@@ -70,7 +70,7 @@ class _ConfigBase(object):
         return self.__configFile
     
     def _set_configFile(self, configFile):
-        if not isinstance(configFile, basestring):
+        if not isinstance(configFile, str):
             raise TypeError('Expecting string type for configFile; got %r' %
                             type(configFile))
         self.__configFile = configFile
@@ -304,11 +304,11 @@ class SSLClientAuthNValidator(SSLIdPValidator):
     a certificate to the peer enabling mutual authentication
     """
     PARAMETERS = {
-        'configFilePath': basestring,
-        'caCertDirPath': basestring,
-        'certFilePath': basestring,
-        'priKeyFilePath': basestring,
-        'priKeyPwd': basestring
+        'configFilePath': str,
+        'caCertDirPath': str,
+        'certFilePath': str,
+        'priKeyFilePath': str,
+        'priKeyPwd': str
     }
     __slots__ = {}
     __slots__.update(PARAMETERS)
@@ -344,7 +344,7 @@ class SSLClientAuthNValidator(SSLIdPValidator):
         file
         @type parameters: dict
         ''' 
-        for name, val in parameters.items():
+        for name, val in list(parameters.items()):
             setattr(self, name, os.path.expandvars(val))
         
         if self.caCertDirPath:
@@ -439,7 +439,7 @@ class FileBasedIdentityUriValidator(IdPValidator):
     flat file - one pattern per line
     """    
     PARAMETERS = {
-        'configFilePath': basestring,
+        'configFilePath': str,
     }
     CONFIGFILE_COMMENT_CHAR = '#'
     
@@ -463,7 +463,7 @@ class FileBasedIdentityUriValidator(IdPValidator):
         return self.__configFilePath
 
     def _setConfigFilePath(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "configFilePath"; got '
                             '%r' % type(value))
         self.__configFilePath = value
@@ -474,11 +474,11 @@ class FileBasedIdentityUriValidator(IdPValidator):
 
     def initialize(self, **parameters):
         '''@raise ConfigException:''' 
-        for name, val in parameters.items():
+        for name, val in list(parameters.items()):
             if name not in FileBasedIdentityUriValidator.PARAMETERS:
                 raise AttributeError('Invalid parameter name "%s".  Valid '
                             'names are %r' % (name,
-                            FileBasedIdentityUriValidator.PARAMETERS.keys()))
+                            list(FileBasedIdentityUriValidator.PARAMETERS.keys())))
                 
             if not isinstance(val, 
                               FileBasedIdentityUriValidator.PARAMETERS[name]):
@@ -497,7 +497,7 @@ class FileBasedIdentityUriValidator(IdPValidator):
         """
         try:
             configFile = open(self.configFilePath)
-        except IOError, e:
+        except IOError as e:
             raise ConfigException('Error parsing %r configuration file "%s": '
                                   '%s' % (self.__class__.__name__,
                                    e.filename, e.strerror))
@@ -520,7 +520,7 @@ class FileBasedIdentityUriValidator(IdPValidator):
         @param idpIdentity: endpoint for OpenID Provider service being 
         @raise IdPInvalidException:
         ''' 
-        for patStr, pat in self.identityUriPatterns.items():
+        for patStr, pat in list(self.identityUriPatterns.items()):
             if pat.match(idpIdentity) is not None:
                 log.debug("Identity URI %r matches whitelist pattern %r" %
                           (idpIdentity, patStr))
@@ -585,7 +585,7 @@ class IdPValidationDriver(object):
                 validator.initialize(**validatorConfig.parameters)
                 validators.append(validator)
             
-            except Exception, e:  
+            except Exception as e:  
                 log.error("Failed to initialise validator %s: %s", 
                           validatorConfig.className, traceback.format_exc())
                 
@@ -628,12 +628,12 @@ class IdPValidationDriver(object):
 
                         newDiscoveries.append(discoveryInfo)
                     
-                    except IdPInvalidException, e:
+                    except IdPInvalidException as e:
                         log.warning("Whitelist Validator %r rejecting "
                                     "identifier: %s: %s", validator, 
                                     identifier, e)
                                                
-                    except Exception, e:        
+                    except Exception as e:        
                         log.warning("Error with Whitelist Validator %r "
                                     "rejecting identity: %s: %s", validator, 
                                     identifier, traceback.format_exc())
@@ -657,7 +657,7 @@ class SSLIdPValidationDriver(IdPValidationDriver):
     IDP_VALIDATOR_BASE_CLASS = SSLIdPValidator
     
     def __init__(self, idpConfigFilePath=None, installOpener=False):
-        if _M2CRYPTO_NOT_INSTALLED:
+        if _NDG_HTTPSCLIENT_NOT_INSTALLED:
             raise ImportError("M2Crypto is required for SSL-based IdP "
                               "validation but it is not installed.")
 
@@ -673,7 +673,7 @@ class SSLIdPValidationDriver(IdPValidationDriver):
                             callback=self)
 
         if installOpener:
-            urllib2.install_opener(build_opener(ssl_context=self.ctx))
+            urllib.request.install_opener(build_opener(ssl_context=self.ctx))
         
         if idpConfigFilePath is not None:
             self.idPValidators += \
@@ -707,7 +707,7 @@ class SSLIdPValidationDriver(IdPValidationDriver):
                 validator.initialize(self.ctx, **validatorConfig.parameters)
                 validators.append(validator)
             
-            except Exception, e: 
+            except Exception as e: 
                 raise ConfigException("Validator class %r initialisation "
                                       "failed with %s exception: %s" %
                                       (validatorConfig.className, 
@@ -738,7 +738,7 @@ class SSLIdPValidationDriver(IdPValidationDriver):
                 log.info("Whitelist Validator %s succeeded", 
                          validator.__class__.__name__)
             
-            except Exception, e:
+            except Exception as e:
                 log.error("Whitelist Validator %r caught %s exception with "
                           "peer certificate context: %s", 
                           validator.__class__.__name__, 

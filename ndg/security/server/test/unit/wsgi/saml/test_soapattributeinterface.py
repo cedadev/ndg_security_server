@@ -12,7 +12,7 @@ __revision__ = '$Id$'
 import unittest
 from uuid import uuid4
 from datetime import datetime
-from cStringIO import StringIO
+from io import StringIO
 
 from ndg.saml.saml2.core import (Attribute, SAMLVersion, Subject, NameID, Issuer, 
                              AttributeQuery, XSStringAttributeValue, 
@@ -100,7 +100,7 @@ class SOAPAttributeInterfaceMiddlewareTestCase(
         soapResponse.parse(responseStream)
         
         print("Parsed response ...")
-        print(soapResponse.serialize())
+        print((soapResponse.serialize()))
 #        print(prettyPrint(soapResponse.elem))
         
         response = ResponseElementTree.fromXML(soapResponse.body.elem[0])
@@ -120,13 +120,13 @@ class SOAPAttributeInterfaceMiddlewareTestCase(
                                  params=request, 
                                  headers=header, 
                                  status=200)
-        print("Response status=%d" % response.status)
+        print(("Response status=%d" % response.status))
         samlResponse = self._getSAMLResponse(response.body)
 
-        self.assert_(samlResponse.status.statusCode.value == \
+        self.assertTrue(samlResponse.status.statusCode.value == \
                      StatusCode.SUCCESS_URI)
-        self.assert_(samlResponse.inResponseTo == attributeQuery.id)
-        self.assert_(samlResponse.assertions[0].subject.nameID.value == \
+        self.assertTrue(samlResponse.inResponseTo == attributeQuery.id)
+        self.assertTrue(samlResponse.assertions[0].subject.nameID.value == \
                      attributeQuery.subject.nameID.value)
 
     def test02AttributeReleaseDenied(self):
@@ -143,11 +143,11 @@ class SOAPAttributeInterfaceMiddlewareTestCase(
                                  headers=header, 
                                  status=200)
         
-        print("Response status=%d" % response.status)
+        print(("Response status=%d" % response.status))
         
         samlResponse = self._getSAMLResponse(response.body)
 
-        self.assert_(samlResponse.status.statusCode.value == \
+        self.assertTrue(samlResponse.status.statusCode.value == \
                      StatusCode.INVALID_ATTR_NAME_VALUE_URI)
 
     def test03InvalidAttributesRequested(self):
@@ -174,11 +174,11 @@ class SOAPAttributeInterfaceMiddlewareTestCase(
                                  headers=header, 
                                  status=200)
         
-        print("Response status=%d" % response.status)
+        print(("Response status=%d" % response.status))
         
         samlResponse = self._getSAMLResponse(response.body)
 
-        self.assert_(samlResponse.status.statusCode.value == \
+        self.assertTrue(samlResponse.status.statusCode.value == \
                      StatusCode.INVALID_ATTR_NAME_VALUE_URI)
         
     def test04InvalidQueryIssuer(self):
@@ -195,11 +195,11 @@ class SOAPAttributeInterfaceMiddlewareTestCase(
                                  headers=header, 
                                  status=200)
         
-        print("Response status=%d" % response.status)
+        print(("Response status=%d" % response.status))
         
         samlResponse = self._getSAMLResponse(response.body)
 
-        self.assert_(samlResponse.status.statusCode.value == \
+        self.assertTrue(samlResponse.status.statusCode.value == \
                      StatusCode.REQUEST_DENIED_URI)
 
     def test05UnknownPrincipal(self):
@@ -216,11 +216,11 @@ class SOAPAttributeInterfaceMiddlewareTestCase(
                                  headers=header, 
                                  status=200)
         
-        print("Response status=%d" % response.status)
+        print(("Response status=%d" % response.status))
         
         samlResponse = self._getSAMLResponse(response.body)
 
-        self.assert_(samlResponse.status.statusCode.value == \
+        self.assertTrue(samlResponse.status.statusCode.value == \
                      StatusCode.UNKNOWN_PRINCIPAL_URI)
 
  

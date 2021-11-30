@@ -11,10 +11,10 @@ import logging
 log = logging.getLogger(__name__)
 
 import socket
-import httplib
-import urllib
-import urllib2
-import urlparse
+import http.client
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
+import urllib.parse
 
 from paste import httpexceptions
 from paste.proxy import parse_headers
@@ -98,7 +98,7 @@ class SSLCtxEnvironMiddleware(object):
  
     @certEnvKeyName.setter
     def certEnvKeyName(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "certEnvKeyName" '
                             'attribute; got %r' % type(val))
         self.__certEnvKeyName = val
@@ -109,7 +109,7 @@ class SSLCtxEnvironMiddleware(object):
 
     @ctxEnvKeyName.setter
     def ctxEnvKeyName(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "ctxEnvKeyName" '
                             'attribute; got %r' % type(val))
         self.__ctxEnvKeyName = val
@@ -120,7 +120,7 @@ class SSLCtxEnvironMiddleware(object):
 
     @caCertFilePath.setter
     def caCertFilePath(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "caCertFilePath" '
                             'attribute; got %r' % type(val))
 
@@ -132,7 +132,7 @@ class SSLCtxEnvironMiddleware(object):
 
     @caCertDir.setter
     def caCertDir(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "caCertDir" '
                             'attribute; got %r' % type(val))
 
@@ -144,7 +144,7 @@ class SSLCtxEnvironMiddleware(object):
 
     @verifyPeer.setter
     def verifyPeer(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "caCertDir" '
                             'attribute; got %r' % type(val))
 
@@ -188,7 +188,7 @@ class SSLCtxEnvironMiddleware(object):
     
                 ctx.use_privatekey(clientKey)
                 ctx.use_certificate(clientCert)
-            except Exception, exc:
+            except Exception as exc:
                 log.error("Exception setting certificate in environ: %s",
                           exc.__str__())
 
@@ -260,7 +260,7 @@ class CertificateSubjectEnvironMiddleware(object):
  
     @certEnvKeyName.setter
     def certEnvKeyName(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "certEnvKeyName" '
                             'attribute; got %r' % type(val))
         self.__certEnvKeyName = val
@@ -271,7 +271,7 @@ class CertificateSubjectEnvironMiddleware(object):
  
     @remoteUserEnvKeyName.setter
     def remoteUserEnvKeyName(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "remoteUserEnvKeyName" '
                             'attribute; got %r' % type(val))
         self.__remoteUserEnvKeyName = val
@@ -366,7 +366,7 @@ class NDGSecurityProxyMiddleware(object):
         @param local_conf: middleware configuration
         """
         # Sanity check
-        if not isinstance(prefix, basestring):
+        if not isinstance(prefix, str):
             prefix = ''
 
         # Get proxy initialisation parameters
@@ -400,7 +400,7 @@ class NDGSecurityProxyMiddleware(object):
 
     @localAddresses.setter
     def localAddresses(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "localAddresses" '
                             'attribute; got %r' % type(val))
         self.__localAddresses = val
@@ -411,7 +411,7 @@ class NDGSecurityProxyMiddleware(object):
 
     @proxyPrefix.setter
     def proxyPrefix(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "proxyPrefix" '
                             'attribute; got %r' % type(val))
         self.__proxyPrefix = val
@@ -463,15 +463,15 @@ class NDGSecurityProxyMiddleware(object):
         else:
             request_port = None
         if not request_port:
-            request_port = {'http': httplib.HTTP_PORT,
-                            'https': httplib.HTTPS_PORT}.get(request.scheme)
+            request_port = {'http': http.client.HTTP_PORT,
+                            'https': http.client.HTTPS_PORT}.get(request.scheme)
         request_port = int(request_port)
 
         result = False
         for (server_host, server_port) in addresses:
             if not server_port:
-                server_port = {'http': httplib.HTTP_PORT,
-                               'https': httplib.HTTPS_PORT}.get(request.scheme)
+                server_port = {'http': http.client.HTTP_PORT,
+                               'https': http.client.HTTPS_PORT}.get(request.scheme)
             server_port = int(server_port)
             result = ((request_fqdn == server_host) and
                       (request_port == server_port))
@@ -536,7 +536,7 @@ class NDGSecurityProxy(object):
 
     @ctxEnvKeyName.setter
     def ctxEnvKeyName(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "ctxEnvKeyName" '
                             'attribute; got %r' % type(val))
         self.__ctxEnvKeyName = val
@@ -547,7 +547,7 @@ class NDGSecurityProxy(object):
 
     @proxyPrefix.setter
     def proxyPrefix(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "proxyPrefix" '
                             'attribute; got %r' % type(val))
         self.__proxyPrefix = val
@@ -558,7 +558,7 @@ class NDGSecurityProxy(object):
 
     @http_proxy.setter
     def http_proxy(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "http_proxy" '
                             'attribute; got %r' % type(val))
         self.__http_proxy = val
@@ -572,7 +572,7 @@ class NDGSecurityProxy(object):
 
     @https_proxy.setter
     def https_proxy(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "https_proxy" '
                             'attribute; got %r' % type(val))
         self.__https_proxy = val
@@ -586,7 +586,7 @@ class NDGSecurityProxy(object):
 
     @no_proxy.setter
     def no_proxy(self, val):
-        if not isinstance(val, basestring):
+        if not isinstance(val, str):
             raise TypeError('Expecting string type for "no_proxy" '
                             'attribute; got %r' % type(val))
         self.__no_proxy = val
@@ -627,18 +627,18 @@ class NDGSecurityProxy(object):
             # '-' denotes the default port.
             if port != '-':
                 host = host + ':' + port
-            path = urllib.quote('/' + path)
+            path = urllib.parse.quote('/' + path)
         else:
             scheme = environ['wsgi.url_scheme']
             host = environ['HTTP_HOST']
-            path = urllib.quote(original_path)
+            path = urllib.parse.quote(original_path)
         query = environ.get('QUERY_STRING', None)
 
-        url = urlparse.urlunsplit((scheme, host, path, query, None))
+        url = urllib.parse.urlunsplit((scheme, host, path, query, None))
         log.debug("Target URL: %s", url)
 
         headers = {}
-        for key, value in environ.items():
+        for key, value in list(environ.items()):
             if key.startswith('HTTP_'):
                 key = key[5:].lower().replace('_', '-')
                 headers[key] = value
@@ -655,7 +655,7 @@ class NDGSecurityProxy(object):
             if environ['CONTENT_LENGTH'] != '-1':
                 headers['content-length'] = environ['CONTENT_LENGTH']
 
-        request = urllib2.Request(url, headers=headers)
+        request = urllib.request.Request(url, headers=headers)
         config = httpsclientutils.Configuration(sslCtx,
                                                 log.isEnabledFor(logging.DEBUG),
                                                 proxies=self.__proxies,
@@ -667,8 +667,8 @@ class NDGSecurityProxy(object):
         log.debug("Response status: %s", status)
 
         # Pass 401 status back to caller.
-        if return_code == httplib.UNAUTHORIZED:
-            start_response(httplib.UNAUTHORIZED, [])
+        if return_code == http.client.UNAUTHORIZED:
+            start_response(http.client.UNAUTHORIZED, [])
             return []
 
         if not response:

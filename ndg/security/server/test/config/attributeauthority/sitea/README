@@ -3,15 +3,11 @@ Site A Test Attribute Authority Service
 This directory contains the configuration information for an Attribute 
 Authority test service used by the unit tests:
 
- - site-aa.ini: main configuration file for the service which also contains
-   Paste config to enable running the service with paster (make sure to replace
-   %(here)s settings with the specific file path):
+ - site-aa.ini: main configuration file for the service
    
-   $ paster serve attribute-service.ini
-      
  - attributeauthorityapp.py: script to invoke the service:
  
-   $ python ./sitea_attributeauthority.py
+   $ python ./attributeauthorityapp.py
    
    This script can be used to test the service but the unit tests start up and
    close down attribute authority instances automatically.  See: 
@@ -20,6 +16,13 @@ Authority test service used by the unit tests:
  - sitea_attributeinterface.py: attribute interface plugin to the Attribute 
    Authority determines what attributes a given user is entitled to.  In a 
    production deployment this might link to a user database or other repository.
+   
+ - Testing - using ndg_saml_client CLI tool from ndg_saml package:
+ 
+   $ ndg_saml_client attr -u https://localhost:5443/attribute-service -s \
+       https://localhost:7443/openid/philip.kershaw -S urn:esg:openid \
+       -C ../pki/ca -i "/O=Site A/CN=Authorisation Service" \
+       -a "urn:siteA:security:authz:1.0:attr" -p
    
 Initial version: P J Kershaw 14/05/09
 Updated: P J Kershaw 24/01/11

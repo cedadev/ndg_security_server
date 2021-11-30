@@ -71,6 +71,6 @@ class SQLAlchemyAXInterfaceTestCase(TestUserDatabase):
         
         interface(axReq, axResp, None, authnCtx)
         axData = axResp.getExtensionArgs()
-        self.assert_(len(axData.keys()) > 0)
+        self.assertTrue(len(list(axData.keys())) > 0)
         print(axData)
                               

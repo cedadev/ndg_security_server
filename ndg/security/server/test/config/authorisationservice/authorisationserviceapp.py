@@ -12,16 +12,24 @@ __revision__ = "$Id$"
 from os import path
 import optparse 
 
-from ndg.security.server.utils.paste_utils import PasteDeployAppServer
+from paste.script.util.logging_config import fileConfig    
+from paste.deploy import loadapp
+
+from ndg.security.server.utils.wsgi_utils import GunicornServerApp
+from ndg.security.server.test.base import NDGSEC_TEST_CONFIG_DIR
 
 INI_FILENAME = 'authorisation-service.ini'
+CFG_FILEPATH = path.join(path.dirname(path.abspath(__file__)), INI_FILENAME)
 
-# To start run 
-# $ paster serve services.ini or run this file as a script, see
-# $ ./authorisationserviceapp.py -h
+
 if __name__ == '__main__':    
-    cfgFilePath = path.join(path.dirname(path.abspath(__file__)), INI_FILENAME)  
-        
+    def_cert_filepath = path.join(NDGSEC_TEST_CONFIG_DIR, 
+                                  'pki', 
+                                  'localhost.crt')
+    def_prikey_filepath = path.join(NDGSEC_TEST_CONFIG_DIR, 
+                                   'pki', 
+                                   'localhost.key')
+    
     parser = optparse.OptionParser()
     parser.add_option("-p",
                       "--port",
@@ -32,35 +40,41 @@ if __name__ == '__main__':
 
     parser.add_option("-c",
                       "--cert-file",
-                      dest='certFilePath',
+                      dest='cert_filepath',
+                      default=def_cert_filepath,
                       help="SSL Certificate file")
 
     parser.add_option("-k",
                       "--private-key-file",
-                      dest='priKeyFilePath',
+                      dest='prikey_filepath',
+                      default=def_prikey_filepath,
                       help="SSL private key file")
 
     parser.add_option("-f",
                       "--conf",
-                      dest="configFilePath",
-                      default=cfgFilePath,
+                      dest="config_filepath",
+                      default=CFG_FILEPATH,
                       help="Configuration file path")
-    
-    opt = parser.parse_args()[0]
-    
-    if opt.certFilePath:         
-        from OpenSSL import SSL
-        
-        ssl_context = SSL.Context(SSL.SSLv23_METHOD)
-        ssl_context.set_options(SSL.OP_NO_SSLv2)
-    
-        ssl_context.use_privatekey_file(opt.priKeyFilePath)
-        ssl_context.use_certificate_file(opt.certFilePath)
-    else:
-        ssl_context = None
 
-    server = PasteDeployAppServer(cfgFilePath=path.abspath(opt.configFilePath), 
-                                  port=opt.port,
-                                  ssl_context=ssl_context) 
-    server.start()
+    parser.add_option("-t",
+                      "--timeout",
+                      dest="timeout",
+                      default=3,
+                      type='int',
+                      help="timeout in seconds")  
+      
+    opt = parser.parse_args()[0]
+
+    dir_name = path.dirname(__file__)
+    options = {
+        'bind': '{}:{}'.format('127.0.0.1', opt.port),
+        'keyfile': opt.prikey_filepath,
+        'certfile': opt.cert_filepath,
+        'timeout': opt.timeout
+    }
+    fileConfig(opt.config_filepath)
+    app = loadapp('config:%s' % opt.config_filepath)
+    
+    gunicorn_server_app = GunicornServerApp(app, options)
+    gunicorn_server_app.run()
 

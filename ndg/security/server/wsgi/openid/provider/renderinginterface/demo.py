@@ -12,7 +12,7 @@ __revision__ = "$Id$"
 __license__ = "BSD - see LICENSE file in top-level directory"
 import logging
 log = logging.getLogger(__name__)
-import httplib
+import http.client
 import cgi
 
 from ndg.security.server.wsgi.openid.provider import RenderingInterface
@@ -490,7 +490,7 @@ class DemoRenderingInterface(RenderingInterface):
         -->
         ''' % msg)
         
-        start_response('%d %s' % (code, httplib.responses[code]),
+        start_response('%d %s' % (code, http.client.responses[code]),
                        [('Content-type', 'text/html' + self.charset),
                         ('Content-length', str(len(response)))])
         return response

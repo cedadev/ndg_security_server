@@ -67,7 +67,7 @@ class CSVFileAXInterface(AXInterface):
         if isinstance(value, (list, tuple)):
             self.__attributeNames = list(value)
             
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             self.__attributeNames = value.split()  
         else:
             raise TypeError('Expecting string, list or tuple type for '
@@ -81,7 +81,7 @@ class CSVFileAXInterface(AXInterface):
                                   "assigned from the columns in the CSV file")
 
     def setProperties(self, **properties):
-        for name, val in properties.items():
+        for name, val in list(properties.items()):
             setattr(self, name, val)
     
     def read(self):
@@ -94,14 +94,14 @@ class CSVFileAXInterface(AXInterface):
             
             # Dictionary keyed by user ID with each val itself a dict keyed
             # by attribute name
-            self.attributeMap[fields[0]] = dict(zip(self.attributeNames,
-                                                    fields[1:nAttributes+1]))
+            self.attributeMap[fields[0]] = dict(list(zip(self.attributeNames,
+                                                    fields[1:nAttributes+1])))
                
     def _getCsvFilePath(self):
         return self.__csvFilePath
 
     def _setCsvFilePath(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "csvFilePath"; got %r'
                             % type(value))
         self.__csvFilePath = value
@@ -168,7 +168,7 @@ class CSVFileAXInterface(AXInterface):
                                        ', '.join(missingAttributeURIs))
         
         # Add the requested attributes
-        for requestedAttributeURI in ax_req.requested_attributes.keys():
+        for requestedAttributeURI in list(ax_req.requested_attributes.keys()):
             if requestedAttributeURI in self.attributeNames:
                 log.info("Adding requested AX parameter %s=%s ...", 
                          requestedAttributeURI,

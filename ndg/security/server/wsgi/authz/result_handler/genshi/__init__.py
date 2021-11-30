@@ -14,14 +14,14 @@ import logging
 log = logging.getLogger(__name__)
 
 from os import path
-from httplib import UNAUTHORIZED, FORBIDDEN
+from http.client import UNAUTHORIZED, FORBIDDEN
 from string import Template
 
-from paste.cascade import Cascade
 from paste.urlparser import StaticURLParser
 from genshi.template import TemplateLoader
 
 from ndg.saml.saml2.core import DecisionType
+from ndg.security.server.utils.paste_port import Cascade
 from ndg.security.server.wsgi.authz.result_handler import \
     PEPResultHandlerMiddlewareBase
 
@@ -72,7 +72,7 @@ class GenshiPEPResultHandlerMiddleware(PEPResultHandlerMiddlewareBase):
         super(GenshiPEPResultHandlerMiddleware, self).__init__(app, {}) 
                
         # Initialise attributes
-        for k, v in GenshiPEPResultHandlerMiddleware.PROPERTY_DEFAULTS.items():
+        for k, v in list(GenshiPEPResultHandlerMiddleware.PROPERTY_DEFAULTS.items()):
             setattr(self, k, v)
          
         # Update from keywords   
@@ -134,7 +134,7 @@ class GenshiPEPResultHandlerMiddleware(PEPResultHandlerMiddlewareBase):
     def __setattr__(self, name, value):
         """Apply some generic type checking"""
         if name in GenshiPEPResultHandlerMiddleware.PROPERTY_DEFAULTS:
-            if not isinstance(value, basestring):
+            if not isinstance(value, str):
                 raise TypeError('Expecting string type for %r attribute; got '
                                 '%r' % (name, type(value)))
             

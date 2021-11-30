@@ -53,14 +53,14 @@ log = logging.getLogger(__name__)
 
 import warnings
 from time import time
-from urlparse import urlunsplit
-import httplib
+from urllib.parse import urlunsplit
+import http.client
 
-from paste.cascade import Cascade
 from paste.urlparser import StaticURLParser
 from authkit.authenticate.multi import MultiHandler
 
 from ndg.security.common.utils.classfactory import importClass
+from ndg.security.server.utils.paste_port import Cascade
 from ndg.security.server.wsgi import NDGSecurityMiddlewareBase
 from ndg.security.server.wsgi.authz.pep import SamlPepFilter
 from ndg.security.server.wsgi.authz.pep_xacml_profile import XacmlSamlPepFilter
@@ -79,7 +79,7 @@ class Http403ForbiddenStatusHandler(object):
     :cvar TRIGGER_HTTP_STATUS_CODE: status code to catch - HTTP 403 Forbidden
     :type TRIGGER_HTTP_STATUS_CODE: basestring
     """
-    TRIGGER_HTTP_STATUS_CODE = str(httplib.FORBIDDEN)
+    TRIGGER_HTTP_STATUS_CODE = str(http.client.FORBIDDEN)
     
     @classmethod
     def intercept(cls, environ, status, headers):
@@ -153,7 +153,7 @@ class AuthorisationFilterBase(object):
                                     resultHandlerStaticContentDirParamName)
         if resultHandlerStaticContentDir is not None:    
             staticApp = StaticURLParser(resultHandlerStaticContentDir)
-            app = Cascade([app, staticApp], catch=(httplib.NOT_FOUND,))
+            app = Cascade([app, staticApp], catch=(http.client.NOT_FOUND,))
 
         pepPrefix = prefix + cls.PEP_PARAM_PREFIX
         pepFilter = cls.PEP_FILTER.filter_app_factory(app, 

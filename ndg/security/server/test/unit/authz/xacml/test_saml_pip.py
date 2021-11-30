@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
 from os import path
-from urllib2 import URLError
+from urllib.error import URLError
 import unittest
 
 from ndg.xacml.core.attributedesignator import SubjectAttributeDesignator
@@ -26,8 +26,6 @@ from ndg.saml.saml2.core import Issuer as SamlIssuer
 
 from ndg.security.server.test.base import BaseTestCase
 from ndg.security.server.test.test_util import TestUserDatabase
-from ndg.security.server.test.service_testrunner import \
-                                                AttributeAuthorityTestRunner
 from ndg.security.server.xacml.pip.saml_pip import PIP
 
 
@@ -52,8 +50,8 @@ class SamlPipTestCase(BaseTestCase):
       
     def test01CreateAndCheckAttributes(self):
         pip = PIP()
-        self.assert_(pip)
-        self.assert_(pip.mappingFilePath is None)
+        self.assertTrue(pip)
+        self.assertTrue(pip.mappingFilePath is None)
         try:
             pip.attribute2AttributeAuthorityMap = {}
             self.fail("pip.attribute2AttributeAuthorityMap should be read-only")
@@ -61,8 +59,8 @@ class SamlPipTestCase(BaseTestCase):
             pass
         
         setattr(pip, 'sessionCacheDataDir', 'My data dir')
-        self.assert_(pip.sessionCacheDataDir == 'My data dir')
-        self.assert_(pip.sessionCacheTimeout is None)
+        self.assertTrue(pip.sessionCacheDataDir == 'My data dir')
+        self.assertTrue(pip.sessionCacheTimeout is None)
         
         try:
             pip.sessionCacheTimeout = {}
@@ -71,11 +69,11 @@ class SamlPipTestCase(BaseTestCase):
         except TypeError:
             pass
         
-        pip.sessionCacheTimeout = 86400L
-        self.assert_(pip.sessionCacheTimeout == 86400L)
+        pip.sessionCacheTimeout = 86400
+        self.assertTrue(pip.sessionCacheTimeout == 86400)
 
         # Check default
-        self.assert_(pip.sessionCacheAssertionClockSkewTol == 1.0)
+        self.assertTrue(pip.sessionCacheAssertionClockSkewTol == 1.0)
         
         try:
             pip.sessionCacheAssertionClockSkewTol = []
@@ -85,16 +83,16 @@ class SamlPipTestCase(BaseTestCase):
             pass
         
         pip.sessionCacheAssertionClockSkewTol = 0.3
-        self.assert_(pip.sessionCacheAssertionClockSkewTol == 0.3)
+        self.assertTrue(pip.sessionCacheAssertionClockSkewTol == 0.3)
         
     def test02ReadMappingFile(self):
         pip = PIP()
         pip.mappingFilePath = self.__class__.MAPPING_FILEPATH
         pip.readMappingFile()
-        self.assert_(len(pip.attribute2AttributeAuthorityMap.keys()) > 0)
-        self.assert_(self.__class__.NDGS_ATTR_ID in
+        self.assertTrue(len(list(pip.attribute2AttributeAuthorityMap.keys())) > 0)
+        self.assertTrue(self.__class__.NDGS_ATTR_ID in
                      pip.attribute2AttributeAuthorityMap)
-        print(pip.attribute2AttributeAuthorityMap)
+        print((pip.attribute2AttributeAuthorityMap))
         
     @classmethod
     def _createXacmlRequestCtx(cls):
@@ -155,46 +153,6 @@ class SamlPipTestCase(BaseTestCase):
         designator = cls._createSubjectAttributeDesignator()
         ctx = cls._createXacmlRequestCtx()
         return pip, designator, ctx
-    
-    def test03Query(self):
-        aa_testrunner = AttributeAuthorityTestRunner()
-        aa_testrunner.start_service()
-        try:
-            pip, designator, ctx = self.__class__._initQuery()
-            
-            # Avoid caching to avoid impacting other tests in this class
-            pip.cacheSessions = False
-            
-            attributeValues = pip.attributeQuery(ctx, designator)
-            self.assert_(len(attributeValues) > 0)
-            print("PIP retrieved attribute values %r" % attributeValues)
-        
-        finally:
-            aa_testrunner.stop_service()
-            
-    def test05SessionCaching(self):
-        aa_testrunner = AttributeAuthorityTestRunner()
-        aa_testrunner.start_service()
-        try:
-            pipA, designator, ctx = self._initQuery()
-            attributeValuesA = pipA.attributeQuery(ctx, designator)
-            
-            pipB = self._createPIP()
-            pipB.cacheSessions = False
-            
-            attributeValuesB = pipB.attributeQuery(ctx, designator)
-        finally:  
-            aa_testrunner.stop_service()
-        
-        attributeValuesA2 = pipA.attributeQuery(ctx, designator)
-        self.assert_(len(attributeValuesA2) > 0)
-        
-        try:
-            attributeValuesB2 = pipB.attributeQuery(ctx, designator)
-            self.fail("Expected URLError exception for call with no-caching "
-                      "set")
-        except URLError:
-            print("Pass: expected %r error for call with no-caching set")        
         
         
 if __name__ == "__main__":

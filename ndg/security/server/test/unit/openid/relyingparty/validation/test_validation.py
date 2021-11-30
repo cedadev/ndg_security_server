@@ -86,7 +86,7 @@ class IdPValidationTestCase(BaseTestCase):
                                                                 discoveries)
         # Expect no discoveries returned because the IDP_CONFIG_FILE 
         # environment variable is not set
-        self.assert_(len(validDiscoveries) == 1)
+        self.assertTrue(len(validDiscoveries) == 1)
         
     def test02WithIdPConfigFile(self):
         identifier = 'https://pjk.badc.rl.ac.uk'
@@ -96,7 +96,7 @@ class IdPValidationTestCase(BaseTestCase):
             
         idPValidationDriver = IdPValidationDriver()
         validDiscoveries = idPValidationDriver.performIdPValidation(identifier)
-        self.assert_(len(validDiscoveries) == 2)
+        self.assertTrue(len(validDiscoveries) == 2)
         
     @unittest.skipIf(not m2crypto_installed, "Skipping IdPValidationTestCase "
                      "M2Crypto is not installed.")

@@ -11,13 +11,13 @@ import logging
 log = logging.getLogger(__name__)
 
 import re
-import httplib
-from urllib2 import URLError
+import http.client
+from urllib.error import URLError
 from time import time
 
 import webob
 
-from ndg.soap.client import UrlLib2SOAPClientError
+from ndg.soap.client import SOAPClientError
 from ndg.saml.saml2.core import DecisionType, SubjectQuery
 from ndg.saml.utils.factory import AuthzDecisionQueryFactory
 from ndg.saml.saml2.binding.soap.client.requestbase import \
@@ -120,7 +120,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         return self.__localPolicyFilePath
 
     def _setLocalPolicyFilePath(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "localPolicyFilePath" '
                             'attribute; got %r' % type(value))
             
@@ -152,7 +152,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
     
     @ignore_file_list_pat.setter
     def ignore_file_list_pat(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             # Assume split on line boundaries
             self._ignore_file_list_pat = value.splitlines()
         elif is_iterable(value):
@@ -198,7 +198,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         return self.__authzServiceURI
 
     def _setAuthzServiceURI(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "authzServiceURI" '
                             'attribute; got %r' % type(value))
         self.__authzServiceURI = value
@@ -210,7 +210,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         return self.__sessionKey
 
     def _setSessionKey(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError('Expecting string type for "sessionKey" attribute; '
                             'got %r' % type(value))
         self.__sessionKey = value
@@ -222,7 +222,7 @@ class SamlPepFilterBase(SessionMiddlewareBase):
         return self.__cacheDecisions
 
     def _setCacheDecisions(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self.__cacheDecisions = str2Bool(value)
         elif isinstance(value, bool):
             self.__cacheDecisions = value
@@ -514,10 +514,10 @@ class SamlPepFilter(SamlPepFilterBase):
                 samlAuthzResponse = self.client_binding.send(query,
                                                      uri=self.authzServiceURI)
                 
-            except (UrlLib2SOAPClientError, URLError) as e:
+            except (SOAPClientError, URLError) as e:
                 import traceback
                 
-                if isinstance(e, UrlLib2SOAPClientError):
+                if isinstance(e, SOAPClientError):
                     log.error("Error, HTTP %s response from authorisation "
                               "service %r requesting access to %r: %s", 
                               e.urllib2Response.code,
@@ -532,8 +532,8 @@ class SamlPepFilter(SamlPepFilterBase):
                               traceback.format_exc()) 
                     
                 response = webob.Response()
-                response.status = httplib.FORBIDDEN
-                response.body = ('An error occurred retrieving an access '
+                response.status = http.client.FORBIDDEN
+                response.text = ('An error occurred retrieving an access '
                                  'decision for %r for user %r' % 
                                  (requestURI, remote_user))
                 response.content_type = 'text/plain'
@@ -560,10 +560,10 @@ class SamlPepFilter(SamlPepFilterBase):
                     
                     if not remote_user:
                         # Access failed and the user is not logged in
-                        response.status = httplib.UNAUTHORIZED
+                        response.status = http.client.UNAUTHORIZED
                     else:
                         # The user is logged in but not authorised
-                        response.status = httplib.FORBIDDEN
+                        response.status = http.client.FORBIDDEN
                         
                     response.body = 'Access denied to %r for user %r' % (
                                                                  requestURI,
@@ -577,7 +577,7 @@ class SamlPepFilter(SamlPepFilterBase):
                       "from %r", self.authzServiceURI)
             
             response = webob.Response()
-            response.status = httplib.FORBIDDEN
+            response.status = http.client.FORBIDDEN
             response.body = ('An error occurred retrieving an access decision '
                              'for %r for user %r' % (requestURI, remote_user))
             response.content_type = 'text/plain'

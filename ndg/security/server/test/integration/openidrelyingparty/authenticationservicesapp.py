@@ -11,28 +11,26 @@ __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = "$Id$"
 from os import path
 import optparse 
-     
-from OpenSSL import SSL
+    
+from paste.script.util.logging_config import fileConfig
+from paste.deploy import loadapp
 
-from ndg.security.server.utils.paste_utils import PasteDeployAppServer
-from ndg.security.server.test.base import BaseTestCase
-
-INI_FILEPATH = path.join(path.dirname(path.abspath(__file__)), 
-                            'authenticationservices.ini')    
+from ndg.security.server.utils.wsgi_utils import GunicornServerApp
+from ndg.security.server.test.base import NDGSEC_TEST_CONFIG_DIR 
+    
+INI_FILENAME = 'authenticationservices.ini'
+CFG_FILEPATH = path.join(path.dirname(path.abspath(__file__)), INI_FILENAME)
 DEFAULT_PORT = 6443
 
-# To start run 
-# $ paster serve authenticationservices.ini or run this file as a script
-# $ ./authenticationservicesapp.py [port #]
+
 if __name__ == '__main__':
-     
-    defCertFilePath = path.join(BaseTestCase.NDGSEC_TEST_CONFIG_DIR, 
-                                'pki', 
-                                'localhost.crt')
-    defPriKeyFilePath = path.join(BaseTestCase.NDGSEC_TEST_CONFIG_DIR, 
+    def_cert_filepath = path.join(NDGSEC_TEST_CONFIG_DIR, 
                                   'pki', 
-                                  'localhost.key')
-        
+                                  'localhost.crt')
+    def_prikey_filepath = path.join(NDGSEC_TEST_CONFIG_DIR, 
+                                   'pki', 
+                                   'localhost.key')
+    
     parser = optparse.OptionParser()
     parser.add_option("-p",
                       "--port",
@@ -41,43 +39,42 @@ if __name__ == '__main__':
                       type='int',
                       help="port number to run under")
 
-    parser.add_option("-s",
-                      "--with-ssl",
-                      dest="withSSL",
-                      default='True',
-                      help="Run with SSL")
-
     parser.add_option("-c",
                       "--cert-file",
-                      dest='certFilePath',
-                      default=defCertFilePath,
+                      dest='cert_filepath',
+                      default=def_cert_filepath,
                       help="SSL Certificate file")
 
     parser.add_option("-k",
                       "--private-key-file",
-                      default=defPriKeyFilePath,
-                      dest='priKeyFilePath',
+                      dest='prikey_filepath',
+                      default=def_prikey_filepath,
                       help="SSL private key file")
 
     parser.add_option("-f",
                       "--conf",
-                      dest="configFilePath",
-                      default=INI_FILEPATH,
+                      dest="config_filepath",
+                      default=CFG_FILEPATH,
                       help="Configuration file path")
-    
-    opt = parser.parse_args()[0]
-    
-    if opt.withSSL.lower() == 'true':
-        
-        ssl_context = SSL.Context(SSL.SSLv23_METHOD)
-        ssl_context.set_options(SSL.OP_NO_SSLv2)
-    
-        ssl_context.use_privatekey_file(opt.priKeyFilePath)
-        ssl_context.use_certificate_file(opt.certFilePath)
-    else:
-        ssl_context = None
 
-    server = PasteDeployAppServer(cfgFilePath=path.abspath(opt.configFilePath), 
-                                  port=opt.port,
-                                  ssl_context=ssl_context) 
-    server.start()
+    parser.add_option("-t",
+                      "--timeout",
+                      dest="timeout",
+                      default=3,
+                      type='int',
+                      help="timeout in seconds")  
+      
+    opt = parser.parse_args()[0]
+
+    dir_name = path.dirname(__file__)
+    options = {
+        'bind': '{}:{}'.format('127.0.0.1', opt.port),
+        'keyfile': opt.prikey_filepath,
+        'certfile': opt.cert_filepath,
+        'timeout': opt.timeout
+    }
+    fileConfig(opt.config_filepath)
+    app = loadapp('config:%s' % opt.config_filepath)
+    
+    gunicorn_server_app = GunicornServerApp(app, options)
+    gunicorn_server_app.run()

@@ -9,7 +9,7 @@ __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = '$Id$'
 import logging
 log = logging.getLogger(__name__)
-import httplib
+import http.client
 import re # for NDGSecurityPathFilter
 
 class NDGSecurityMiddlewareError(Exception):
@@ -69,7 +69,7 @@ class NDGSecurityMiddlewareBase(object):
         self.__class__._filterOpts(opt, local_conf, prefix=prefix)
         
         # Set options as object attributes
-        for name, val in opt.items():
+        for name, val in list(opt.items()):
             if not name.startswith('_'):
                 setattr(self, name, val)
 
@@ -177,7 +177,7 @@ class NDGSecurityMiddlewareBase(object):
         if start_response is None:
             start_response = self.start_response
             
-        status = '%d %s' % (code, httplib.responses[code])
+        status = '%d %s' % (code, http.client.responses[code])
         if msg is None:
             response = status
         else:
@@ -189,7 +189,7 @@ class NDGSecurityMiddlewareBase(object):
         start_response(status,
                        [('Content-type', contentType),
                         ('Content-Length', str(len(response)))])
-        return [response]
+        return [response.encode('utf-8')]
         
     @staticmethod
     def getStatusMessage(statusCode):
@@ -200,7 +200,7 @@ class NDGSecurityMiddlewareBase(object):
         @return: status code with standard message
         @raise KeyError: for invalid status code
         '''
-        return '%d %s' % (statusCode, httplib.responses[statusCode])
+        return '%d %s' % (statusCode, http.client.responses[statusCode])
     
     # Utility functions to support Paste Deploy application and filter function
     # signatures
@@ -248,7 +248,7 @@ class NDGSecurityMiddlewareBase(object):
             propertyDefaults = cls.propertyDefaults
             
         badOpt = []
-        for k,v in newOpt.items():
+        for k,v in list(newOpt.items()):
             if prefix and k.startswith(prefix):
                 subK = k.replace(prefix, '')                    
                 filtK = '_'.join(subK.split('.'))  
@@ -426,7 +426,7 @@ class NDGSecurityPathFilter(NDGSecurityMiddlewareBase):
         as set in environ['PATH_INFO']
         '''
         
-        if isinstance(pathList, basestring):
+        if isinstance(pathList, str):
             # Try parsing a space separated list of file paths
              self.__pathMatchList=NDGSecurityPathFilter.CSV_PAT.split(pathList)
             
@@ -455,13 +455,13 @@ class NDGSecurityPathFilter(NDGSecurityMiddlewareBase):
         fails"""
         if isinstance(code, int):
             self._errorResponseCode = code
-        elif isinstance(code, basestring):
+        elif isinstance(code, str):
             self._errorResponseCode = int(code)
         else:
             raise TypeError('Expecting int or string type for '
                             '"errorResponseCode" attribute')
             
-        if self._errorResponseCode not in httplib.responses: 
+        if self._errorResponseCode not in http.client.responses: 
             raise ValueError("Error response code [%d] is not recognised "
                              "standard HTTP response code" % 
                              self._errorResponseCode)  

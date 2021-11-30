@@ -12,12 +12,12 @@ def print_trip(request, response):
     """
     just prints the request and response
     """
-    print "Request\n==========\n\n"
-    print str(request)
-    print "\n\n"
-    print "Response\n==========\n\n"
-    print str(response)
-    print "\n\n"
+    print("Request\n==========\n\n")
+    print(str(request))
+    print("\n\n")
+    print("Response\n==========\n\n")
+    print(str(response))
+    print("\n\n")
 
 
 class HTTPMiddleware(object):
@@ -34,8 +34,8 @@ class HTTPMiddleware(object):
         result = req.get_response(self._app)
         try:
             self._record(req.copy(), result.copy())
-        except Exception, ex: #return response at all costs
-            print ex
+        except Exception as ex: #return response at all costs
+            print(ex)
         return result
 
 # Disable for now to avoid nose picking it up and hanging the test run.
